@@ -1,0 +1,15 @@
+{
+	"email":{
+		"valueType" : "Text",
+		"messageId" : "invalidEmail",
+		"minLength" : "5",
+		"maxLength" : "100",
+		"regex" :"I Don't know it off hand. Please get the Best one"
+	},
+	"amt" :{
+		"valueType" : "Integer",
+		"messageId" : "invalidInteger",
+		"minValue" : "100",
+		"maxValue" : "99999999"
+	}
+}

@@ -1,0 +1,11 @@
+{
+	"formId": "itr1",
+	"dataELements": {
+		"primaryEmail":{
+		"dataType" : "email",
+		"isRequired":true,
+		"label" : "Primary Email",
+		"placeHolder" : "enter your primary email"
+		}
+	}
+}
