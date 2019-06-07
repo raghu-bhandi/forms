@@ -30,17 +30,20 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Agent receives requests from http clients. Requested service is
- * located and invoked to get a response that is sent back to the client
+ * This is the entry point for <code>Agent</code> from a web-server (http-server
+ * or servlet container like Tomcat or Jetty)
+ * <br/>
+ * <br/>
+ * Our design is to have just one entry point for a web-app. We do not use REST
+ * path standards. Instead, a service oriented approach is used , more like an
+ * RPC. Name of service is expected as a header field. We use the the paradigm
+ * <bold>response = serve(serviceName, request)</bold>
  * 
  * @author simplity.org
  * 
  */
-@WebServlet(
-		  name = "s",
-		  description = "Sole URL for client to request a service",
-		  urlPatterns = {"/s"}
-		)public class Servlet extends HttpServlet {
+@WebServlet(name = "s", description = "Sole URL for client to request a service", urlPatterns = { "/s" })
+public class Servlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 	protected static final int STATUS_METHOD_NOT_ALLOWED = 405;

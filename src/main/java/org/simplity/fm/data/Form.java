@@ -51,13 +51,29 @@ public class Form implements IForm {
 	 */
 	private FormStructure structure;
 	/**
-	 * field values. empty array, but not null if this template has no fields
+	 * field values. null if this template has no fields
 	 */
 	private Object[] fieldValues;
 	/**
-	 * grid data. empty array, but not null if this template has no fields
+	 * grid data. null if this template has no fields
 	 */
 	private Object[][][] gridData;
+
+	/**
+	 * @param formStructure
+	 *            data structure describes the template for which this object
+	 *            provides
+	 *            actual data
+	 * @param values
+	 *            grid data. null if this template has no fields
+	 * @param tables
+	 *            grid data. null if this template has no fields
+	 */
+	public Form(FormStructure formStructure, Object[] values, Object[][][] tables) {
+		this.structure = formStructure;
+		this.fieldValues = values;
+		this.gridData = tables;
+	}
 
 	@Override
 	public String getFormId() {
@@ -73,19 +89,12 @@ public class Form implements IForm {
 		if (indexes == null || indexes.length == 0) {
 			throw new ApplicationError("Form " + this.getFormId() + " has no key fields");
 		}
-		Object obj = this.fieldValues[indexes[0]];
-		if (obj == null) {
-			return null;
-		}
-		String key = obj.toString();
-		if (indexes.length > 1) {
-			for (int i = 1; i < indexes.length; i++) {
-				obj = this.fieldValues[indexes[i]];
-				if (obj == null) {
-					return null;
-				}
-				key += KEY_JOINER + obj.toString();
+		String key = this.getFormId();
+		for (Object obj : this.fieldValues) {
+			if (obj == null) {
+				return null;
 			}
+			key += KEY_JOINER + obj.toString();
 		}
 		return key;
 	}

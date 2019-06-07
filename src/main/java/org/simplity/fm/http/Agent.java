@@ -46,8 +46,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Agent receives requests from http clients. Requested service is
- * located and invoked to get a response that is sent back to the client
+ * Agent is the single-point-of-contact to invoke any service on this app.
+ * Services are not to be invoked directly (bypassing the Agent) in production.
+ * This design provides a simple and clean separation of web and service layer.
+ * No code needs to be written for a service in the web layer.
  * 
  * @author simplity.org
  * 
@@ -77,19 +79,17 @@ public class Agent {
 	private static final int STATUS_INTERNAL_ERROR = 500;
 	private static final String SERVICE_NAME = "_serviceName";
 	/**
-	 * TODO: cache manager to be used or session cache. Using a local map for
+	 * TODO: cache manager to be used for session cache. Using a local map for
 	 * the time being
 	 */
 	private Map<String, LoggedInUser> activeUsers = new HashMap<>();
 	/**
-	 * all registered services
+	 * TODO : all services to be loaded through a resource file
 	 */
 	private Map<String, IService> services = new HashMap<>();
 
 	/**
 	 * register a service with the agent
-	 * TODO: In the absence of a container like Spring, we have to device a way
-	 * for us to have all defined services get registered
 	 * 
 	 * @param serviceName
 	 *            non-null service name
@@ -158,16 +158,17 @@ public class Agent {
 			if (inputDataIsInPayload) {
 				try (InputStream ins = req.getInputStream()) {
 					/*
-					 * our initial design is to read the whole stream into JSON
-					 * Object, for simplicity.
-					 * We need to revise this to work with low level APIs from
-					 * stream in case we expect very large JSONs
+					 * read it as json
 					 */
 					JsonNode json = new ObjectMapper().readTree(ins);
 					if (json.getNodeType() != JsonNodeType.OBJECT) {
 						resp.setStatus(STATUS_INVALID_DATA);
 						return;
 					}
+					/*
+					 * let the form fill itself with data from the json, and any
+					 * validation error is added to the list
+					 */
 					inputForm.validateAndLoad((ObjectNode) json, messages);
 				} catch (Exception e) {
 					resp.setStatus(STATUS_INVALID_DATA);
@@ -184,12 +185,17 @@ public class Agent {
 			}
 		}
 
-		// finally.... call the service
+		/*
+		 * finally.... call the service
+		 * We allow the service to use output stream, but not input stream. This
+		 * is a safety mechanism against possible measures to be taken when
+		 * receiving payload from an external source
+		 */
 		try (OutputStream outs = resp.getOutputStream()) {
 			ServiceResult result = service.execute(user, inputForm, outs);
 			if (result.allOk) {
 				this.setHeaders(resp);
-			}else {
+			} else {
 				this.respondWithError(resp, result.messages, outs);
 			}
 		} catch (ApplicationError a) {

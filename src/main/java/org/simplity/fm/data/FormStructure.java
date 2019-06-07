@@ -21,7 +21,12 @@
  */
 package org.simplity.fm.data;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+
+import org.simplity.fm.ApplicationError;
+import org.simplity.fm.IForm;
 
 /**
  * @author simplity.org
@@ -32,25 +37,46 @@ public class FormStructure {
 	 * this is the unique id given this to this form, it is an independent
 	 * form. It is the section name in case it is a section of a composite form
 	 */
-	private String formId;
+	private String uniqueName;
 
 	/**
-	 * index to the values array for the key fields
-	 */
-	private int[] keyIndexes;
-	/**
-	 * data elements are sequenced so that the values can be saved in an array
+	 * Fields in this form.
 	 */
 	private Field[] fields;
 
 	/**
-	 * name of grids. null if there are no grids;
+	 * name of grids/tabular dta. null if there are no gridsgrid name is the
+	 * "fieldName" used in this form for the tabular data. like orderLines.;
 	 */
 	private String[] gridNames;
 	/**
-	 * structure of grids. null if there are no grids
+	 * structure of grids. same order as the array gridNames. Each element is a
+	 * form-structure that describes the columns in the grid
 	 */
-	private FormStructure[] grids;
+	private FormStructure[] gridStructures;
+	/**
+	 * describes all the inter-field validations, and form-level validations
+	 */
+	private IFormValidation[] validations;
+	/**
+	 * minimum rows of data required. 0 if this is not a grid, or the data is
+	 * optional
+	 */
+	private int minRows;
+	/**
+	 * maximum rows of data required. 0 if this is not a grid, or you do not
+	 * want to restrict data
+	 */
+	private int maxRows;
+	/*
+	 * following fields are derived from others. Defined for improving
+	 * performance of some methods
+	 */
+	/**
+	 * index to the values array for the key fields. this is derived based on
+	 * fields. This based on the field meta data attribute isKeyField
+	 */
+	private int[] keyIndexes;
 	/**
 	 * fields are also stored as Maps for ease of access
 	 */
@@ -61,22 +87,96 @@ public class FormStructure {
 	private Map<String, FormStructure> gridsMap;
 
 	/**
-	 * describes all the inter-field validations, and form-level validations
+	 * 
+	 * this is the unique id given this to this form, it is an independent
+	 * form. It is the section name in case it is a section of a composite form
+	 * 
+	 * @param uniqueName
+	 *            this is the unique id given this to this form, it is an
+	 *            independent form. It is the section name in case it is a
+	 *            section of a composite form
+	 * @param fields
+	 *            Fields in this form. ensure that each field has its sequenceNo
+	 *            set as per their position in the array
+	 * @param gridNames
+	 *            name of grids/tabular dta. null if there are no grids
+	 * @param gridStructures
+	 *            structure of grids. same order as the array gridNames. Each
+	 *            element is a
+	 *            form-structure that describes the columns in the grid
+	 * @param validations
+	 *            describes all the inter-field validations, and form-level
+	 *            validations
+	 * @param minRows
+	 *            minimum rows of data required. 0 if this is not a grid, or the
+	 *            data is optional
+	 * @param maxRows
+	 *            maximum rows of data required. 0 if this is not a grid, or you
+	 *            do not want to restrict data
 	 */
-	private IFormValidation[] validations;
-	/**
-	 * for validating data.
-	 */
-	private int minRows;
-	/**
-	 * for validating data
-	 */
-	private int maxRows;
+	public FormStructure(String uniqueName, Field[] fields, String[] gridNames, FormStructure[] gridStructures,
+			IFormValidation[] validations, int minRows, int maxRows) {
+		this.fields = fields;
+		this.gridNames = gridNames;
+		this.gridStructures = gridStructures;
+		this.validations = validations;
+		this.minRows = minRows;
+		this.maxRows = maxRows;
+		if (this.fields != null) {
+			this.buildFieldsMap();
+		}
 
-	/**
-	 * zero based index of this section, if this is a section ofa composite form
-	 */
-	private int sequenceIdx;
+		if (this.gridNames != null) {
+			this.buildGridsMap();
+		}
+		if (this.validations != null && this.validations.length == 0) {
+			this.validations = null;
+		}
+	}
+
+	private void buildFieldsMap() {
+		int n = this.fields.length;
+		if (n == 0) {
+			this.fields = null;
+			return;
+		}
+		this.fieldsMap = new HashMap<>(n, 1);
+		int[] keys = new int[n];
+		int keyIdx = 0;
+		for (int i = 0; i < this.fields.length; i++) {
+			Field field = this.fields[i];
+			if (i != field.getSequenceIdx()) {
+				throw new ApplicationError(
+						"Field " + field.getFieldName() + " in form strcuture " + this.uniqueName + " is at index " + i
+								+ " in the fieldNames array, but its sequenceNo is set to " + field.getSequenceIdx());
+			}
+			this.fieldsMap.put(field.getFieldName(), field);
+			if(field.isKeyField()) {
+				keys[keyIdx] =i;
+				keyIdx++;
+			}
+		}
+		if(keyIdx != 0) {
+			this.keyIndexes = Arrays.copyOf(keys, keyIdx);
+		}
+	}
+
+	private void buildGridsMap() {
+		int n = this.gridNames.length;
+		if (n == 0) {
+			this.gridNames = null;
+			return;
+		}
+		if (this.gridStructures == null || this.gridStructures.length != n) {
+			throw new ApplicationError("Form " + this.uniqueName + " has " + n
+					+ " grid names but does not haev the same numberof entries in gridStructures");
+		}
+		this.gridsMap = new HashMap<>(n, 1);
+		for (int i = 0; i < this.gridNames.length; i++) {
+			this.gridsMap.put(this.gridNames[i], this.gridStructures[i]);
+		}
+
+	}
 
 	/**
 	 * message to be used if the grid has less than the min or greater than the
@@ -91,7 +191,7 @@ public class FormStructure {
 	 * @return non-null unique id
 	 */
 	public String getFormId() {
-		return this.formId;
+		return this.uniqueName;
 	}
 
 	/**
@@ -112,7 +212,7 @@ public class FormStructure {
 	 * @return the grid names. non-null. could be empty
 	 */
 	public FormStructure[] getGridStructures() {
-		return this.grids;
+		return this.gridStructures;
 	}
 
 	/**
@@ -130,13 +230,6 @@ public class FormStructure {
 	 */
 	public FormStructure getGridStructure(String gridName) {
 		return this.gridsMap.get(gridName);
-	}
-
-	/**
-	 * @return the sequenceIdx
-	 */
-	public int getSequenceIdx() {
-		return this.sequenceIdx;
 	}
 
 	/**
@@ -173,5 +266,21 @@ public class FormStructure {
 	 */
 	public String getGridMessageId() {
 		return this.gridMessageId;
+	}
+
+	/**
+	 * 
+	 * @return A form that can take field/table values
+	 */
+	public IForm newForm() {
+		Object[] values = null;
+		Object[][][] tables = null;
+		if (this.fields != null && this.fields.length != 0) {
+			values = new Object[this.fields.length];
+		}
+		if (this.gridNames != null && this.gridNames.length != 0) {
+			tables = new Object[this.gridNames.length][][];
+		}
+		return new Form(this, values, tables);
 	}
 }

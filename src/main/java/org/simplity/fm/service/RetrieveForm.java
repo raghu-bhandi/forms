@@ -25,6 +25,7 @@ package org.simplity.fm.service;
 import java.io.OutputStream;
 
 import org.simplity.fm.IForm;
+import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
 
@@ -38,13 +39,13 @@ public class RetrieveForm extends AbstractService {
 
 	/**
 	 * a simple service that just retrieves the required form.
-	 * @param inputForm 
-	 * @param outputForm 
+	 * @param inputStructure 
+	 * @param outputStructure 
 	 * 
 	 */
-	public RetrieveForm(Class<IForm> inputForm, Class<IForm> outputForm) {
-		this.inputFormClass = inputForm;
-		this.outputFormClass = outputForm;
+	public RetrieveForm(FormStructure inputStructure, FormStructure outputStructure) {
+		this.inputStructure = inputStructure;
+		this.outputStructure = outputStructure;
 	}
 
 	@Override
@@ -52,7 +53,7 @@ public class RetrieveForm extends AbstractService {
 		boolean ok = DataStore.getStore().retrieve(inputForm.getDocumentId(), outs);
 		if(!ok) {
 			//if the file is not found, may be we should create an empty one!!
-			IForm outputForm = this.outputFormClass.newInstance();
+			IForm outputForm = this.outputStructure.newForm();
 			outputForm.serializeAsJson(outs);
 		}
 		return new ServiceResult(null, true);

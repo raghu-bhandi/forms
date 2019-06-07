@@ -20,45 +20,54 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
+package junk;
 
-import java.io.OutputStream;
-
-import org.simplity.fm.IForm;
-import org.simplity.fm.data.FormStructure;
-import org.simplity.fm.http.LoggedInUser;
-import org.simplity.fm.io.DataStore;
+import org.simplity.fm.data.Field;
 
 /**
- * Simple service that just saves the form with no saves the form received from
+ * represents data structure that holds data from a service request or for a
+ * service response.
  * 
  * @author simplity.org
  *
  */
-public class SaveForm extends AbstractService {
+public interface IDataStructure {
+	
+	/**
+	 * @return a form data instance based on this data structure
+	 */
+	public IFormData newFormData();
 
 	/**
-	 * a simple service that just saves the form. output form is null;
+	 * each data structure in a project has unique name that is used as id.
 	 * 
-	 * @param inputStructure
+	 * @return unique name/id of this data structure
 	 */
-	public SaveForm(FormStructure inputStructure) {
-		this.inputStructure = inputStructure;
-	}
+	public String getName();
 
-	@Override
-	public ServiceResult processForm(LoggedInUser user, IForm inputForm,  OutputStream respStream) throws Exception {
-		try (OutputStream outs = DataStore.getStore().getOutStream(inputForm.getDocumentId())) {
-			inputForm.serializeAsJson(outs);
-		}
-		return new ServiceResult(null, true);
-	}
+	/**
+	 * 
+	 * @return non-null array of field names
+	 */
+	public String[] getFieldNames();
 
-	@Override
-	protected boolean hasAccess(LoggedInUser user, String key) {
-		// TODO implement the logic to check if this user has write access to
-		// this form
-		return true;
-	}
-
+	/**
+	 * 
+	 * @return non-null array of grid names
+	 */
+	public String[] getGridNames();
+	/**
+	 * 
+	 * @param fieldName
+	 * @return null if this is not a field. DataElement provides meta-data about
+	 *         the field
+	 */
+	public Field getFieldType(String fieldName);
+	
+	/**
+	 * 
+	 * @param gridName
+	 * @return sub0structure used  by this data grid. null if this is not the name of a grid
+	 */
+	public IDataStructure getGridStructure(String gridName);
 }

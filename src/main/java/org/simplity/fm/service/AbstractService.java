@@ -24,10 +24,10 @@ package org.simplity.fm.service;
 
 import java.io.OutputStream;
 
-import org.simplity.fm.ApplicationError;
 import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
 import org.simplity.fm.MessageType;
+import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 
 /**
@@ -44,37 +44,27 @@ public abstract class AbstractService implements IService {
 	/**
 	 * null if no input is expected
 	 */
-	protected Class<IForm> inputFormClass;
+	protected FormStructure inputStructure;
 
 	/**
 	 * null if no output is expected
 	 */
-	protected Class<IForm> outputFormClass;
+	protected FormStructure outputStructure;
 
 	@Override
 	public IForm getInputForm() {
-		if (this.inputFormClass == null) {
+		if (this.inputStructure == null) {
 			return null;
 		}
-		try {
-			return this.inputFormClass.newInstance();
-		} catch (Exception e) {
-			throw new ApplicationError("Unable to create an instance of class " + this.inputFormClass.getName()
-					+ " Error:" + e.getMessage());
-		}
+		return this.inputStructure.newForm();
 	}
 
 	@Override
 	public IForm getOutputForm() {
-		if (this.outputFormClass == null) {
+		if (this.outputStructure == null) {
 			return null;
 		}
-		try {
-			return this.outputFormClass.newInstance();
-		} catch (Exception e) {
-			throw new ApplicationError("Unable to create an instance of class " + this.outputFormClass.getName()
-					+ " Error:" + e.getMessage());
-		}
+		return this.inputStructure.newForm();
 	}
 
 	@Override
@@ -95,12 +85,17 @@ public abstract class AbstractService implements IService {
 
 	/**
 	 * let the concrete service process the form and return its result
-	 * @param user non-null logged in user
-	 * @param inputForm null if this service is not expecting any input
-	 * @throws Exception general catch-all
+	 * 
+	 * @param user
+	 *            non-null logged in user
+	 * @param inputForm
+	 *            null if this service is not expecting any input
+	 * @throws Exception
+	 *             general catch-all
 	 * @return service result
 	 */
-	protected abstract ServiceResult processForm(LoggedInUser user, IForm inputForm,  OutputStream outs) throws Exception;
+	protected abstract ServiceResult processForm(LoggedInUser user, IForm inputForm, OutputStream outs)
+			throws Exception;
 
 	/**
 	 * let the concrete service check if the user has access to this form

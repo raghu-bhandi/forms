@@ -20,45 +20,16 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
+package junk;
 
-import java.io.OutputStream;
-
-import org.simplity.fm.IForm;
 import org.simplity.fm.data.FormStructure;
-import org.simplity.fm.http.LoggedInUser;
-import org.simplity.fm.io.DataStore;
 
 /**
- * Simple service that just saves the form with no saves the form received from
- * 
+ * represents data organized as rows and columns
  * @author simplity.org
  *
  */
-public class SaveForm extends AbstractService {
+public class GridData {
 
-	/**
-	 * a simple service that just saves the form. output form is null;
-	 * 
-	 * @param inputStructure
-	 */
-	public SaveForm(FormStructure inputStructure) {
-		this.inputStructure = inputStructure;
-	}
-
-	@Override
-	public ServiceResult processForm(LoggedInUser user, IForm inputForm,  OutputStream respStream) throws Exception {
-		try (OutputStream outs = DataStore.getStore().getOutStream(inputForm.getDocumentId())) {
-			inputForm.serializeAsJson(outs);
-		}
-		return new ServiceResult(null, true);
-	}
-
-	@Override
-	protected boolean hasAccess(LoggedInUser user, String key) {
-		// TODO implement the logic to check if this user has write access to
-		// this form
-		return true;
-	}
-
+	private FormStructure structure;
 }
