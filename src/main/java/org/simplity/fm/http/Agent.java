@@ -26,16 +26,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.simplity.fm.ApplicationError;
-import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.service.ServiceResult;
@@ -151,38 +148,25 @@ public class Agent {
 		 * We will have to re-design our code to populate inData partly from
 		 * client and partly from session-cache
 		 */
-		IForm inputForm = service.getInputForm();
-		if (inputForm != null) {
-			List<Message> messages = new ArrayList<>();
-
-			if (inputDataIsInPayload) {
-				try (InputStream ins = req.getInputStream()) {
-					/*
-					 * read it as json
-					 */
-					JsonNode json = new ObjectMapper().readTree(ins);
-					if (json.getNodeType() != JsonNodeType.OBJECT) {
-						resp.setStatus(STATUS_INVALID_DATA);
-						return;
-					}
-					/*
-					 * let the form fill itself with data from the json, and any
-					 * validation error is added to the list
-					 */
-					inputForm.validateAndLoad((ObjectNode) json, messages);
-				} catch (Exception e) {
+		ObjectNode json = null;
+		Map<String, String> fields = null;
+		if (inputDataIsInPayload) {
+			try (InputStream ins = req.getInputStream()) {
+				/*
+				 * read it as json
+				 */
+				JsonNode node = new ObjectMapper().readTree(ins);
+				if (node.getNodeType() != JsonNodeType.OBJECT) {
 					resp.setStatus(STATUS_INVALID_DATA);
 					return;
 				}
-			} else {
-				this.readQueryString(req, inputForm, messages);
-			}
-			if (messages.size() > 0) {
-				try (OutputStream outs = resp.getOutputStream()) {
-					this.respondWithError(resp, messages.toArray(new Message[0]), outs);
-				}
+				json = (ObjectNode) node;
+			} catch (Exception e) {
+				resp.setStatus(STATUS_INVALID_DATA);
 				return;
 			}
+		} else {
+			fields = this.readQueryString(req);
 		}
 
 		/*
@@ -192,7 +176,12 @@ public class Agent {
 		 * receiving payload from an external source
 		 */
 		try (OutputStream outs = resp.getOutputStream()) {
-			ServiceResult result = service.execute(user, inputForm, outs);
+			ServiceResult result = null;
+			if (fields != null) {
+				result = service.serve(user, fields, outs);
+			} else {
+				result = service.serve(user, json, outs);
+			}
 			if (result.allOk) {
 				this.setHeaders(resp);
 			} else {
@@ -226,23 +215,24 @@ public class Agent {
 		}
 	}
 
-	private void readQueryString(HttpServletRequest req, IForm data, List<Message> messages) {
+	private Map<String, String> readQueryString(HttpServletRequest req) {
 		Map<String, String> values = new HashMap<>();
 		String qry = req.getQueryString();
-		if (qry != null) {
-
-			for (String part : qry.split("&")) {
-				String[] pair = part.split("=");
-				String val;
-				if (pair.length == 1) {
-					val = "";
-				} else {
-					val = this.decode(pair[1]);
-				}
-				values.put(pair[0].trim(), val);
-			}
+		if (qry == null) {
+			return values;
 		}
-		data.validateAndLoad(values, messages);
+
+		for (String part : qry.split("&")) {
+			String[] pair = part.split("=");
+			String val;
+			if (pair.length == 1) {
+				val = "";
+			} else {
+				val = this.decode(pair[1]);
+			}
+			values.put(pair[0].trim(), val);
+		}
+		return values;
 	}
 
 	private IService getService(HttpServletRequest req) {

@@ -112,14 +112,24 @@ public interface IForm {
 	public void load(ObjectNode json);
 
 	/**
-	 * load from a JSON node that is not dependable. Like input from a client
+	 * load keys from a map. input is suspect.
 	 * 
 	 * @param values
 	 *            non-null
 	 * @param errors
 	 *            non-null to which any validation errors are added
 	 */
-	public void validateAndLoad(Map<String, String> values, List<Message> errors);
+	public void loadKeys(Map<String, String> values, List<Message> errors);
+
+	/**
+	 * load keys from a JSON. input is suspect.
+	 * 
+	 * @param json
+	 *            non-null
+	 * @param errors
+	 *            non-null to which any validation errors are added
+	 */
+	public void loadKeys(ObjectNode json, List<Message> errors);
 
 	/**
 	 * load from a JSON node that is not dependable. Like input from a client
@@ -132,10 +142,10 @@ public interface IForm {
 	public void validateAndLoad(ObjectNode jsonNode, List<Message> errors);
 
 	/**
-	 * @param outs 
-	 * @throws IOException 
+	 * @param outs
+	 * @throws IOException
 	 */
-	public void serializeAsJson(OutputStream outs)  throws IOException ;
+	public void serializeAsJson(OutputStream outs) throws IOException;
 
 	/**
 	 * 

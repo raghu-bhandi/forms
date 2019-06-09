@@ -23,44 +23,59 @@
 package org.simplity.fm.service;
 
 import java.io.OutputStream;
+import java.util.Map;
 
-import org.simplity.fm.IForm;
 import org.simplity.fm.http.LoggedInUser;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 /**
- * Interface for service. Also, the instance is expected to be re-usable, and
+ * Interface for service. The instance is expected to be re-usable, and
  * thread-safe. (immutable). Singleton pattern is suitable or this.
+ * <br />
+ * <br />
+ * serve methods may be added for otehr formats on a need basis
  * 
  * @author simplity.org
  *
  */
 public interface IService {
 	/**
-	 * 
-	 * @return data structure for input. null if it is designed not to take any
-	 *         input.
+	 * message to be used if the user is not authorized for this specific form instance
 	 */
-	public IForm getInputForm();
-
+	public static final String MSG_NOT_AUTHORIZED = null;
 	/**
-	 * 
-	 * @return data structure for output. null if it is designed not to return
-	 *         any data
+	 * error to be used in case of any internal  error
 	 */
-	public IForm getOutputForm();
-
+	public static final String MSG_INTERNAL_ERROR = null;
 	/**
+	 * serve when data is requested in a Map
 	 * 
 	 * @param user
 	 *            logged-in user who has requested this service. This can be
 	 *            used to check whether the user is authorized to deal with the
 	 *            document/form being requested
-	 * @param inputForm
-	 *            instance that was returned from a call to
-	 *            <code>Iservie.getInputForm()</code>
-	 * @param outs stream to which the output can be written to
+	 * @param keyFields
+	 *            fields that are required to uniquely identify the form
+	 * @param outStream
+	 *            stream to which the output can be written to
 	 * @return non-null service result.
 	 */
-	public ServiceResult execute(LoggedInUser user, IForm inputForm, OutputStream outs);
-	
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outStream);
+
+	/**
+	 * serve the request when data is received as a JSON Object
+	 * 
+	 * @param user
+	 *            logged-in user who has requested this service. This can be
+	 *            used to check whether the user is authorized to deal with the
+	 *            document/form being requested
+	 * @param formData
+	 *            fields that are required to uniquely identify the form
+	 * @param outs
+	 *            stream to which the output can be written to
+	 * @return non-null service result.
+	 */
+	public ServiceResult serve(LoggedInUser user, ObjectNode formData, OutputStream outs);
+
 }

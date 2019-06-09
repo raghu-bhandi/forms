@@ -123,34 +123,48 @@ public class Form implements IForm {
 	}
 
 	@Override
-	public void validateAndLoad(Map<String, String> values, List<Message> errors) {
-		for (Field f : this.structure.getFields()) {
+	public void loadKeys(Map<String, String> values, List<Message> errors) {
+		int[] indexes = this.structure.getKeyIndexes();
+		if (indexes == null) {
+			throw new ApplicationError("Form " + this.getFormId()
+					+ " has not defined key fields. Form data can not be saved/retrieved without key field(s)");
+		}
+		Field[] fields = this.structure.getFields();
+		for (int idx : indexes) {
+			Field f = fields[idx];
 			this.validateAndSet(f, values.get(f.getFieldName()), this.fieldValues, errors);
 		}
-		this.validateForm(errors);
 	}
 
+	@Override
+	public void loadKeys(ObjectNode json, List<Message> errors) {
+		int[] indexes = this.structure.getKeyIndexes();
+		if (indexes == null) {
+			throw new ApplicationError("Form " + this.getFormId()
+					+ " has not defined key fields. Form data can not be saved/retrieved without key field(s)");
+		}
+		Field[] fields = this.structure.getFields();
+		for (int idx : indexes) {
+			Field f = fields[idx];
+			this.validateAndSet(f, json.get(f.getFieldName()), this.fieldValues, errors);
+		}
+	}
 	/**
 	 * @param validations
-	 * @return
 	 */
-	private boolean validateForm(List<Message> messages) {
+	private void validateForm(List<Message> errors) {
 		IFormValidation[] validations = this.structure.getValidations();
-		if (validations == null) {
-			return true;
-		}
-		boolean allOk = true;
-		for (IFormValidation vln : validations) {
-			if (!vln.validate(this, messages)) {
-				allOk = false;
+		if (validations != null) {
+			for (IFormValidation vln : validations) {
+				vln.validate(this, errors);
 			}
 		}
-		return allOk;
 	}
 
 	@Override
 	public void validateAndLoad(ObjectNode json, List<Message> errors) {
 		this.setFeilds(json, this.structure, this.fieldValues, errors);
+		this.validateForm(errors);
 
 		String[] gridNames = this.structure.getGridNames();
 		if (gridNames == null) {

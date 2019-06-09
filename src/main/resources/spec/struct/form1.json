@@ -1,0 +1,52 @@
+{
+	"formId": "form1",
+	"dataElements": [
+		{
+			"name": "f1",
+			"dataType": "textType1",
+			"isRequired": true,
+			"label": "Label F1",
+			"placeHolder": "enter value for f1",
+			"isKeyField" : true
+		},
+		{
+			"name": "f2",
+			"dataType": "intType1",
+			"isRequired": true,
+			"label": "Label F2",
+			"placeHolder": "enter value for f2",
+			"isKeyField" : true
+		},
+		{
+			"name": "f3",
+			"dataType": "boolType11",
+			"isRequired": false,
+			"label": "Label F2",
+			"placeHolder": "enter value for f2",
+			"isKeyField" : true
+		},
+		{
+			"name": "f4",
+			"dataType": "intType1",
+			"isRequired": true,
+			"label": "Label F2",
+			"placeHolder": "enter value for f2",
+			"isKeyField" : true
+		}
+	],
+	"grids":[
+		{
+			"fieldName":"f5",
+			"structureName" : "form2"
+		}
+	],
+	"validations":[
+		{
+			"type" : "fromTo",
+			"fromField" : "f1",
+			"toField" : "f2"
+		}
+	],
+	"minRows" : 0,
+	"maxRows" : 100
+}

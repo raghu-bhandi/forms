@@ -23,14 +23,16 @@
 package org.simplity.fm.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
  * @author simplity.org
  *
  */
-public abstract class DataStore{
+public abstract class DataStore {
 	private static DataStore instance = new FileSystemStore();
+
 	/**
 	 * 
 	 * @return get a store configured for this app
@@ -38,6 +40,7 @@ public abstract class DataStore{
 	public static DataStore getStore() {
 		return instance;
 	}
+
 	/**
 	 *
 	 * @param id
@@ -58,7 +61,7 @@ public abstract class DataStore{
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
-	public abstract  boolean retrieve(String id, OutputStream outs) throws IOException;
+	public abstract boolean retrieve(String id, OutputStream outs) throws IOException;
 
 	/**
 	 *
@@ -70,13 +73,24 @@ public abstract class DataStore{
 	 *             in case of any error in persistence process
 	 */
 	public abstract void store(String data, String id) throws IOException;
+
 	/**
 	 *
 	 * @param id
-	 *            unique id of this form across all forms handled b this store
-	 * @return non-null output stream to which data to be saved is to be written to
+	 *            unique id of this form across all forms handled by this store
+	 * @return non-null output stream to which data to be saved is to be written
+	 *         to
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
 	public abstract OutputStream getOutStream(String id) throws IOException;
+
+	/**
+	 * @param id
+	 *            unique id of this form across all forms handled by this store
+	 * @return input stream to read data from. null if no file for this id
+	 * @throws IOException
+	 *             in case of any error in persistence process
+	 */
+	public abstract InputStream getInputStream(String id) throws IOException;
 }

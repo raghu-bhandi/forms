@@ -32,84 +32,89 @@ import org.simplity.fm.Message;
 import org.simplity.fm.MessageType;
 import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
+import org.simplity.fm.io.DataStore;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * a service that has no additional work (other than the validation of input
- * that is already done by <code>IForm</code>
+ * Simple service that just saves the form with no saves the form received from
  * 
  * @author simplity.org
  *
  */
-public abstract class AbstractService implements IService {
-	protected static final String MSG_NOT_AUTHORIZED = null;
-	protected static final String MSG_INTERNAL_ERROR = null;
+public class GetService implements IService {
 
 	/**
 	 * null if no input is expected
 	 */
 	protected FormStructure formStructure;
 
-
-	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outs) {
-		List<Message> errors = new ArrayList<>();
-		IForm input = this.formStructure.newForm();
-		input.loadKeys(keyFields, errors);
-		if(errors.size() > 0) {
-			return new ServiceResult(errors.toArray(new Message[0]), false);
-		}
-		return this.exec(user, input, outs);
+	/**
+	 * a simple service that just retrieves the required form.
+	 * 
+	 * @param formStructure
+	 * 
+	 */
+	public GetService(FormStructure formStructure) {
+		this.formStructure = formStructure;
 	}
 
 	@Override
 	public ServiceResult serve(LoggedInUser user, ObjectNode json, OutputStream outs) {
-		List<Message> errors = new ArrayList<>();
-		IForm input = this.formStructure.newForm();
-		input.validateAndLoad(json, errors);
-		if(errors.size() > 0) {
-			return new ServiceResult(errors.toArray(new Message[0]), false);
-		}
-		return this.exec(user, input, outs);
+		/*
+		 * should not be called with pay-load
+		 */
+		Message[] msgs = { Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0) };
+		return new ServiceResult(msgs, false);
 	}
 
-	private ServiceResult exec(LoggedInUser user, IForm input, OutputStream outs) {
-		String key = input.getDocumentId();
+	@Override
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outs) {
+		List<Message> errors = new ArrayList<>();
+		IForm form = this.formStructure.newForm();
+		form.loadKeys(keyFields, errors);
+		if (errors.size() > 0) {
+			return new ServiceResult(errors.toArray(new Message[0]), false);
+		}
+		String key = form.getDocumentId();
 		Message msg = null;
-		if (this.hasAccess(user, key)) {
+		if (this.hasAccess(user, key) == false) {
+			msg = Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0);
+		} else {
 			try {
-				return this.processForm(user, input, outs);
+				boolean ok = DataStore.getStore().retrieve(key, outs);
+				if (!ok) {
+					this.initializeForm(form);
+					form.serializeAsJson(outs);
+				}
 			} catch (Exception e) {
 				msg = Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0);
 			}
-			msg =  Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0);
 		}
-	Message[] msgs = {msg};
-	return new ServiceResult(msgs , false);
-		
+		Message[] msgs = { msg };
+		return new ServiceResult(msgs, false);
 	}
-	
-	/**
-	 * let the concrete service process the form and return its result
-	 * 
-	 * @param user
-	 *            non-null logged in user
-	 * @param inputForm
-	 *            null if this service is not expecting any input
-	 * @throws Exception
-	 *             general catch-all
-	 * @return service result
-	 */
-	protected abstract ServiceResult processForm(LoggedInUser user, IForm inputForm, OutputStream outs)
-			throws Exception;
 
 	/**
-	 * let the concrete service check if the user has access to this form
+	 * to be implemented by special services that want to populate fields from
+	 * some where at run time
+	 * 
+	 * @param form
+	 */
+	protected void initializeForm(IForm form) {
+		// TODO Auto-generated method stub
+	}
+
+	/**
 	 * 
 	 * @param user
 	 * @param key
-	 * @return true if ok, false if user has no access to this document
+	 * @return
 	 */
-	protected abstract boolean hasAccess(LoggedInUser user, String key);
+	private boolean hasAccess(LoggedInUser user, String key) {
+		// TODO implement the logic to check if this user has view access to
+		// this form
+		return true;
+	}
+
 }

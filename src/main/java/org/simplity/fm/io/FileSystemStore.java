@@ -95,4 +95,13 @@ public class FileSystemStore extends DataStore {
 		return new FileOutputStream(f);
 	}
 
+	@Override
+	public InputStream getInputStream(String id) throws IOException {
+		File f = new File(FOLDER + id + EXTN);
+		if (f.exists()) {
+			return new FileInputStream(f);
+		}
+		return null;
+	}
+
 }
