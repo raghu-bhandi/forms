@@ -129,6 +129,12 @@ public class SaveService implements IService {
 		return new ServiceResult(errors.toArray(new Message[0]), false);
 	}
 
+	/**
+	 * 
+	 * @param user
+	 * @param key
+	 * @return
+	 */
 	private boolean hasAccess(LoggedInUser user, String key) {
 		// TODO implement the logic to check if this user has write access to
 		// this form
