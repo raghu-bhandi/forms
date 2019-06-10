@@ -19,64 +19,55 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
+
+package org.simplity.fm.data;
+
+import java.util.List;
+
+import org.simplity.fm.IForm;
+import org.simplity.fm.Message;
 
 /**
- * validation parameters for a an integral value
- * 
  * @author simplity.org
  *
  */
-public class IntegerType extends DataType {
-	private final long minValue;
-	private final long maxValue;
+public class FromToValidation implements IFormValidation{
 
+	private final String fromName;
+	private final String toName;
+	private final boolean equalValueOk;
+	private final String errorMessageId;
+	
 	/**
 	 * 
-	 * @param minValue
-	 * @param maxValue
-	 * @param errorId
+	 * @param fromName
+	 * @param toName
+	 * @param equalValueOk 
+	 * @param errorMessageId 
 	 */
-	public IntegerType(long minValue, long maxValue, String errorId) {
-		this.valueType = ValueType.Integer;
-		this.minValue = minValue;
-		this.maxValue = maxValue;
-		if (this.minValue >= 0) {
-			this.minLength = ("" + this.minValue).length();
-		}
-		if (this.maxValue >= 0) {
-			this.maxLength = ("" + this.maxValue).length();
-		}
-		this.messageId = errorId;
+	public FromToValidation(String fromName, String toName, boolean equalValueOk, String errorMessageId) {
+		this.fromName = fromName;
+		this.toName = toName;
+		this.equalValueOk = equalValueOk;
+		this.errorMessageId = errorMessageId;
 	}
-
 	@Override
-	public boolean validate(String value) {
-		if (value == null || value.isEmpty()) {
+	public boolean validate(IForm form, List<Message> messages) {
+		long fromValue = form.getLongValue(this.fromName);
+		long toValue = form.getLongValue(this.toName);
+		if(fromValue == 0 || toValue == 0) {
 			return true;
+		}if(this.equalValueOk) {
+			if(fromValue <= toValue) {
+				return true;
+			}
+		}else {
+			if(fromValue < toValue) {
+				return true;
+			}
 		}
-		long val = 0;
-		try {
-			val = Long.parseLong(value, 10);
-		} catch (Exception e) {
-			return false;
-		}
-		return this.isOk(val);
+		messages.add(Message.getValidationMessage(this.fromName, this.errorMessageId));
+		return false;
 	}
 
-	@Override
-	public long parseLong(String value) throws Exception {
-		if (value == null || value.isEmpty()) {
-			return 0;
-		}
-		long val = Long.parseLong(value, 10);
-		if (this.isOk(val)) {
-			return val;
-		}
-		throw new Exception();
-	}
-
-	private boolean isOk(long value) {
-		return value >= this.minValue && value <= this.maxValue;
-	}
 }

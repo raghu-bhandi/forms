@@ -42,6 +42,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import example.project.service.Services;
+
 /**
  * Agent is the single-point-of-contact to invoke any service on this app.
  * Services are not to be invoked directly (bypassing the Agent) in production.
@@ -80,24 +82,6 @@ public class Agent {
 	 * the time being
 	 */
 	private Map<String, LoggedInUser> activeUsers = new HashMap<>();
-	/**
-	 * TODO : all services to be loaded through a resource file
-	 */
-	private Map<String, IService> services = new HashMap<>();
-
-	/**
-	 * register a service with the agent
-	 * 
-	 * @param serviceName
-	 *            non-null service name
-	 * @param service
-	 *            non-null service. this instance is used concurrently in a
-	 *            multi-threaded environment. Hence it must be immutable
-	 *            (state-less), there by thread-safe.
-	 */
-	public void registerService(String serviceName, IService service) {
-		this.services.put(serviceName, service);
-	}
 
 	/**
 	 * response for a pre-flight request
@@ -240,8 +224,7 @@ public class Agent {
 		if (serviceName == null) {
 			return null;
 		}
-		return this.services.get(serviceName);
-
+		return Services.getService(serviceName);
 	}
 
 	private LoggedInUser getUser(HttpServletRequest req) {

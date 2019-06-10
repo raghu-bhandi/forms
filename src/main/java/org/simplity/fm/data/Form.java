@@ -132,7 +132,7 @@ public class Form implements IForm {
 		Field[] fields = this.structure.getFields();
 		for (int idx : indexes) {
 			Field f = fields[idx];
-			this.validateAndSet(f, values.get(f.getFieldName()), this.fieldValues, errors);
+			validateAndSet(f, values.get(f.getFieldName()), this.fieldValues, idx, errors);
 		}
 	}
 
@@ -146,9 +146,10 @@ public class Form implements IForm {
 		Field[] fields = this.structure.getFields();
 		for (int idx : indexes) {
 			Field f = fields[idx];
-			this.validateAndSet(f, json.get(f.getFieldName()), this.fieldValues, errors);
+			validateAndSet(f, json.get(f.getFieldName()), this.fieldValues, idx, errors);
 		}
 	}
+
 	/**
 	 * @param validations
 	 */
@@ -163,7 +164,7 @@ public class Form implements IForm {
 
 	@Override
 	public void validateAndLoad(ObjectNode json, List<Message> errors) {
-		this.setFeilds(json, this.structure, this.fieldValues, errors);
+		setFeilds(json, this.structure, this.fieldValues, errors);
 		this.validateForm(errors);
 
 		String[] gridNames = this.structure.getGridNames();
@@ -207,14 +208,16 @@ public class Form implements IForm {
 				}
 
 				Object[] row = new Object[struct.getFields().length];
-				this.setFeilds((ObjectNode) col, struct, row, errors);
+				setFeilds((ObjectNode) col, struct, row, errors);
 
 			}
 		}
 	}
 
-	private void setFeilds(ObjectNode json, FormStructure struct, Object[] row, List<Message> errors) {
-		for (Field field : struct.getFields()) {
+	private static void setFeilds(ObjectNode json, FormStructure struct, Object[] row, List<Message> errors) {
+		Field[] fields = struct.getFields();
+		for (int i = 0; i < fields.length; i++) {
+			Field field = fields[i];
 			JsonNode node = json.get(field.getFieldName());
 			Object value = null;
 			if (node != null) {
@@ -228,12 +231,11 @@ public class Form implements IForm {
 				}
 			}
 
-			this.validateAndSet(field, value, row, errors);
+			validateAndSet(field, value, row, i, errors);
 		}
-		this.validateForm(errors);
 	}
 
-	private void validateAndSet(Field field, Object value, Object[] row, List<Message> errors) {
+	private static void validateAndSet(Field field, Object value, Object[] row, int idx, List<Message> errors) {
 
 		if (errors == null && value == null) {
 			return;
@@ -248,7 +250,7 @@ public class Form implements IForm {
 		}
 
 		if (value != null) {
-			row[field.getSequenceIdx()] = value;
+			row[idx] = value;
 		}
 	}
 
@@ -305,42 +307,41 @@ public class Form implements IForm {
 
 	@Override
 	public String getValue(String fieldName) {
-		Field field = this.structure.getField(fieldName);
-		if (field == null) {
-			return null;
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx >= 0) {
+			Object obj = this.fieldValues[idx];
+			if (obj != null) {
+				return obj.toString();
+			}
 		}
-		Object obj = this.fieldValues[field.getSequenceIdx()];
-		if (obj == null) {
-			return null;
-		}
-		return obj.toString();
+		return null;
 	}
 
 	@Override
 	public long getLongValue(String fieldName) {
-		Field field = this.structure.getField(fieldName);
-		if (field == null || field.getValueType() == ValueType.Text) {
-			return 0;
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx >= 0) {
+			Object obj = this.fieldValues[idx];
+			if (obj != null) {
+				return (Long) obj;
+			}
 		}
-		Object obj = this.fieldValues[field.getSequenceIdx()];
-		if (obj == null) {
-			return 0;
-		}
-		return (Long) obj;
+		return 0;
 	}
 
 	@Override
 	public boolean setValue(String fieldName, String value) {
-		Field field = this.structure.getField(fieldName);
-		if (field == null) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx < 0) {
 			return false;
 		}
-		int idx = field.getSequenceIdx();
+		
+		Field field = this.structure.getFields()[idx];
 		if (field.getValueType() == ValueType.Text) {
 			this.fieldValues[idx] = value;
 			return true;
 		}
-
+		
 		long val = 0;
 		if (value != null) {
 			try {
@@ -355,16 +356,18 @@ public class Form implements IForm {
 
 	@Override
 	public boolean setLongValue(String fieldName, long value) {
-		Field field = this.structure.getField(fieldName);
-		if (field == null) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx < 0) {
 			return false;
 		}
-		int idx = field.getSequenceIdx();
+		
+		Field field = this.structure.getFields()[idx];
 		if (field.getValueType() == ValueType.Text) {
-			this.fieldValues[idx] = "" + value;
-		} else {
+			this.fieldValues[idx] = "" +value;
+		}else {
 			this.fieldValues[idx] = value;
 		}
+		
 		return true;
 	}
 }

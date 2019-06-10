@@ -34,8 +34,6 @@ import org.simplity.fm.ApplicationError;
  *
  */
 public class TextType extends DataType {
-	private final int minLength;
-	private final int maxLength;
 	private final Pattern pattern;
 
 	/**
@@ -81,10 +79,6 @@ public class TextType extends DataType {
 	}
 	
 	private boolean isOk(String value) {
-		int len = value.length();
-		if (len < this.minLength || len > this.maxLength) {
-			return false;
-		}
 		if (value.isEmpty() || this.pattern == null) {
 			return true;
 		}

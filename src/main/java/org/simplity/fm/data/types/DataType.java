@@ -30,6 +30,8 @@ import java.util.Set;
  */
 public abstract class DataType {
 	protected String messageId;
+	protected int minLength;
+	protected int maxLength;
 	protected ValueType valueType;
 	protected Set<Object> validValues;
 
@@ -66,6 +68,10 @@ public abstract class DataType {
 	public final boolean isValid(String value) {
 		if(this.validValues != null) {
 			return this.validValues.contains(value);
+		}
+		int n = value.length();
+		if(n < this.minLength || (this.maxLength > 0 && n > this.maxLength)) {
+			return false;
 		}
 		return this.validate(value);
 	}

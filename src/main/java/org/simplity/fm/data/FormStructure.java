@@ -68,23 +68,30 @@ public class FormStructure {
 	 * want to restrict data
 	 */
 	private int maxRows;
+	/**
+	 * message to be used if the grid has less than the min or greater than the
+	 * max rows. null if no min/max restrictions
+	 */
+	private String gridMessageId;
+
 	/*
 	 * following fields are derived from others. Defined for improving
 	 * performance of some methods
 	 */
+
 	/**
 	 * index to the values array for the key fields. this is derived based on
 	 * fields. This based on the field meta data attribute isKeyField
 	 */
 	private int[] keyIndexes;
 	/**
-	 * fields are also stored as Maps for ease of access
+	 * field indexes are stored as Maps for ease of access
 	 */
-	private Map<String, Field> fieldsMap;
+	private Map<String, Integer> fieldIndexes;
 	/**
-	 * grid structures are also stored in map for ease of access
+	 * grid indexes are also stored in map for ease of access
 	 */
-	private Map<String, FormStructure> gridsMap;
+	private Map<String, Integer> gridIndexes;
 
 	/**
 	 * 
@@ -140,23 +147,18 @@ public class FormStructure {
 			this.fields = null;
 			return;
 		}
-		this.fieldsMap = new HashMap<>(n, 1);
+		this.fieldIndexes = new HashMap<>(n, 1);
 		int[] keys = new int[n];
 		int keyIdx = 0;
 		for (int i = 0; i < this.fields.length; i++) {
 			Field field = this.fields[i];
-			if (i != field.getSequenceIdx()) {
-				throw new ApplicationError(
-						"Field " + field.getFieldName() + " in form strcuture " + this.uniqueName + " is at index " + i
-								+ " in the fieldNames array, but its sequenceNo is set to " + field.getSequenceIdx());
-			}
-			this.fieldsMap.put(field.getFieldName(), field);
-			if(field.isKeyField()) {
-				keys[keyIdx] =i;
+			this.fieldIndexes.put(field.getFieldName(), i);
+			if (field.isKeyField()) {
+				keys[keyIdx] = i;
 				keyIdx++;
 			}
 		}
-		if(keyIdx != 0) {
+		if (keyIdx != 0) {
 			this.keyIndexes = Arrays.copyOf(keys, keyIdx);
 		}
 	}
@@ -171,18 +173,12 @@ public class FormStructure {
 			throw new ApplicationError("Form " + this.uniqueName + " has " + n
 					+ " grid names but does not haev the same numberof entries in gridStructures");
 		}
-		this.gridsMap = new HashMap<>(n, 1);
+		this.gridIndexes = new HashMap<>(n, 1);
 		for (int i = 0; i < this.gridNames.length; i++) {
-			this.gridsMap.put(this.gridNames[i], this.gridStructures[i]);
+			this.gridIndexes.put(this.gridNames[i], i);
 		}
 
 	}
-
-	/**
-	 * message to be used if the grid has less than the min or greater than the
-	 * max rows. null if no min/max restrictions
-	 */
-	private String gridMessageId;
 
 	/**
 	 * unique id assigned to this form. like customerDetails. This is unique
@@ -216,11 +212,28 @@ public class FormStructure {
 	}
 
 	/**
+	 * 
+	 * @param fieldName
+	 * @return index of the field in the fields array. -1 if this is not a field
+	 */
+	public int getFieldIndex(String fieldName) {
+		Integer idx = this.fieldIndexes.get(fieldName);
+		if (idx == null) {
+			return -1;
+		}
+		return idx;
+	}
+
+	/**
 	 * @param fieldName
 	 * @return data element or null if there is no such field
 	 */
 	public Field getField(String fieldName) {
-		return this.fieldsMap.get(fieldName);
+		Integer idx = this.fieldIndexes.get(fieldName);
+		if (idx == null) {
+			return null;
+		}
+		return this.fields[idx];
 	}
 
 	/**
@@ -229,7 +242,24 @@ public class FormStructure {
 	 * @return form structure that represents this grid, or null if no such grid
 	 */
 	public FormStructure getGridStructure(String gridName) {
-		return this.gridsMap.get(gridName);
+		Integer idx = this.gridIndexes.get(gridName);
+		if (idx == null) {
+			return null;
+		}
+		return this.gridStructures[idx];
+	}
+
+	/**
+	 * 
+	 * @param gridName
+	 * @return index of this grid in the gridArray. -1 if this is not a grid
+	 */
+	public int getGridIindex(String gridName) {
+		Integer idx = this.gridIndexes.get(gridName);
+		if (idx == null) {
+			return -1;
+		}
+		return idx;
 	}
 
 	/**
@@ -282,5 +312,15 @@ public class FormStructure {
 			tables = new Object[this.gridNames.length][][];
 		}
 		return new Form(this, values, tables);
+	}
+
+	static class IndexedField {
+		final int idx;
+		final Field field;
+
+		protected IndexedField(int idx, Field field) {
+			this.idx = idx;
+			this.field = field;
+		}
 	}
 }

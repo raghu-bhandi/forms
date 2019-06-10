@@ -42,10 +42,26 @@ public class Field {
 	 */
 	private final DataType dataType;
 	/**
+	 * Is this field editable by the client. If false, then this can be either a
+	 * "reference field" that is used for display or validation purposes. It is
+	 * typically not sent back from client.
+	 */
+	private final boolean isEditable;
+	/**
 	 * required/mandatory. If set to true, text value of empty string and 0 for
-	 * integral are assumed to be not valid
+	 * integral are assumed to be not valid. Relevant only for editable fields.
 	 */
 	private final boolean isRequired;
+	/**
+	 * if true, this field value is calculated based on other fields. Typically
+	 * not received from client, but some designs may receive and keep it for
+	 * logging/legal purposes. Not relevant if the field is editable.
+	 */
+	private final boolean isDerivedField;
+	/**
+	 * is this part of the conceptual key (document-id) of the form.
+	 */
+	private boolean isKeyField;
 	/**
 	 * refers to the message id/code that is used for i18n of messages
 	 */
@@ -55,21 +71,6 @@ public class Field {
 	 * used if the field is mandatory
 	 */
 	private final String defaultValue;
-	/**
-	 * if true, this field value is calculated based on other fields. Typically
-	 * not received from client, but some designs may receive and keep it for
-	 * logging/legal purposes
-	 */
-	private final boolean isDerivedField;
-	/**
-	 * for optimized storage and retrieval, we may model the form as a sequence
-	 * of fields rather than a collection of fields. this index is zero based
-	 */
-	private final int sequenceIdx;
-	/**
-	 * is this part of the conceptual key (document-id) of the form?
-	 */
-	private boolean isKeyField;
 
 	/**
 	 * this is generally invoked by the generated code for a Data Structure
@@ -87,27 +88,28 @@ public class Field {
 	 *            this. This e is used ONLY if isRequired is false. That is,
 	 *            this is used if the field is optional, and the client skips
 	 *            it. This value is NOT used if isRequired is set to true
+	 * @param isEditable
+	 *            can this field be edited/requested by the client? If false,
+	 *            the field is either a reference field or a derived field
 	 * @param messageId
 	 *            can be null in which case the id from dataType is used
 	 * @param isDerivedField
 	 *            true if this field value is derived/calculated based on other
 	 *            fields. Like sum of other fields, or calculated based on sume
 	 *            rule
-	 * @param sequenceIdx
-	 *            0 based sequence number of this field in the form
-	 * @param isKeyField is this a key (document id) field?
+	 * @param isKeyField
+	 *            is this a key (document id) field?
 	 */
-	public Field(String fieldName, DataType dataType, boolean isRequired, String defaultValue, String messageId,
-			boolean isDerivedField, int sequenceIdx, boolean isKeyField) {
+	public Field(String fieldName, DataType dataType, boolean isRequired, String defaultValue, boolean isEditable,
+			String messageId, boolean isDerivedField, boolean isKeyField) {
 		this.fieldName = fieldName;
 		this.isRequired = isRequired;
+		this.isEditable = isEditable;
 		this.messageId = messageId;
 		this.defaultValue = defaultValue;
 		this.isDerivedField = isDerivedField;
 		this.dataType = dataType;
-		this.sequenceIdx = sequenceIdx;
 		this.isKeyField = isKeyField;
-		
 
 	}
 
@@ -143,12 +145,10 @@ public class Field {
 	}
 
 	/**
-	 * @return 0 based sequence number of this field within the form. May be
-	 *         used to store data in an array
-	 * 
+	 * @return is this field editable?
 	 */
-	public int getSequenceIdx() {
-		return this.sequenceIdx;
+	public boolean isEditable() {
+		return this.isEditable;
 	}
 
 	/**
@@ -216,9 +216,10 @@ public class Field {
 	public boolean isDerivedField() {
 		return this.isDerivedField;
 	}
-	
+
 	/**
 	 * is this a key field?
+	 * 
 	 * @return true if this is the key field, or one of the key fields
 	 */
 	public boolean isKeyField() {
