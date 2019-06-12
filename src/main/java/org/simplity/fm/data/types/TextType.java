@@ -21,11 +21,7 @@
  */
 package org.simplity.fm.data.types;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
-import org.simplity.fm.ApplicationError;
 
 /**
  * validation parameters for a text value
@@ -34,7 +30,7 @@ import org.simplity.fm.ApplicationError;
  *
  */
 public class TextType extends DataType {
-	private final Pattern pattern;
+	private final String regex;
 
 	/**
 	 * 
@@ -48,15 +44,7 @@ public class TextType extends DataType {
 		this.minLength = minLength;
 		this.maxLength = maxLength;
 		this.messageId = errorMessageId;
-		if (regex == null || regex.isEmpty()) {
-			this.pattern = null;
-		} else {
-			try {
-				this.pattern = Pattern.compile(regex);
-			} catch (PatternSyntaxException e) {
-				throw new ApplicationError(regex + " is not a valid regex", e);
-			}
-		}
+		this.regex = regex;
 	}
 
 	@Override
@@ -79,10 +67,9 @@ public class TextType extends DataType {
 	}
 	
 	private boolean isOk(String value) {
-		if (value.isEmpty() || this.pattern == null) {
+		if (this.regex == null) {
 			return true;
 		}
-		Matcher matcher = this.pattern.matcher(value);
-		return matcher.matches();
+		return Pattern.matches(this.regex, value);
 	}
 }

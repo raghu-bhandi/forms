@@ -22,7 +22,7 @@
 
 package org.simplity.fm.service;
 
-import java.io.OutputStream;
+import java.io.Writer;
 
 import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
@@ -45,8 +45,8 @@ public class SubmitService extends SaveService {
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, OutputStream outs) {
-		ServiceResult result = super.serve(user, json, outs);
+	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) {
+		ServiceResult result = super.serve(user, json, writer);
 		if (result.allOk) {
 			// we have to put an entry some where..
 		}

@@ -23,8 +23,8 @@
 package org.simplity.fm.io;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 
 /**
  * @author simplity.org
@@ -42,55 +42,27 @@ public abstract class DataStore {
 	}
 
 	/**
-	 *
+	 * retrieve data and provide it to the consumer
+	 * 
 	 * @param id
 	 *            non-null unique id of the data
-	 * @return data for the key. null if no data stored with this key
-	 * @throws IOException
-	 *             in case of any error in persistence process
-	 */
-	public abstract String retrieve(String id) throws IOException;
-
-	/**
-	 *
-	 * @param id
-	 *            non-null unique id of the data
-	 * @param outs
-	 *            to which the content is written to
+	 * @param consumer
+	 *            to which reader is provided for reading the content
 	 * @return true if all ok. false if file is not located
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
-	public abstract boolean retrieve(String id, OutputStream outs) throws IOException;
+	public abstract boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException;
 
 	/**
-	 *
-	 * @param data
-	 *            non-null
-	 * @param id
-	 *            unique id of this form across all forms handled b this store
-	 * @throws IOException
-	 *             in case of any error in persistence process
-	 */
-	public abstract void store(String data, String id) throws IOException;
-
-	/**
-	 *
+	 * store the data from the
+	 * 
 	 * @param id
 	 *            unique id of this form across all forms handled by this store
-	 * @return non-null output stream to which data to be saved is to be written
-	 *         to
+	 * @param consumer
+	 *            to which a writer is supplied to write the data to
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
-	public abstract OutputStream getOutStream(String id) throws IOException;
-
-	/**
-	 * @param id
-	 *            unique id of this form across all forms handled by this store
-	 * @return input stream to read data from. null if no file for this id
-	 * @throws IOException
-	 *             in case of any error in persistence process
-	 */
-	public abstract InputStream getInputStream(String id) throws IOException;
+	public abstract void Store(String id, IoConsumer<Writer> consumer) throws IOException;
 }

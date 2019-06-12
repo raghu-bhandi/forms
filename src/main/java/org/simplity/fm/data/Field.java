@@ -21,6 +21,7 @@
  */
 package org.simplity.fm.data;
 
+
 import org.simplity.fm.data.types.DataType;
 import org.simplity.fm.data.types.InvalidValueException;
 import org.simplity.fm.data.types.ValueType;
@@ -202,7 +203,13 @@ public class Field {
 	 */
 	public String parseText(String inputValue) throws InvalidValueException {
 		try {
-			return this.dataType.parseText(inputValue);
+			if(inputValue == null || inputValue.isEmpty()) {
+				if(this.isRequired == false) {
+					return "";
+				}
+			}else {
+				return this.dataType.parseText(inputValue);
+			}
 		} catch (Exception e) {
 			//
 		}

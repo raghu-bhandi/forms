@@ -19,49 +19,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package org.simplity.fm.io;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
 
 /**
+ * created to avoid handling IO exceptions in te generic interface
+ * 
  * @author simplity.org
+ * @param <T>
+ *            should
  *
  */
-public class FileSystemStore extends DataStore {
-	private static final String FOLDER = "c:/forms/";
-	private static final String EXTN = ".json";
-	static {
-		File f = new File(FOLDER);
-		if (!f.exists()) {
-			f.mkdirs();
-		}
-	}
+public interface IoConsumer<T> {
 
-	@Override
-	public boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException {
-		File f = new File(FOLDER + id + EXTN);
-		if (!f.exists()) {
-			return false;
-		}
-		try (Reader reader = new FileReader(f)) {
-			consumer.accept(reader);
-		}
-		return false;
-	}
-
-	@Override
-	public void Store(String id, IoConsumer<Writer> consumer) throws IOException {
-		File f = new File(FOLDER + id + EXTN);
-		if (!f.exists()) {
-			f.createNewFile();
-		}
-		try (Writer writer = new FileWriter(f)) {
-			consumer.accept(writer);
-		}
-	}
+	/**
+	 * accept the reader/writer and feel free to have statements that throw
+	 * IOException
+	 * 
+	 * @param t
+	 * @throws IOException
+	 */
+	public void accept(T t) throws IOException;
 }

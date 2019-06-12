@@ -23,7 +23,7 @@
 package org.simplity.fm.data;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
@@ -255,8 +255,8 @@ public class Form implements IForm {
 	}
 
 	@Override
-	public void serializeAsJson(OutputStream outStream) throws IOException {
-		try (JsonGenerator gen = new JsonFactory().createGenerator(outStream)) {
+	public void serializeAsJson(Writer writer) throws IOException {
+		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
 			gen.writeStartObject();
 			this.writeFields(gen, this.fieldValues, this.structure.getFields());
 			if (this.gridData != null) {

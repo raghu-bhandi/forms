@@ -19,12 +19,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package org.simplity.fm.io;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 
@@ -32,36 +32,35 @@ import java.io.Writer;
  * @author simplity.org
  *
  */
-public class FileSystemStore extends DataStore {
-	private static final String FOLDER = "c:/forms/";
-	private static final String EXTN = ".json";
-	static {
-		File f = new File(FOLDER);
-		if (!f.exists()) {
-			f.mkdirs();
+public class IoUtil {
+	private static final int BUF_SIZE = 0x1000; // 4K
+
+	/**
+	 * drain input to output
+	 * @param input
+	 * @param output
+	 * @throws IOException
+	 */
+	public static void copy(InputStream input, OutputStream output) throws IOException {
+		byte[] buf = new byte[BUF_SIZE];
+		while (true) {
+			int r = input.read(buf);
+			if (r == -1) {
+				break;
+			}
+			output.write(buf, 0, r);
 		}
 	}
-
-	@Override
-	public boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException {
-		File f = new File(FOLDER + id + EXTN);
-		if (!f.exists()) {
-			return false;
-		}
-		try (Reader reader = new FileReader(f)) {
-			consumer.accept(reader);
-		}
-		return false;
-	}
-
-	@Override
-	public void Store(String id, IoConsumer<Writer> consumer) throws IOException {
-		File f = new File(FOLDER + id + EXTN);
-		if (!f.exists()) {
-			f.createNewFile();
-		}
-		try (Writer writer = new FileWriter(f)) {
-			consumer.accept(writer);
+	/**
+	 * drain input to output
+	 * @param reader
+	 * @param writer
+	 * @throws IOException
+	 */
+	public static void copy(Reader reader, Writer writer) throws IOException {
+		int ch;
+		while ((ch = reader.read()) != -1) {
+			writer.write(ch);
 		}
 	}
 }

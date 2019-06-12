@@ -23,7 +23,7 @@
 package org.simplity.fm;
 
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.Writer;
 import java.util.List;
 import java.util.Map;
 
@@ -142,10 +142,10 @@ public interface IForm {
 	public void validateAndLoad(ObjectNode jsonNode, List<Message> errors);
 
 	/**
-	 * @param outs
+	 * @param writer
 	 * @throws IOException
 	 */
-	public void serializeAsJson(OutputStream outs) throws IOException;
+	public void serializeAsJson(Writer writer) throws IOException;
 
 	/**
 	 * 

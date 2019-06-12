@@ -23,8 +23,8 @@ package org.simplity.fm.http;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
@@ -159,17 +159,17 @@ public class Agent {
 		 * is a safety mechanism against possible measures to be taken when
 		 * receiving payload from an external source
 		 */
-		try (OutputStream outs = resp.getOutputStream()) {
+		try (Writer writer = resp.getWriter()) {
 			ServiceResult result = null;
 			if (fields != null) {
-				result = service.serve(user, fields, outs);
+				result = service.serve(user, fields, writer);
 			} else {
-				result = service.serve(user, json, outs);
+				result = service.serve(user, json, writer);
 			}
 			if (result.allOk) {
 				this.setHeaders(resp);
 			} else {
-				this.respondWithError(resp, result.messages, outs);
+				this.respondWithError(resp, result.messages, writer);
 			}
 		} catch (ApplicationError a) {
 			resp.setStatus(STATUS_INTERNAL_ERROR);
@@ -181,9 +181,9 @@ public class Agent {
 	 * 
 	 * @param resp
 	 * @param messages
-	 * @param outs
+	 * @param writer
 	 */
-	private void respondWithError(HttpServletResponse resp, Message[] messages, OutputStream outs) {
+	private void respondWithError(HttpServletResponse resp, Message[] messages, Writer writer) {
 		// TODO to send messages as pay-load
 		resp.setStatus(STATUS_INVALID_DATA);
 	}

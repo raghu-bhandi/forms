@@ -22,7 +22,7 @@
 
 package org.simplity.fm.service;
 
-import java.io.OutputStream;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -53,33 +53,33 @@ public abstract class AbstractService implements IService {
 
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outs) {
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) {
 		List<Message> errors = new ArrayList<>();
 		IForm input = this.formStructure.newForm();
 		input.loadKeys(keyFields, errors);
 		if(errors.size() > 0) {
 			return new ServiceResult(errors.toArray(new Message[0]), false);
 		}
-		return this.exec(user, input, outs);
+		return this.exec(user, input, writer);
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, OutputStream outs) {
+	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) {
 		List<Message> errors = new ArrayList<>();
 		IForm input = this.formStructure.newForm();
 		input.validateAndLoad(json, errors);
 		if(errors.size() > 0) {
 			return new ServiceResult(errors.toArray(new Message[0]), false);
 		}
-		return this.exec(user, input, outs);
+		return this.exec(user, input, writer);
 	}
 
-	private ServiceResult exec(LoggedInUser user, IForm input, OutputStream outs) {
+	private ServiceResult exec(LoggedInUser user, IForm input, Writer writer) {
 		String key = input.getDocumentId();
 		Message msg = null;
 		if (this.hasAccess(user, key)) {
 			try {
-				return this.processForm(user, input, outs);
+				return this.processForm(user, input, writer);
 			} catch (Exception e) {
 				msg = Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0);
 			}
@@ -101,7 +101,7 @@ public abstract class AbstractService implements IService {
 	 *             general catch-all
 	 * @return service result
 	 */
-	protected abstract ServiceResult processForm(LoggedInUser user, IForm inputForm, OutputStream outs)
+	protected abstract ServiceResult processForm(LoggedInUser user, IForm inputForm, Writer writer)
 			throws Exception;
 
 	/**

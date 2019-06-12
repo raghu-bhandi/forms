@@ -69,6 +69,9 @@ public abstract class DataType {
 		if(this.validValues != null) {
 			return this.validValues.contains(value);
 		}
+		if(value == null) {
+			return true;
+		}
 		int n = value.length();
 		if(n < this.minLength || (this.maxLength > 0 && n > this.maxLength)) {
 			return false;

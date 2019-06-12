@@ -22,7 +22,9 @@
 
 package org.simplity.fm.service;
 
-import java.io.OutputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,8 @@ import org.simplity.fm.MessageType;
 import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
+import org.simplity.fm.io.IoConsumer;
+import org.simplity.fm.io.IoUtil;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -60,7 +64,7 @@ public class GetService implements IService {
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, OutputStream outs) {
+	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) {
 		/*
 		 * should not be called with pay-load
 		 */
@@ -69,7 +73,7 @@ public class GetService implements IService {
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outs) {
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) {
 		List<Message> errors = new ArrayList<>();
 		IForm form = this.formStructure.newForm();
 		form.loadKeys(keyFields, errors);
@@ -82,10 +86,16 @@ public class GetService implements IService {
 			msg = Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0);
 		} else {
 			try {
-				boolean ok = DataStore.getStore().retrieve(key, outs);
+				boolean ok = DataStore.getStore().retrieve(key, new IoConsumer<Reader>() {
+					
+					@Override
+					public void accept(Reader reader) throws IOException {
+						IoUtil.copy(reader, writer);
+					}
+				});
 				if (!ok) {
 					this.initializeForm(form);
-					form.serializeAsJson(outs);
+					form.serializeAsJson(writer);
 				}
 			} catch (Exception e) {
 				msg = Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0);

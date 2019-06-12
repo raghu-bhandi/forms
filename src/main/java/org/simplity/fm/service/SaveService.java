@@ -22,8 +22,9 @@
 
 package org.simplity.fm.service;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,7 @@ import org.simplity.fm.MessageType;
 import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
+import org.simplity.fm.io.IoConsumer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,7 +66,7 @@ public class SaveService implements IService {
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outs) {
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) {
 		/*
 		 * should not be called with pay-load
 		 */
@@ -73,7 +75,7 @@ public class SaveService implements IService {
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, OutputStream outs) {
+	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) {
 		List<Message> errors = new ArrayList<>();
 		IForm form = this.formStructure.newForm();
 		form.loadKeys(json, errors);
@@ -91,39 +93,40 @@ public class SaveService implements IService {
 		 * load existing form first.
 		 */
 		DataStore store = DataStore.getStore();
-		try (InputStream ins = store.getInputStream(key)) {
-			if (ins != null) {
-				/*
-				 * read it as JSON
-				 */
-				JsonNode node = new ObjectMapper().readTree(ins);
-				if (node.getNodeType() != JsonNodeType.OBJECT) {
-					throw new ApplicationError("File content is not a JSON for id " + key);
+		try {
+			store.retrieve(key, new IoConsumer<Reader>() {
+
+				@Override
+				public void accept(Reader reader) throws IOException {
+					JsonNode node = new ObjectMapper().readTree(reader);
+					if (node.getNodeType() != JsonNodeType.OBJECT) {
+						throw new ApplicationError("File content is not a JSON for id " + key);
+					}
+					form.load((ObjectNode) node);
 				}
-				form.load((ObjectNode) node);
+			});
+
+			/*
+			 * now load data coming from client. It could be just a section
+			 */
+			form.validateAndLoad(json, errors);
+			if (errors.size() > 0) {
+				return this.returnWithError(errors);
 			}
-		} catch (Exception e) {
-			errors.add(Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0));
-			return this.returnWithError(errors);
-		}
 
-		/*
-		 * now load data coming from client. It could be just a section
-		 */
-		form.validateAndLoad(json, errors);
-		if (errors.size() > 0) {
-			return this.returnWithError(errors);
-		}
+			store.Store(key, new IoConsumer<Writer>() {
 
-		try (OutputStream fileStream = store.getOutStream(key)) {
-			form.serializeAsJson(fileStream);
+				@Override
+				public void accept(Writer w) throws IOException {
+					form.serializeAsJson(w);
+				}
+			});
 			return new ServiceResult(null, true);
-		} catch (Exception e) {
+		} catch (IOException e) {
 			errors.add(Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0));
 			return this.returnWithError(errors);
 		}
 	}
-
 
 	private ServiceResult returnWithError(List<Message> errors) {
 		return new ServiceResult(errors.toArray(new Message[0]), false);

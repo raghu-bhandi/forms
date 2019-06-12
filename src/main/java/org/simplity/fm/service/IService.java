@@ -22,7 +22,7 @@
 
 package org.simplity.fm.service;
 
-import java.io.OutputStream;
+import java.io.Writer;
 import java.util.Map;
 
 import org.simplity.fm.http.LoggedInUser;
@@ -57,11 +57,11 @@ public interface IService {
 	 *            document/form being requested
 	 * @param keyFields
 	 *            fields that are required to uniquely identify the form
-	 * @param outStream
-	 *            stream to which the output can be written to
+	 * @param writer
+	 *            to which the output can be written to
 	 * @return non-null service result.
 	 */
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, OutputStream outStream);
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer);
 
 	/**
 	 * serve the request when data is received as a JSON Object
@@ -72,10 +72,10 @@ public interface IService {
 	 *            document/form being requested
 	 * @param formData
 	 *            fields that are required to uniquely identify the form
-	 * @param outs
-	 *            stream to which the output can be written to
+	 * @param writer
+	 *            to which the output can be written to
 	 * @return non-null service result.
 	 */
-	public ServiceResult serve(LoggedInUser user, ObjectNode formData, OutputStream outs);
+	public ServiceResult serve(LoggedInUser user, ObjectNode formData, Writer writer);
 
 }
