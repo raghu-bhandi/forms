@@ -22,6 +22,7 @@
 
 package org.simplity.fm.data;
 
+import java.util.Date;
 import java.util.List;
 
 import org.simplity.fm.IForm;
@@ -53,16 +54,17 @@ public class FromToValidation implements IFormValidation{
 	}
 	@Override
 	public boolean validate(IForm form, List<Message> messages) {
-		long fromValue = form.getLongValue(this.fromName);
-		long toValue = form.getLongValue(this.toName);
-		if(fromValue == 0 || toValue == 0) {
+		Date fromDate = form.getDateValue(this.fromName);
+		Date toDate = form.getDateValue(this.toName);
+		if(fromDate == null || toDate == null) {
 			return true;
-		}if(this.equalValueOk) {
-			if(fromValue <= toValue) {
+		}
+		if(this.equalValueOk) {
+			if(!fromDate.after(toDate)) {
 				return true;
 			}
 		}else {
-			if(fromValue < toValue) {
+			if(toDate.after(fromDate)) {
 				return true;
 			}
 		}

@@ -21,6 +21,10 @@
  */
 package org.simplity.fm.data.types;
 
+import java.util.Date;
+
+import org.simplity.fm.DateUtil;
+
 /**
  * validation parameters for a an integral value
  * 
@@ -28,17 +32,18 @@ package org.simplity.fm.data.types;
  *
  */
 public class DateType extends DataType {
-	private static final int SECS = 60 * 60 * 24;
 	private final int minValue;
 	private final int maxValue;
 
 	/**
 	 * 
 	 * @param minDays
-	 *            0 means today is OK. -100 means 100 days before today is the min, 100
+	 *            0 means today is OK. -100 means 100 days before today is the
+	 *            min, 100
 	 *            means 100 days after today is the min
 	 * @param maxDays
-	 *            0 means today is OK. -100 means 100 days before today is the max. 100
+	 *            0 means today is OK. -100 means 100 days before today is the
+	 *            max. 100
 	 *            means 100 days after today is the max
 	 * @param errorId
 	 */
@@ -54,34 +59,36 @@ public class DateType extends DataType {
 	 */
 	@Override
 	public boolean validate(String value) {
-		if(value == null || value.isEmpty()) {
+		if (value == null) {
 			return true;
 		}
-
-		long val  = 0;
-		try {
-			val = Long.parseLong(value, 10);
-		}catch(Exception e) {
+		Date date = DateUtil.parseDateWithOptionalTime(value);
+		if (date == null) {
 			return false;
 		}
-		return this.isOk(val);
+		return this.isOk(date);
 	}
-	
-	@Override
-	public long parseLong(String value) throws Exception {
-		if(value == null || value.isEmpty()) {
-			return 0;
-		}
 
-		long val  = Long.parseLong(value, 10);
-		if(this.isOk(val)) {
-			return val;
-		}
-		throw new Exception();
-	}
-	
-	private boolean isOk(long value) {
-		int days = (int)(value - System.currentTimeMillis())/SECS;
+	private boolean isOk(Date date) {
+		int days = DateUtil.daysFromToday(date.getTime());
 		return days >= this.minValue && days <= this.maxValue;
 	}
+
+	@Override
+	public Object getDefaultValue() {
+		return new Date(0);
+	}
+
+	@Override
+	public Object parse(String value) {
+		Date date = DateUtil.parseDateWithOptionalTime(value);
+		if(date == null) {
+			return null;
+		}
+		if(this.isOk(date)) {
+			return date;
+		}
+		return null;
+	}
+
 }

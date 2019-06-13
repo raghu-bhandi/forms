@@ -41,30 +41,29 @@ public class BooleanType extends DataType {
 
 	@Override
 	public boolean validate(String value) {
-		if(value == null || value.isEmpty()) {
+		if (value == null || value.isEmpty()) {
 			return true;
 		}
-		if(value.length() > 0) {
+		if (value.length() > 0) {
 			return false;
 		}
 		char c = value.charAt(0);
 		return c == ZERO || c == ONE;
 	}
-	
+
 	@Override
-	public long parseLong(String value) throws Exception {
-		if(value == null || value.isEmpty()) {
-			return 0;
+	public Object getDefaultValue() {
+		return false;
+	}
+
+	@Override
+	public Object parse(String value) {
+		if ("1".equals(value) || "true".equals(value)) {
+			return true;
 		}
-		if(value.length() == 0) {
-			char c = value.charAt(0);
-			if (c == ZERO) {
-				return 0L;
-			}
-			if(c ==  ONE) {
-				return 1L;
-			}
+		if ("0".equals(value) || "false".equals(value)) {
+			return false;
 		}
-		throw new Exception();
+		return null;
 	}
 }

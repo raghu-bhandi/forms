@@ -29,22 +29,22 @@ public class FormStructures {
 	}
 		
 	/**
-	 * form 1 description
-	 */
-	public static final FormStructure form1 = form1();
-	/**
 	 * form 2 description
 	 */
 	public static final FormStructure form2 = form2();
+	/**
+	 * form 1 description
+	 */
+	public static final FormStructure form1 = form1();
 	
 	private static FormStructure form1() {
 		Field[] fields = { 
 				new Field("customerId",  DataTypes.customerId, true,  null, true, null, false, true),
 				new Field("financialYear", DataTypes.fy,       true,  null, true, null, false, true),
-				new Field("boolField", DataTypes.trueFalse,    false, null, true, null, false, false),
+				new Field("boolField", DataTypes.trueFalse,    true, null, true, null, false, false),
 				new Field("fromDate", DataTypes.futureDate,    false, null, true, null, false, false),
 				new Field("toDate", DataTypes.futureDate,      false, null, true, null, false, false),
-				new Field("intFeidl1", DataTypes.qty,          true,  "33", true, null, false, false),
+				new Field("intField1", DataTypes.qty,	       true,  "33", true, null, false, false),
 				new Field("intField2", DataTypes.qty,          false, "45", true, null, false, false),
 				new Field("derivedField", DataTypes.qty,       false, null, false,null, true,  false),
 				new Field("currentFy", DataTypes.fy,           false, null, false,null, false, false)
@@ -52,8 +52,7 @@ public class FormStructures {
 		
 		String[] gridNames = {"orderLines"};
 		FormStructure[] grids = {form2};
-		IFormValidation[] validations = {new FromToValidation("fromDate", "toDate", false, "invalidDateRange")};
-		
+		IFormValidation[] validations = {new FromToValidation("fromDate", "toDate", true, "invalidDateRange")};
 		
 		FormStructure fs =  new FormStructure("form1", fields, gridNames, grids, validations, 1, 200);
 		allStructures.put("form1", fs);

@@ -21,8 +21,11 @@
  */
 package org.simplity.fm.data.types;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.simplity.fm.DateUtil;
 
 /**
  * @author simplity.org
@@ -37,21 +40,23 @@ public abstract class DataType {
 
 	/**
 	 * 
-	 * @param values of the form "a,b,c,d" or "1:red,2:black,3:blue"
+	 * @param values
+	 *            of the form "a,b,c,d" or "1:red,2:black,3:blue"
 	 */
 	protected void setValidValues(String values) {
-		if(values == null || values.isEmpty()) {
+		if (values == null || values.isEmpty()) {
 			return;
 		}
 		this.validValues = new HashSet<Object>();
-		for(String part : values.split("'")) {
+		for (String part : values.split("'")) {
 			int idx = part.indexOf(':');
-			if(idx != -1) {
-				part = part.substring(0,idx);
+			if (idx != -1) {
+				part = part.substring(0, idx);
 			}
 			this.validValues.add(part.trim());
 		}
 	}
+
 	/**
 	 * @return unique error message id that has the actual error message to be
 	 *         used if a value fails validation
@@ -66,20 +71,20 @@ public abstract class DataType {
 	 * @return true if the value passes validation. false otherwise.
 	 */
 	public final boolean isValid(String value) {
-		if(this.validValues != null) {
+		if (this.validValues != null) {
 			return this.validValues.contains(value);
 		}
-		if(value == null) {
+		if (value == null) {
 			return true;
 		}
 		int n = value.length();
-		if(n < this.minLength || (this.maxLength > 0 && n > this.maxLength)) {
+		if (n < this.minLength || (this.maxLength > 0 && n > this.maxLength)) {
 			return false;
 		}
 		return this.validate(value);
 	}
-	
-	protected abstract boolean validate(String value); 
+
+	protected abstract boolean validate(String value);
 
 	/**
 	 * @return the valueType
@@ -89,25 +94,46 @@ public abstract class DataType {
 	}
 
 	/**
-	 * 
-	 * @param value
-	 * @return 0 if value is null, else parsed number if it is valid for this
-	 *         element.
-	 * @throws Exception
-	 *             if the value is not valid for this data element
+	 * @return default non-null value of this type. empty string for String, 0
+	 *         number and date, false for boolean
 	 */
-	public long parseLong(String value) throws Exception {
-		throw new Exception();
-	}
+	public abstract Object getDefaultValue();
 
 	/**
+	 * @param value
+	 *            non-null value to be parsed into the right type after
+	 *            validation
+	 * @return null if the validation fails. object of the right type for the
+	 *         field.
+	 */
+	public abstract Object parse(String value);
+
+	/**
+	 * get text value of this object
 	 * 
 	 * @param value
-	 * @return input value if it is valid
-	 * @throws Exception
-	 *             if the value is invalid
+	 * @return null if object is null. else a string representation of value.
+	 *         Date is represented standard UTC format
 	 */
-	public String parseText(String value) throws Exception {
-		throw new Exception();
+	public String toTextValue(Object value) {
+		if (value == null) {
+			return null;
+		}
+		if (value instanceof String) {
+			return (String) value;
+		}
+		if (value instanceof Number) {
+			return value.toString();
+		}
+		if (value instanceof Boolean) {
+			if ((Boolean) value) {
+				return "true";
+			}
+			return "false";
+		}
+		if (value instanceof Date) {
+			return DateUtil.formatDateTime((Date) value);
+		}
+		return value.toString();
 	}
 }

@@ -64,19 +64,26 @@ public class IntegerType extends DataType {
 		return this.isOk(val);
 	}
 
-	@Override
-	public long parseLong(String value) throws Exception {
-		if (value == null || value.isEmpty()) {
-			return 0;
-		}
-		long val = Long.parseLong(value, 10);
-		if (this.isOk(val)) {
-			return val;
-		}
-		throw new Exception();
-	}
-
 	private boolean isOk(long value) {
 		return value >= this.minValue && value <= this.maxValue;
+	}
+
+	@Override
+	public Object getDefaultValue() {
+		return 0;
+	}
+
+	@Override
+	public Object parse(String value) {
+		long n = 0;
+		try {
+			n = Long.parseLong(value, 10);
+		} catch (Exception e) {
+			return null;
+		}
+		if (this.isOk(n)) {
+			return n;
+		}
+		return null;
 	}
 }

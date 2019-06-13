@@ -21,6 +21,8 @@
  */
 package org.simplity.fm;
 
+import org.simplity.fm.data.types.InvalidValueException;
+
 /**
  * represents a validation error while accepting data from a client for a field
  * 
@@ -28,6 +30,14 @@ package org.simplity.fm;
  *
  */
 public class Message {
+	/**
+	 * @param e
+	 * @return a validation message based on the exception
+	 */
+	public static Message getValidationMessage(InvalidValueException e) {
+		return new Message(MessageType.Error, e.getMessageId(), e.getFieldName(), null, 0);
+	}
+
 	/**
 	 * create a message that is not associated with any field
 	 * 
@@ -62,13 +72,14 @@ public class Message {
 	 * 
 	 * @param fieldName
 	 * @param messageId
-	 * @param gridName 
-	 * @param rowNumber 
+	 * @param gridName
+	 * @param rowNumber
 	 * @return validation error message
 	 */
 	public static Message getValidationMessage(String fieldName, String messageId, String gridName, int rowNumber) {
 		return new Message(MessageType.Error, messageId, fieldName, gridName, rowNumber);
 	}
+
 	/**
 	 * name of the field/column that is in error. null if the error is not
 	 * specific to a field
@@ -95,7 +106,6 @@ public class Message {
 	 */
 	public MessageType messageType;
 
-
 	private Message(MessageType messageType, String messageId, String fieldName, String gridName, int rowNumber) {
 		this.messageType = messageType;
 		this.messageId = messageId;
@@ -103,4 +113,10 @@ public class Message {
 		this.fieldName = fieldName;
 		this.gridName = gridName;
 	}
+
+	@Override
+	public String toString() {
+		return "type:" + this.messageType + "  id:" + this.messageId + " field:" + this.fieldName;
+	}
+
 }

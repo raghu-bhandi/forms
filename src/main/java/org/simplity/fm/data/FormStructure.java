@@ -123,6 +123,7 @@ public class FormStructure {
 	 */
 	public FormStructure(String uniqueName, Field[] fields, String[] gridNames, FormStructure[] gridStructures,
 			IFormValidation[] validations, int minRows, int maxRows) {
+		this.uniqueName = uniqueName;
 		this.fields = fields;
 		this.gridNames = gridNames;
 		this.gridStructures = gridStructures;

@@ -24,8 +24,11 @@ package org.simplity.fm;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import org.simplity.fm.data.types.ValueType;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -150,38 +153,106 @@ public interface IForm {
 	/**
 	 * 
 	 * @param fieldName
-	 * @return null if there is no such field. number returned as text in case
-	 *         the field value is numeric
+	 * @return value type of this field. null if no such field
 	 */
-	public String getValue(String fieldName);
+	public ValueType getValueType(String fieldName);
 
 	/**
 	 * 
 	 * @param fieldName
-	 * @return value of the field as a number. 0 if it is not a number, or it s
-	 *         not a field
+	 * @return null if there is no such field, or the field has null value.
+	 *         String/Long/Date/Boolean depending on the type. Use more specific
+	 *         getXXX if you know the type
+	 */
+	public Object getValue(String fieldName);
+
+	/**
+	 * 
+	 * @param fieldName
+	 * @return value of the field as text. null if no such field, or the field
+	 *         has null value.
+	 *         "0"/"1" if boolean, milliseconds in case of date
+	 */
+	public String getStringValue(String fieldName);
+
+	/**
+	 * 
+	 * @param fieldName
+	 * @return value of the field as a number. 0 if it is not field, or he field
+	 *         has null, or the field has non-numeric text
+	 *         0/1 for boolean and milliseconds for date
 	 */
 	public long getLongValue(String fieldName);
 
 	/**
-	 * to be used by service layer. Value is NOT validated
+	 * 
+	 * @param fieldName
+	 * @return value of the field as Date. null if the field is not a date
+	 *         field, or it has null value
+	 */
+	public Date getDateValue(String fieldName);
+
+	/**
+	 * 
+	 * @param fieldName
+	 * @return value of the field as boolean. false if no such field, or the
+	 *         field is null,or the field has empty string, 0 or false value
+	 *         true otherwise
+	 */
+	public boolean getBoolValue(String fieldName);
+
+	/**
+	 * parse the value to proper type and set it
 	 * 
 	 * @param fieldName
 	 *            name of the field
 	 * @param value
-	 *            will be converted to long if required
+	 *            ignored if null. parsed and set if valid
 	 * @return true if value was indeed set. false if field is not defined.
 	 */
 	public boolean setValue(String fieldName, String value);
 
 	/**
-	 * to be used by service layer. Value is NOT validated
 	 * 
 	 * @param fieldName
 	 *            name of the field
 	 * @param value
-	 *            will be converted to text if required
-	 * @return true if value was indeed set. false if field is not defined
+	 * 
+	 * @return true if field exists, and is of String type. false otherwise, and
+	 *         the value is not set
+	 */
+	public boolean setStringValue(String fieldName, String value);
+
+	/**
+	 * 
+	 * @param fieldName
+	 *            name of the field
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of Date type. false otherwise, and
+	 *         the value is not set
+	 */
+	public boolean setDateValue(String fieldName, Date value);
+
+	/**
+	 * 
+	 * @param fieldName
+	 *            name of the field
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of boolean type. false otherwise,
+	 *         and the value is not set
+	 */
+	public boolean setBoolValue(String fieldName, boolean value);
+
+	/**
+	 * 
+	 * @param fieldName
+	 *            name of the field
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of integer type. false otherwise,
+	 *         and the value is not set
 	 */
 	public boolean setLongValue(String fieldName, long value);
 }

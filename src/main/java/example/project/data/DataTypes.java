@@ -15,7 +15,7 @@ public class DataTypes {
 	/**
 	 * customerId
 	 */
-	public static final TextType customerId = new TextType(10, 10, "[A-Z][A-Z][A-Z]-\\d\\d-[A-Z][A-Z][A-Z]", "invalidCustId");
+	public static final TextType customerId = new TextType(10, 10, "[A-Z]{3}-[0-9]{2}-[A-Z]{3}", "invalidCustId") ;
 	/**
 	 * fy
 	 */

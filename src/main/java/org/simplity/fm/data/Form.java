@@ -24,12 +24,15 @@ package org.simplity.fm.data;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.ApplicationError;
+import org.simplity.fm.DateUtil;
 import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
+import org.simplity.fm.data.types.InvalidValueException;
 import org.simplity.fm.data.types.ValueType;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -38,6 +41,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+
 
 /**
  * @author simplity.org
@@ -87,10 +91,11 @@ public class Form implements IForm {
 		 */
 		int[] indexes = this.structure.getKeyIndexes();
 		if (indexes == null || indexes.length == 0) {
-			throw new ApplicationError("Form " + this.getFormId() + " has no key fields");
+			return null;
 		}
 		String key = this.getFormId();
-		for (Object obj : this.fieldValues) {
+		for (int idx : indexes) {
+			Object obj = this.fieldValues[idx];
 			if (obj == null) {
 				return null;
 			}
@@ -126,9 +131,9 @@ public class Form implements IForm {
 	public void loadKeys(Map<String, String> values, List<Message> errors) {
 		int[] indexes = this.structure.getKeyIndexes();
 		if (indexes == null) {
-			throw new ApplicationError("Form " + this.getFormId()
-					+ " has not defined key fields. Form data can not be saved/retrieved without key field(s)");
+			return;
 		}
+
 		Field[] fields = this.structure.getFields();
 		for (int idx : indexes) {
 			Field f = fields[idx];
@@ -140,13 +145,13 @@ public class Form implements IForm {
 	public void loadKeys(ObjectNode json, List<Message> errors) {
 		int[] indexes = this.structure.getKeyIndexes();
 		if (indexes == null) {
-			throw new ApplicationError("Form " + this.getFormId()
-					+ " has not defined key fields. Form data can not be saved/retrieved without key field(s)");
+			return;
 		}
 		Field[] fields = this.structure.getFields();
 		for (int idx : indexes) {
 			Field f = fields[idx];
-			validateAndSet(f, json.get(f.getFieldName()), this.fieldValues, idx, errors);
+			String value = getChildAsText(json, f.getFieldName());
+			validateAndSet(f, value, this.fieldValues, idx, errors);
 		}
 	}
 
@@ -165,6 +170,9 @@ public class Form implements IForm {
 	@Override
 	public void validateAndLoad(ObjectNode json, List<Message> errors) {
 		setFeilds(json, this.structure, this.fieldValues, errors);
+		/*
+		 * TODO: we have to re-design as to when to validate the entire form
+		 */
 		this.validateForm(errors);
 
 		String[] gridNames = this.structure.getGridNames();
@@ -209,7 +217,6 @@ public class Form implements IForm {
 
 				Object[] row = new Object[struct.getFields().length];
 				setFeilds((ObjectNode) col, struct, row, errors);
-
 			}
 		}
 	}
@@ -218,39 +225,23 @@ public class Form implements IForm {
 		Field[] fields = struct.getFields();
 		for (int i = 0; i < fields.length; i++) {
 			Field field = fields[i];
-			JsonNode node = json.get(field.getFieldName());
-			Object value = null;
-			if (node != null) {
-				JsonNodeType nt = node.getNodeType();
-				if (nt != JsonNodeType.NULL && nt != JsonNodeType.MISSING) {
-					if (nt == JsonNodeType.NUMBER) {
-						value = node.asLong();
-					} else if (nt != JsonNodeType.NULL && nt != JsonNodeType.MISSING) {
-						value = nt.toString();
-					}
-				}
-			}
-
+			String value = getChildAsText(json, field.getFieldName());
 			validateAndSet(field, value, row, i, errors);
 		}
 	}
 
-	private static void validateAndSet(Field field, Object value, Object[] row, int idx, List<Message> errors) {
-
-		if (errors == null && value == null) {
-			return;
-		}
-
-		String textValue = value == null ? null : value.toString();
-		if (errors != null) {
-			if (field.isValid(textValue) == false) {
-				errors.add(Message.getValidationMessage(field.getFieldName(), field.getMessageId()));
-				return;
+	private static void validateAndSet(Field field, String value, Object[] row, int idx, List<Message> errors) {
+		// TODO : Handling nulls: We need a complete relook at it.Specifically,
+		// to see how client can delete an optional value
+		try {
+			Object obj = field.parse(value);
+			if (obj != null) {
+				row[idx] = obj;
 			}
-		}
-
-		if (value != null) {
-			row[idx] = value;
+		} catch (InvalidValueException e) {
+			if (errors != null) {
+				errors.add(Message.getValidationMessage(field.getFieldName(), field.getMessageId()));
+			}
 		}
 	}
 
@@ -295,12 +286,11 @@ public class Form implements IForm {
 			if (value == null) {
 				continue;
 			}
-			Field field = fields[j];
-			String fn = field.getFieldName();
-			if (field.getValueType() == ValueType.Text) {
-				gen.writeStringField(fn, value.toString());
+			gen.writeFieldName(fields[j].getFieldName());
+			if (value instanceof Date) {
+				gen.writeString(DateUtil.formatDateTime((Date) value));
 			} else {
-				gen.writeNumberField(fn, (Long) value);
+				gen.writeObject(value);
 			}
 		}
 	}
@@ -318,30 +308,18 @@ public class Form implements IForm {
 	}
 
 	@Override
-	public long getLongValue(String fieldName) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx >= 0) {
-			Object obj = this.fieldValues[idx];
-			if (obj != null) {
-				return (Long) obj;
-			}
-		}
-		return 0;
-	}
-
-	@Override
 	public boolean setValue(String fieldName, String value) {
 		int idx = this.structure.getFieldIndex(fieldName);
 		if (idx < 0) {
 			return false;
 		}
-		
+
 		Field field = this.structure.getFields()[idx];
 		if (field.getValueType() == ValueType.Text) {
 			this.fieldValues[idx] = value;
 			return true;
 		}
-		
+
 		long val = 0;
 		if (value != null) {
 			try {
@@ -354,20 +332,137 @@ public class Form implements IForm {
 		return true;
 	}
 
+	private static String getChildAsText(JsonNode json, String fieldName) {
+		JsonNode node = json.get(fieldName);
+		if (node == null) {
+			return null;
+		}
+		JsonNodeType nt = node.getNodeType();
+		if (nt == JsonNodeType.NULL || nt == JsonNodeType.MISSING) {
+			return null;
+		}
+		return node.asText();
+	}
+
+	@Override
+	public ValueType getValueType(String fieldName) {
+		Field field = this.structure.getField(fieldName);
+		if (field == null) {
+			return null;
+		}
+		return field.getValueType();
+	}
+
+	@Override
+	public long getLongValue(String fieldName) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx >= 0) {
+			Object obj = this.fieldValues[idx];
+			if (obj != null && obj instanceof Number) {
+				return ((Number) obj).longValue();
+			}
+		}
+		return 0;
+	}
+
+	@Override
+	public String getStringValue(String fieldName) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx == -1) {
+			return null;
+		}
+		Object obj = this.fieldValues[idx];
+		if (obj == null) {
+			return null;
+		}
+		return this.structure.getFields()[idx].getDataType().toTextValue(obj);
+	}
+
+	@Override
+	public Date getDateValue(String fieldName) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx == -1) {
+			return null;
+		}
+		Object obj = this.fieldValues[idx];
+		if (obj != null && obj instanceof Date) {
+			return (Date) obj;
+		}
+		return null;
+	}
+
+	@Override
+	public boolean getBoolValue(String fieldName) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx == -1) {
+			return false;
+		}
+		Object obj = this.fieldValues[idx];
+		if (obj == null) {
+			return false;
+		}
+		if (obj instanceof Boolean) {
+			return (Boolean) obj;
+		}
+		if (obj instanceof Number) {
+			return ((Number) obj).intValue() != 0;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setStringValue(String fieldName, String value) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx == -1) {
+			return false;
+		}
+		ValueType vt = this.structure.getFields()[idx].getValueType();
+		if (vt == ValueType.Text) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setDateValue(String fieldName, Date value) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx == -1) {
+			return false;
+		}
+		ValueType vt = this.structure.getFields()[idx].getValueType();
+		if (vt == ValueType.Date) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setBoolValue(String fieldName, boolean value) {
+		int idx = this.structure.getFieldIndex(fieldName);
+		if (idx == -1) {
+			return false;
+		}
+		ValueType vt = this.structure.getFields()[idx].getValueType();
+		if (vt == ValueType.Boolean) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		return false;
+	}
+
 	@Override
 	public boolean setLongValue(String fieldName, long value) {
 		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx < 0) {
+		if (idx == -1) {
 			return false;
 		}
-		
-		Field field = this.structure.getFields()[idx];
-		if (field.getValueType() == ValueType.Text) {
-			this.fieldValues[idx] = "" +value;
-		}else {
+		ValueType vt = this.structure.getFields()[idx].getValueType();
+		if (vt == ValueType.Integer) {
 			this.fieldValues[idx] = value;
+			return true;
 		}
-		
-		return true;
+		return false;
 	}
 }

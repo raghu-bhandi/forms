@@ -21,7 +21,6 @@
  */
 package org.simplity.fm.data;
 
-
 import org.simplity.fm.data.types.DataType;
 import org.simplity.fm.data.types.InvalidValueException;
 import org.simplity.fm.data.types.ValueType;
@@ -175,40 +174,27 @@ public class Field {
 	}
 
 	/**
-	 * parse text into a long as per validations prescribed by this data element
-	 * 
-	 * @param value
-	 *            input text.
-	 * @return 0 if value is null or empty. parsed value if it is valid.
-	 * @throws InvalidValueException
-	 *             if the value is invalid
-	 */
-	public long parseLong(String value) throws InvalidValueException {
-		try {
-			return this.dataType.parseLong(value);
-		} catch (Exception e) {
-			//
-		}
-		throw new InvalidValueException(this.fieldName, this.getMessageId());
-	}
-
-	/**
-	 * parse text as per validations set for this data element
+	 * parse into the desired type, validate and return the value. null if it
+	 * fails to validate
 	 * 
 	 * @param inputValue
 	 *            input text.
-	 * @return empty string if value is null. inputValue if it is valid.
+	 * @return object of the right type. or null if the value is null and it is
+	 *         valid
 	 * @throws InvalidValueException
 	 *             if the value is invalid
 	 */
-	public String parseText(String inputValue) throws InvalidValueException {
+	public Object parse(String inputValue) throws InvalidValueException {
 		try {
-			if(inputValue == null || inputValue.isEmpty()) {
-				if(this.isRequired == false) {
-					return "";
+			if (inputValue == null) {
+				if (this.isRequired == false) {
+					return null;
 				}
-			}else {
-				return this.dataType.parseText(inputValue);
+			} else {
+				Object obj = this.dataType.parse(inputValue);
+				if(obj != null) {
+					return obj;
+				}
 			}
 		} catch (Exception e) {
 			//
@@ -231,5 +217,12 @@ public class Field {
 	 */
 	public boolean isKeyField() {
 		return this.isKeyField;
+	}
+
+	/**
+	 * @return the dataType
+	 */
+	public DataType getDataType() {
+		return this.dataType;
 	}
 }

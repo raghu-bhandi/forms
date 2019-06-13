@@ -54,22 +54,24 @@ public class TextType extends DataType {
 		}
 		return this.isOk(value);
 	}
-	
-	@Override
-	public String parseText(String value) throws Exception {
-		if(value == null) {
-			return "";
-		}
-		if(this.isOk(value)) {
-			return value;
-		}
-		throw new Exception();
-	}
-	
+
 	private boolean isOk(String value) {
 		if (this.regex == null) {
 			return true;
 		}
 		return Pattern.matches(this.regex, value);
+	}
+
+	@Override
+	public Object getDefaultValue() {
+		return "";
+	}
+
+	@Override
+	public Object parse(String value) {
+		if (this.isOk(value)) {
+			return value;
+		}
+		return null;
 	}
 }
