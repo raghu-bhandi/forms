@@ -97,6 +97,7 @@ public class GetService implements IService {
 					this.initializeForm(form);
 					form.serializeAsJson(writer);
 				}
+				return new ServiceResult(null, true);
 			} catch (Exception e) {
 				msg = Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0);
 			}

@@ -53,7 +53,7 @@ public class JettyHandler extends AbstractHandler {
 	 * start jetty server on port 8080. To be extended to get run-time parameter
 	 * for port, and error handling if port is in-use etc..
 	 * <br/>
-	 * Simply invoke this as java app to run the server (of course teh class
+	 * Simply invoke this as java app to run the server (of course the class
 	 * path etc.. are to be taken care of)
 	 * 
 	 * @param args

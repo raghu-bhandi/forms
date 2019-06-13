@@ -33,7 +33,7 @@ public class Services {
 	/**
 	 * 
 	 * @param serviceName
-	 * @return service instance for this service name, or null if nosuch service
+	 * @return service instance for this service name, or null if no such service
 	 */
 	public static IService getService(String serviceName) {
 		IService service = instance.services.get(serviceName);
@@ -50,7 +50,7 @@ public class Services {
 		if (fs == null) {
 			return null;
 		}
-		String opr = serviceName.substring(0, idx - 1);
+		String opr = serviceName.substring(0, idx);
 		if (SERVICE_TYPE_GET.equals(opr)) {
 			service = new GetService(fs);
 		} else if (SERVICE_TYPE_SAVE.equals(opr)) {

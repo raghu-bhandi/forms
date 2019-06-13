@@ -51,7 +51,7 @@ public class FileSystemStore extends DataStore {
 		try (Reader reader = new FileReader(f)) {
 			consumer.accept(reader);
 		}
-		return false;
+		return true;
 	}
 
 	@Override

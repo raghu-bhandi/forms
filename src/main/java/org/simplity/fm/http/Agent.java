@@ -28,6 +28,8 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -37,6 +39,8 @@ import org.simplity.fm.Message;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.service.ServiceResult;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
@@ -54,7 +58,7 @@ import example.project.service.Services;
  * 
  */
 public class Agent {
-
+	private static final Logger logger = Logger.getLogger(Agent.class.getName());
 	private static Agent singleInstance = new Agent();
 
 	/**
@@ -112,6 +116,7 @@ public class Agent {
 
 		LoggedInUser user = this.getUser(req);
 		if (user == null) {
+			logger.log(Level.INFO, "No User. Asking to sent auth");
 			resp.setStatus(STATUS_AUTH_REQUIRED);
 			return;
 		}
@@ -146,6 +151,7 @@ public class Agent {
 				}
 				json = (ObjectNode) node;
 			} catch (Exception e) {
+				logger.log(Level.INFO, "Invalid data recd from client " + e.getMessage());
 				resp.setStatus(STATUS_INVALID_DATA);
 				return;
 			}
@@ -162,13 +168,18 @@ public class Agent {
 		try (Writer writer = resp.getWriter()) {
 			ServiceResult result = null;
 			if (fields != null) {
+				logger.log(Level.INFO, "Calling Service " + service.getClass().getName() + " with " + fields.size() + " fields");
 				result = service.serve(user, fields, writer);
 			} else {
+				logger.log(Level.INFO, "Calling Service " + service.getClass().getName() + "with json");
 				result = service.serve(user, json, writer);
 			}
 			if (result.allOk) {
+				logger.log(Level.INFO, "All Ok");
 				this.setHeaders(resp);
 			} else {
+				for(Message msg : result.messages)
+				logger.log(Level.INFO, "Message :" + msg);
 				this.respondWithError(resp, result.messages, writer);
 			}
 		} catch (ApplicationError a) {
@@ -184,8 +195,20 @@ public class Agent {
 	 * @param writer
 	 */
 	private void respondWithError(HttpServletResponse resp, Message[] messages, Writer writer) {
-		// TODO to send messages as pay-load
 		resp.setStatus(STATUS_INVALID_DATA);
+		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
+			gen.writeStartObject();
+			gen.writeFieldName("messages");
+			gen.writeStartArray();
+			for(Message msg: messages) {
+				gen.writeObject(msg);
+			}
+			gen.writeEndArray();
+			gen.writeEndObject();
+		}catch(Exception e) {
+			//
+		}
+		
 	}
 
 	/**
@@ -222,9 +245,15 @@ public class Agent {
 	private IService getService(HttpServletRequest req) {
 		String serviceName = req.getHeader(SERVICE_NAME);
 		if (serviceName == null) {
+			logger.log(Level.INFO,  "header "+ SERVICE_NAME + " not recd");
+			
 			return null;
 		}
-		return Services.getService(serviceName);
+		IService service = Services.getService(serviceName);
+		if(service == null) {
+			logger.log(Level.INFO, serviceName + " is not a service");
+		}
+		return service;
 	}
 
 	private LoggedInUser getUser(HttpServletRequest req) {
