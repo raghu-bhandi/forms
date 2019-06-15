@@ -1,5 +1,5 @@
 
-package example.project.data;
+package example.project.form;
 
 import org.simplity.fm.data.types.BooleanType;
 import org.simplity.fm.data.types.DateType;
@@ -15,7 +15,7 @@ public class DataTypes {
 	/**
 	 * customerId
 	 */
-	public static final TextType customerId = new TextType(10, 10, "[A-Z]{4}[0-9]{2}[A-Z]{4}", "invalidCustId") ;
+	public static final TextType customerId = new TextType(10, 10, "[A-Z]{3}-[0-9]{2}-[A-Z]{3}", "invalidCustId") ;
 	/**
 	 * fy
 	 */
@@ -44,4 +44,14 @@ public class DataTypes {
 	 * textId
 	 */
 	public static final TextType textId = new TextType(4, 15, "[\\w]*", "invalidCustId");
+	private static final int[] colorList = {0,1,2};
+	/**
+	 * color
+	 */
+	public static final IntegerType color = new IntegerType(0,0,"invalidColor", colorList); 
+	private static final int[] severityList = {0,1,2,3};
+	/**
+	 * severity
+	 */
+	public static final IntegerType severity = new IntegerType(0,0,"invalidSeverity", severityList); 
 }

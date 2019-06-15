@@ -21,6 +21,8 @@
  */
 package org.simplity.fm.data.types;
 
+import java.util.HashSet;
+
 /**
  * validation parameters for a an integral value
  * 
@@ -48,6 +50,23 @@ public class IntegerType extends DataType {
 			this.maxLength = ("" + this.maxValue).length();
 		}
 		this.messageId = errorId;
+	}
+
+	/**
+	 * 
+	 * @param minValue
+	 * @param maxValue
+	 * @param errorId
+	 * @param validValues
+	 */
+	public IntegerType(long minValue, long maxValue, String errorId, int[] validValues) {
+		this(minValue, maxValue, errorId);
+		if (validValues != null && validValues.length > 0) {
+			this.validValues = new HashSet<>();
+			for (int val : validValues) {
+				this.validValues.add(val);
+			}
+		}
 	}
 
 	@Override

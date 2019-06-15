@@ -34,10 +34,10 @@ import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.simplity.fm.ApplicationError;
 import org.simplity.fm.Message;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.service.ServiceResult;
+import org.simplity.fm.service.Services;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -45,8 +45,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import example.project.service.Services;
 
 /**
  * Agent is the single-point-of-contact to invoke any service on this app.
@@ -182,7 +180,10 @@ public class Agent {
 				logger.log(Level.INFO, "Message :" + msg);
 				this.respondWithError(resp, result.messages, writer);
 			}
-		} catch (ApplicationError a) {
+		} catch (Throwable e) {
+			/*
+			 * TODO : wire this to error handling process provided by the configuration
+			 */
 			resp.setStatus(STATUS_INTERNAL_ERROR);
 			return;
 		}

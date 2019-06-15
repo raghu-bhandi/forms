@@ -23,7 +23,12 @@
 package org.simplity.fm.service;
 
 import java.io.Writer;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.simplity.fm.Message;
+import org.simplity.fm.data.Form;
+import org.simplity.fm.data.FormOperation;
 import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 
@@ -42,14 +47,36 @@ public class SubmitService extends SaveService {
 	 */
 	public SubmitService(FormStructure formStructure) {
 		super(formStructure);
+		this.operation = FormOperation.SUBMIT;
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) {
-		ServiceResult result = super.serve(user, json, writer);
-		if (result.allOk) {
-			// we have to put an entry some where..
+	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
+		List<Message> messages = new ArrayList<>();
+		Form form = this.newForm(user, json, messages);
+		if (form == null) {
+			return this.failed(messages);
 		}
-		return result;
+
+		boolean ok = this.doSave(form, user, json, messages);
+		if(!ok) {
+			return this.failed(messages);
+		}
+
+		if(!this.processForm(FormStructure.PRE_SUBMIT, form, messages)) {
+			return this.failed(messages);
+		}
+		
+
+		/*
+		 * TODO : do whatever we have to do to submit this form...
+		 */
+		if(!this.processForm(FormStructure.POST_SUBMIT, form, messages)) {
+			return this.failed(messages);
+		}
+
+		return this.succeeded();
 	}
+	
+	
 }

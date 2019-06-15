@@ -19,63 +19,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
 
-import java.util.regex.Pattern;
+package org.simplity.fm.data;
 
 /**
- * validation parameters for a text value
- * 
+ * various operations that are implemented on a form
  * @author simplity.org
  *
  */
-public class TextType extends DataType {
-	private final String regex;
-
+public enum FormOperation { 
 	/**
-	 * 
-	 * @param minLength
-	 * @param maxLength
-	 * @param regex
-	 * @param errorMessageId
+	 * get/retrieve this form from storage. get a blank form, possibly populated with some default values
 	 */
-	public TextType(int minLength, int maxLength, String regex, String errorMessageId) {
-		this.valueType = ValueType.Text;
-		this.minLength = minLength;
-		this.maxLength = maxLength;
-		this.messageId = errorMessageId;
-		this.regex = regex;
-	}
-
-	@Override
-	public boolean validate(String value) {
-		if (value == null) {
-			return true;
-		}
-		return this.isOk(value);
-	}
-
-	private boolean isOk(String value) {
-		int len = value.length();
-		if(len < this.minLength ||(this.maxLength > 0 &&  len>this.maxLength)) {
-			return false;
-		}
-		if (this.regex == null) {
-			return true;
-		}
-		return Pattern.matches(this.regex, value);
-	}
-
-	@Override
-	public Object getDefaultValue() {
-		return "";
-	}
-
-	@Override
-	public Object parse(String value) {
-		if (this.isOk(value)) {
-			return value;
-		}
-		return null;
-	}
+	GET, 
+	/**
+	 * save the form as draft 
+	 */
+	SAVE, 
+	/**
+	 * submit the form for further processing
+	 */
+	SUBMIT
 }

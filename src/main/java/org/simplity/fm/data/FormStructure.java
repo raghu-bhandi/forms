@@ -25,60 +25,103 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.ApplicationError;
-import org.simplity.fm.IForm;
+import org.simplity.fm.service.GetService;
+import org.simplity.fm.service.IFormProcessor;
+import org.simplity.fm.service.IService;
+import org.simplity.fm.service.SaveService;
+import org.simplity.fm.service.SubmitService;
 
 /**
  * @author simplity.org
  *
  */
 public class FormStructure {
+
+	/**
+	 * array index for pre get form processors
+	 */
+	public static final int PRE_GET = 0;
+	/**
+	 * array index for post get form processors
+	 */
+	public static final int POST_GET = 1;
+	/**
+	 * array index for pre save form processors
+	 */
+	public static final int PRE_SAVE = 2;
+	/**
+	 * array index for post save form processors
+	 */
+	public static final int POST_SAVE = 3;
+	/**
+	 * array index for pre submit form processors
+	 */
+	public static final int PRE_SUBMIT = 4;
+	/**
+	 * array index for post submit form processors
+	 */
+	public static final int POST_SUBMIT = 5;
+
+	private static final int NBR_PROCESSORS = 6;
+	/**
+	 * get operation
+	 */
+	public static final String SERVICE_TYPE_GET = "get";
+	/**
+	 * get operation
+	 */
+	public static final String SERVICE_TYPE_SAVE = "save";
+	/**
+	 * get operation
+	 */
+	public static final String SERVICE_TYPE_SUBMIT = "submit";
 	/**
 	 * this is the unique id given this to this form, it is an independent
 	 * form. It is the section name in case it is a section of a composite form
 	 */
-	private String uniqueName;
-
+	protected String uniqueName;
 	/**
 	 * Fields in this form.
 	 */
-	private Field[] fields;
+	protected Field[] fields;
 
 	/**
-	 * name of grids/tabular dta. null if there are no gridsgrid name is the
+	 * field name that has the user id. Used for access control 
+	 */
+	protected String userIdFieldName;
+
+	/**
+	 * name of grids/tabular dta. null if there are no grids. grid name is the
 	 * "fieldName" used in this form for the tabular data. like orderLines.;
 	 */
-	private String[] gridNames;
-	/**
-	 * structure of grids. same order as the array gridNames. Each element is a
-	 * form-structure that describes the columns in the grid
-	 */
-	private FormStructure[] gridStructures;
+	protected TabularField[] tabularFields;
+
 	/**
 	 * describes all the inter-field validations, and form-level validations
 	 */
-	private IFormValidation[] validations;
+	protected IFormValidation[] validations;
+
 	/**
-	 * minimum rows of data required. 0 if this is not a grid, or the data is
-	 * optional
+	 * is a auto-service to get this form ok?
 	 */
-	private int minRows;
+	protected boolean getOk;
+
 	/**
-	 * maximum rows of data required. 0 if this is not a grid, or you do not
-	 * want to restrict data
+	 * is a auto-service to save this form ok?
 	 */
-	private int maxRows;
+	protected boolean saveOk;
+
 	/**
-	 * message to be used if the grid has less than the min or greater than the
-	 * max rows. null if no min/max restrictions
+	 * is a auto-service to submit this form ok?
 	 */
-	private String gridMessageId;
+	protected boolean submitOk;
 
 	/*
 	 * following fields are derived from others. Defined for improving
 	 * performance of some methods
 	 */
 
+	private IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
 	/**
 	 * index to the values array for the key fields. this is derived based on
 	 * fields. This based on the field meta data attribute isKeyField
@@ -89,96 +132,96 @@ public class FormStructure {
 	 */
 	private Map<String, Integer> fieldIndexes;
 	/**
-	 * grid indexes are also stored in map for ease of access
+	 * indexes of tabular fields are also stored in map for ease of access
 	 */
-	private Map<String, Integer> gridIndexes;
+	private Map<String, Integer> tableIndexes;
 
 	/**
-	 * 
-	 * this is the unique id given this to this form, it is an independent
-	 * form. It is the section name in case it is a section of a composite form
-	 * 
-	 * @param uniqueName
-	 *            this is the unique id given this to this form, it is an
-	 *            independent form. It is the section name in case it is a
-	 *            section of a composite form
-	 * @param fields
-	 *            Fields in this form. ensure that each field has its sequenceNo
-	 *            set as per their position in the array
-	 * @param gridNames
-	 *            name of grids/tabular dta. null if there are no grids
-	 * @param gridStructures
-	 *            structure of grids. same order as the array gridNames. Each
-	 *            element is a
-	 *            form-structure that describes the columns in the grid
-	 * @param validations
-	 *            describes all the inter-field validations, and form-level
-	 *            validations
-	 * @param minRows
-	 *            minimum rows of data required. 0 if this is not a grid, or the
-	 *            data is optional
-	 * @param maxRows
-	 *            maximum rows of data required. 0 if this is not a grid, or you
-	 *            do not want to restrict data
+	 * index to the field that represents the userId. User access may be
+	 * implemented based on this field
 	 */
-	public FormStructure(String uniqueName, Field[] fields, String[] gridNames, FormStructure[] gridStructures,
-			IFormValidation[] validations, int minRows, int maxRows) {
-		this.uniqueName = uniqueName;
-		this.fields = fields;
-		this.gridNames = gridNames;
-		this.gridStructures = gridStructures;
-		this.validations = validations;
-		this.minRows = minRows;
-		this.maxRows = maxRows;
-		if (this.fields != null) {
-			this.buildFieldsMap();
-		}
+	private int userIdFieldIdx = -1;
 
-		if (this.gridNames != null) {
-			this.buildGridsMap();
-		}
-		if (this.validations != null && this.validations.length == 0) {
-			this.validations = null;
+	/**
+	 * for extended classes to set the attributes later
+	 */
+	public FormStructure() {
+
+	}
+
+	protected void setUserId(String name) {
+		if (name != null) {
+			this.userIdFieldIdx = this.fieldIndexes.get(name);
 		}
 	}
 
-	private void buildFieldsMap() {
-		int n = this.fields.length;
-		if (n == 0) {
-			this.fields = null;
-			return;
-		}
-		this.fieldIndexes = new HashMap<>(n, 1);
-		int[] keys = new int[n];
-		int keyIdx = 0;
-		for (int i = 0; i < this.fields.length; i++) {
-			Field field = this.fields[i];
-			this.fieldIndexes.put(field.getFieldName(), i);
-			if (field.isKeyField()) {
-				keys[keyIdx] = i;
-				keyIdx++;
+	/**
+	 * MUST BE CALLED after setting all protected fields
+	 */
+	protected void initialize() {
+		if (this.fields != null) {
+			int n = this.fields.length;
+			this.fieldIndexes = new HashMap<>(n, 1);
+			int[] keys = new int[n];
+			int keyIdx = 0;
+			for (int i = 0; i < this.fields.length; i++) {
+				Field field = this.fields[i];
+				this.fieldIndexes.put(field.getFieldName(), i);
+				if (field.isKeyField()) {
+					keys[keyIdx] = i;
+					keyIdx++;
+				}
+			}
+			if (keyIdx != 0) {
+				this.keyIndexes = Arrays.copyOf(keys, keyIdx);
 			}
 		}
-		if (keyIdx != 0) {
-			this.keyIndexes = Arrays.copyOf(keys, keyIdx);
+
+		if(this.tabularFields != null) {
+			int n = this.tabularFields.length;
+			this.tableIndexes = new HashMap<>(n, 1);
+			for (int i = 0; i < this.tabularFields.length; i++) {
+				this.tableIndexes.put(this.tabularFields[i].fieldName, i);
+			}
+		}
+		
+		if(this.userIdFieldName != null) {
+			this.userIdFieldIdx = this.getFieldIndex(this.userIdFieldName);
 		}
 	}
 
-	private void buildGridsMap() {
-		int n = this.gridNames.length;
-		if (n == 0) {
-			this.gridNames = null;
+	/**
+	 * set/attach a pre-slotted for processor for standard services based on
+	 * this form
+	 * 
+	 * @param processorType
+	 * @param processor
+	 */
+	public void setFormProcessor(int processorType, IFormProcessor processor) {
+		if (processorType >= NBR_PROCESSORS) {
 			return;
 		}
-		if (this.gridStructures == null || this.gridStructures.length != n) {
-			throw new ApplicationError("Form " + this.uniqueName + " has " + n
-					+ " grid names but does not haev the same numberof entries in gridStructures");
-		}
-		this.gridIndexes = new HashMap<>(n, 1);
-		for (int i = 0; i < this.gridNames.length; i++) {
-			this.gridIndexes.put(this.gridNames[i], i);
-		}
+		this.formProcessors[processorType] = processor;
+	}
 
+	/**
+	 * @param processorType
+	 * @return pre-slotted for processor for standard services based on this
+	 *         form
+	 */
+	public IFormProcessor getFormProcessor(int processorType) {
+		if (processorType >= NBR_PROCESSORS) {
+			return null;
+		}
+		return this.formProcessors[processorType];
+	}
+
+	/**
+	 * @return the userIdFieldIdx. -1 if user id field is not present in this
+	 *         form
+	 */
+	public int getUserIdFieldIdx() {
+		return this.userIdFieldIdx;
 	}
 
 	/**
@@ -208,8 +251,8 @@ public class FormStructure {
 	/**
 	 * @return the grid names. non-null. could be empty
 	 */
-	public FormStructure[] getGridStructures() {
-		return this.gridStructures;
+	public TabularField[] getTabularFields() {
+		return this.tabularFields;
 	}
 
 	/**
@@ -239,50 +282,30 @@ public class FormStructure {
 
 	/**
 	 * 
-	 * @param gridName
+	 * @param tabularFieldName
 	 * @return form structure that represents this grid, or null if no such grid
 	 */
-	public FormStructure getGridStructure(String gridName) {
-		Integer idx = this.gridIndexes.get(gridName);
+	public TabularField getTabularField(String tabularFieldName) {
+		Integer idx = this.tableIndexes.get(tabularFieldName);
 		if (idx == null) {
 			return null;
 		}
-		return this.gridStructures[idx];
+		return this.tabularFields[idx];
 	}
 
 	/**
 	 * 
-	 * @param gridName
+	 * @param tabularFieldName
 	 * @return index of this grid in the gridArray. -1 if this is not a grid
 	 */
-	public int getGridIindex(String gridName) {
-		Integer idx = this.gridIndexes.get(gridName);
+	public int getTableIndex(String tabularFieldName) {
+		Integer idx = this.tableIndexes.get(tabularFieldName);
 		if (idx == null) {
 			return -1;
 		}
 		return idx;
 	}
 
-	/**
-	 * @return the gridNames
-	 */
-	public String[] getGridNames() {
-		return this.gridNames;
-	}
-
-	/**
-	 * @return the minRows
-	 */
-	public int getMinRows() {
-		return this.minRows;
-	}
-
-	/**
-	 * @return the maxRows
-	 */
-	public int getMaxRows() {
-		return this.maxRows;
-	}
 
 	/**
 	 * @return the validations
@@ -292,36 +315,43 @@ public class FormStructure {
 	}
 
 	/**
-	 * @return message id to be used if the grid does not have the right number
-	 *         of rows
-	 */
-	public String getGridMessageId() {
-		return this.gridMessageId;
-	}
-
-	/**
 	 * 
+	 * @param operation
 	 * @return A form that can take field/table values
 	 */
-	public IForm newForm() {
+	public Form newForm(FormOperation operation) {
 		Object[] values = null;
 		Object[][][] tables = null;
 		if (this.fields != null && this.fields.length != 0) {
 			values = new Object[this.fields.length];
 		}
-		if (this.gridNames != null && this.gridNames.length != 0) {
-			tables = new Object[this.gridNames.length][][];
+		if (this.tabularFields != null && this.tabularFields.length != 0) {
+			tables = new Object[this.tabularFields.length][][];
 		}
-		return new Form(this, values, tables);
+		return new Form(this, operation, values, tables);
 	}
 
-	static class IndexedField {
-		final int idx;
-		final Field field;
-
-		protected IndexedField(int idx, Field field) {
-			this.idx = idx;
-			this.field = field;
+	/**
+	 * 
+	 * @param operation
+	 * @return a service for the specified operation. null if such an operation
+	 *         is not valid for this form
+	 */
+	public IService getService(String operation) {
+		if (SERVICE_TYPE_GET.equals(operation)) {
+			if (this.getOk) {
+				return new GetService(this);
+			}
+		} else if (SERVICE_TYPE_SAVE.equals(operation)) {
+			if (this.saveOk) {
+				return new SaveService(this);
+			}
+		} else if (SERVICE_TYPE_SUBMIT.equals(operation)) {
+			if (this.submitOk) {
+				return new SubmitService(this);
+			}
 		}
+		return null;
 	}
+	
 }

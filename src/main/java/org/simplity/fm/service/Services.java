@@ -1,35 +1,22 @@
 
-package example.project.service;
+package org.simplity.fm.service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.simplity.fm.data.FormStructure;
-import org.simplity.fm.service.GetService;
-import org.simplity.fm.service.IService;
-import org.simplity.fm.service.SaveService;
-import org.simplity.fm.service.SubmitService;
 
-import example.project.data.FormStructures;
+import example.project.form.FormStructures;
 
 /**
  * Place holder the serves as a source for service instances
  */
 public class Services {
+	/**
+	 * separator between operation and form name to suggets a service name, like get-form1
+	 */
+	public static final char SERVICE_SEPARATOR = '-';
 	private static final Services instance = new Services();
-	/**
-	 * service prefix for a get-form
-	 */
-	public static final String SERVICE_TYPE_GET = "get";
-	/**
-	 * service prefix for a save-form
-	 */
-	public static final String SERVICE_TYPE_SAVE = "save";
-	/**
-	 * service prefix for a submit-form
-	 */
-	public static final String SERVICE_TYPE_SUBMIT = "submit";
-
 	/**
 	 * 
 	 * @param serviceName
@@ -40,7 +27,7 @@ public class Services {
 		if (service != null) {
 			return service;
 		}
-		int idx = serviceName.indexOf('-');
+		int idx = serviceName.indexOf(SERVICE_SEPARATOR);
 		if (idx <= 0) {
 			return null;
 		}
@@ -50,17 +37,12 @@ public class Services {
 		if (fs == null) {
 			return null;
 		}
-		String opr = serviceName.substring(0, idx);
-		if (SERVICE_TYPE_GET.equals(opr)) {
-			service = new GetService(fs);
-		} else if (SERVICE_TYPE_SAVE.equals(opr)) {
-			service = new SaveService(fs);
-		} else if (SERVICE_TYPE_SUBMIT.equals(opr)) {
-			service = new SubmitService(fs);
-		} else {
-			return null;
+		
+		String oper = serviceName.substring(0, idx);
+		service = fs.getService(oper);
+		if(service != null) {
+			instance.services.put(serviceName, service);
 		}
-		instance.services.put(serviceName, service);
 		return service;
 	}
 

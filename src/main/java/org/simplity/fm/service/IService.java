@@ -41,13 +41,19 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public interface IService {
 	/**
-	 * message to be used if the user is not authorized for this specific form instance
+	 * message to be used if the user is not authorized for this specific form
+	 * instance
 	 */
-	public static final String MSG_NOT_AUTHORIZED = null;
+	public static final String MSG_NOT_AUTHORIZED = "notAuthorized";
 	/**
-	 * error to be used in case of any internal  error
+	 * error to be used in case of any internal error
 	 */
-	public static final String MSG_INTERNAL_ERROR = null;
+	public static final String MSG_INTERNAL_ERROR = "internalError";
+
+	/**
+	 * error to be used in case of any internal error
+	 */
+	public static final String MSG_INVALID_DATA = "invalidData";
 	/**
 	 * serve when data is requested in a Map
 	 * 
@@ -60,8 +66,11 @@ public interface IService {
 	 * @param writer
 	 *            to which the output can be written to
 	 * @return non-null service result.
+	 * @throws Exception
+	 *             so that the caller can wire exceptions to the right exception
+	 *             handler that is configured for the app
 	 */
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer);
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception;
 
 	/**
 	 * serve the request when data is received as a JSON Object
@@ -75,7 +84,10 @@ public interface IService {
 	 * @param writer
 	 *            to which the output can be written to
 	 * @return non-null service result.
+	 * @throws Exception
+	 *             so that the caller can wire exceptions to the right exception
+	 *             handler that is configured for the app
 	 */
-	public ServiceResult serve(LoggedInUser user, ObjectNode formData, Writer writer);
+	public ServiceResult serve(LoggedInUser user, ObjectNode formData, Writer writer) throws Exception;
 
 }

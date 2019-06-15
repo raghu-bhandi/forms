@@ -32,8 +32,11 @@ import org.simplity.fm.ApplicationError;
 import org.simplity.fm.DateUtil;
 import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
+import org.simplity.fm.MessageType;
 import org.simplity.fm.data.types.InvalidValueException;
 import org.simplity.fm.data.types.ValueType;
+import org.simplity.fm.http.LoggedInUser;
+import org.simplity.fm.service.IService;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -41,7 +44,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 
 /**
  * @author simplity.org
@@ -53,30 +55,44 @@ public class Form implements IForm {
 	 * data structure describes the template for which this object provides
 	 * actual data
 	 */
-	private FormStructure structure;
+	private final FormStructure structure;
 	/**
 	 * field values. null if this template has no fields
 	 */
-	private Object[] fieldValues;
+	private final Object[] fieldValues;
 	/**
 	 * grid data. null if this template has no fields
 	 */
-	private Object[][][] gridData;
+	private final Object[][][] gridData;
+
+	/**
+	 * operation for which this form is created
+	 */
+	private final FormOperation operation;
 
 	/**
 	 * @param formStructure
 	 *            data structure describes the template for which this object
 	 *            provides
 	 *            actual data
+	 * @param operation
 	 * @param values
 	 *            grid data. null if this template has no fields
 	 * @param tables
 	 *            grid data. null if this template has no fields
 	 */
-	public Form(FormStructure formStructure, Object[] values, Object[][][] tables) {
+	public Form(FormStructure formStructure, FormOperation operation, Object[] values, Object[][][] tables) {
 		this.structure = formStructure;
 		this.fieldValues = values;
 		this.gridData = tables;
+		this.operation = operation;
+	}
+
+	/**
+	 * @return the operation
+	 */
+	public FormOperation getOperation() {
+		return this.operation;
 	}
 
 	@Override
@@ -102,6 +118,65 @@ public class Form implements IForm {
 			key += KEY_JOINER + obj.toString();
 		}
 		return key;
+	}
+
+	/**
+	 * 
+	 * @return value of user id field in this form. null if such a field is not
+	 *         defined, or that field has no value.
+	 */
+	public String getUserId() {
+		int idx = this.structure.getUserIdFieldIdx();
+		if (idx == -1) {
+			return null;
+		}
+		Object obj = this.fieldValues[idx];
+		if (obj == null) {
+			return null;
+		}
+		return obj.toString();
+	}
+
+	/**
+	 * set owner for this form
+	 * 
+	 * @param user
+	 * @return true if the owner was indeed set. false in case of any issue in
+	 *         setting it
+	 */
+	public boolean setOwner(LoggedInUser user) {
+		int idx = this.structure.getUserIdFieldIdx();
+		if (idx == -1) {
+			return false;
+		}
+		Field field = this.structure.fields[idx];
+
+		try {
+			this.fieldValues[idx] = field.parse(user.getUserId());
+			return true;
+		} catch (InvalidValueException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * does this form belong the the user
+	 * 
+	 * @param user
+	 *            logged in user object
+	 * @return true if this form belongs to the logged in user. false if it does
+	 *         not,or if we can't say
+	 */
+	public boolean isOwner(LoggedInUser user) {
+		String uidIn = user.getUserId();
+		if (uidIn == null) {
+			return false;
+		}
+		String uid = this.getUserId();
+		if (uid == null) {
+			return false;
+		}
+		return uid.equals(uidIn);
 	}
 
 	@Override
@@ -162,7 +237,7 @@ public class Form implements IForm {
 		IFormValidation[] validations = this.structure.getValidations();
 		if (validations != null) {
 			for (IFormValidation vln : validations) {
-				vln.validate(this, errors);
+				vln.isValid(this, errors);
 			}
 		}
 	}
@@ -175,30 +250,33 @@ public class Form implements IForm {
 		 */
 		this.validateForm(errors);
 
-		String[] gridNames = this.structure.getGridNames();
-		if (gridNames == null) {
+		TabularField[] tables = this.structure.getTabularFields();
+		if (tables == null) {
 			return;
 		}
 
-		this.gridData = new Object[gridNames.length][][];
-		FormStructure[] structs = this.structure.getGridStructures();
 
-		for (int i = 0; i < gridNames.length; i++) {
-			String gn = gridNames[i];
-			JsonNode child = json.get(gn);
-			FormStructure struct = structs[i];
+		for (int i = 0; i < tables.length; i++) {
+			TabularField  field = tables[i];
+			String fieldName = field.fieldName;
+			JsonNode child = json.get(fieldName);
+			FormStructure struct = field.structure;
 			ArrayNode node = null;
 			if (child != null && child.getNodeType() == JsonNodeType.ARRAY) {
 				node = (ArrayNode) child;
 			}
-			int n = 0;
-			if (node != null) {
-				n = node.size();
+			/*
+			 * TODO: if this table had rows in the saved form, should we retain
+			 * that or reset that to null?
+			 */
+			if (node == null) {
+				// continue;
 			}
+			int n = node == null ? 0 : node.size();
 
 			if (errors != null) {
-				if (n < struct.getMinRows() || n > struct.getMaxRows()) {
-					errors.add(Message.getValidationMessage(gn, struct.getGridMessageId()));
+				if (n < field.minRows || (n != 0 && n > field.maxRows)) {
+					errors.add(Message.getValidationMessage(fieldName, field.errorMessageId));
 					continue;
 				}
 			}
@@ -206,17 +284,21 @@ public class Form implements IForm {
 				continue;
 			}
 
+			int nbrCols = struct.getFields().length;
+			Object[][] grid = new Object[n][];
+			this.gridData[i] = grid;
 			for (int j = 0; j < n; j++) {
 				JsonNode col = node.get(j);
 				if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
 					if (errors != null) {
-						errors.add(Message.getValidationMessage(gn, struct.getGridMessageId()));
+						errors.add(Message.getGenericMessage(MessageType.Error, IService.MSG_INVALID_DATA, null, fieldName, 0));
 					}
 					break;
 				}
 
-				Object[] row = new Object[struct.getFields().length];
+				Object[] row = new Object[nbrCols];
 				setFeilds((ObjectNode) col, struct, row, errors);
+				grid[j] = row;
 			}
 		}
 	}
@@ -258,15 +340,15 @@ public class Form implements IForm {
 	}
 
 	private void writeGrids(JsonGenerator gen) throws IOException {
-		FormStructure[] structures = this.structure.getGridStructures();
-		String[] gridNames = this.structure.getGridNames();
+		TabularField[] tableFields = this.structure.getTabularFields();
 		for (int i = 0; i < this.gridData.length; i++) {
 			Object[][] grid = this.gridData[i];
 			if (grid == null) {
 				continue;
 			}
-			gen.writeArrayFieldStart(gridNames[i]);
-			this.writeGrid(gen, grid, structures[i]);
+			TabularField field = tableFields[i];
+			gen.writeArrayFieldStart(field.fieldName);
+			this.writeGrid(gen, grid, field.structure);
 			gen.writeEndArray();
 		}
 	}

@@ -23,24 +23,18 @@
 package org.simplity.fm.service;
 
 import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.simplity.fm.ApplicationError;
-import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
-import org.simplity.fm.MessageType;
+import org.simplity.fm.data.Form;
+import org.simplity.fm.data.FormOperation;
 import org.simplity.fm.data.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
 import org.simplity.fm.io.IoConsumer;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -49,99 +43,64 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author simplity.org
  *
  */
-public class SaveService implements IService {
-
-	/**
-	 * null if no input is expected
-	 */
-	protected FormStructure formStructure;
-
+public class SaveService extends AbstractService {
 	/**
 	 * a simple service that just saves the form. output form is null;
 	 * 
 	 * @param formStructure
 	 */
 	public SaveService(FormStructure formStructure) {
-		this.formStructure = formStructure;
+		super(formStructure);
+		this.operation = FormOperation.SAVE;
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) {
-		/*
-		 * should not be called with pay-load
-		 */
-		Message[] msgs = { Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0) };
-		return new ServiceResult(msgs, false);
+	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
+		List<Message> messages = new ArrayList<>();
+		Form form = this.newForm(user, json, messages);
+		if (form == null) {
+			return this.failed(messages);
+		}
+
+		if(this.doSave(form, user, json, messages)) {
+			return this.succeeded();
+		}
+		return this.failed(messages);
 	}
+	
+	protected boolean doSave(Form form, LoggedInUser user, ObjectNode json, List<Message> messages) throws Exception {
 
-	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) {
-		List<Message> errors = new ArrayList<>();
-		IForm form = this.formStructure.newForm();
-		form.loadKeys(json, errors);
-		if (errors.size() > 0) {
-			return this.returnWithError(errors);
-		}
-
-		String key = form.getDocumentId();
-		if (this.hasAccess(user, key) == false) {
-			errors.add(Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0));
-			return this.returnWithError(errors);
+		/*
+		 * TODO: if this is partial-save, then we should load existing data from
+		 * store before, extracting data fromuser pay load
+		 */
+		boolean ok = this.retrieveForm(user, form, messages, null);
+		if (!ok) {
+			// access issues..
+			return false;
 		}
 
 		/*
-		 * load existing form first.
+		 * now load data coming from client. It could be just a section
 		 */
+		form.validateAndLoad(json, messages);
+		if (messages.size() > 0) {
+			return false;
+		}
+
+		if(!this.processForm(FormStructure.PRE_SAVE, form, messages)) {
+			return false;
+		}
+
 		DataStore store = DataStore.getStore();
-		try {
-			store.retrieve(key, new IoConsumer<Reader>() {
+		store.Store(form.getDocumentId(), new IoConsumer<Writer>() {
 
-				@Override
-				public void accept(Reader reader) throws IOException {
-					JsonNode node = new ObjectMapper().readTree(reader);
-					if (node.getNodeType() != JsonNodeType.OBJECT) {
-						throw new ApplicationError("File content is not a JSON for id " + key);
-					}
-					form.load((ObjectNode) node);
-				}
-			});
-
-			/*
-			 * now load data coming from client. It could be just a section
-			 */
-			form.validateAndLoad(json, errors);
-			if (errors.size() > 0) {
-				return this.returnWithError(errors);
+			@Override
+			public void accept(Writer w) throws IOException {
+				form.serializeAsJson(w);
 			}
+		});
 
-			store.Store(key, new IoConsumer<Writer>() {
-
-				@Override
-				public void accept(Writer w) throws IOException {
-					form.serializeAsJson(w);
-				}
-			});
-			return new ServiceResult(null, true);
-		} catch (IOException e) {
-			errors.add(Message.getGenericMessage(MessageType.Error, MSG_INTERNAL_ERROR, null, null, 0));
-			return this.returnWithError(errors);
-		}
+		return this.processForm(FormStructure.POST_SAVE, form, messages);
 	}
-
-	private ServiceResult returnWithError(List<Message> errors) {
-		return new ServiceResult(errors.toArray(new Message[0]), false);
-	}
-
-	/**
-	 * 
-	 * @param user
-	 * @param key
-	 * @return
-	 */
-	private boolean hasAccess(LoggedInUser user, String key) {
-		// TODO implement the logic to check if this user has write access to
-		// this form
-		return true;
-	}
-
 }

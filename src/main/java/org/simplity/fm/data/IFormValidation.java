@@ -24,7 +24,6 @@ package org.simplity.fm.data;
 
 import java.util.List;
 
-import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
 
 /**
@@ -42,5 +41,5 @@ public interface IFormValidation {
 	 * @param mesages
 	 * @return true if all OK. false if an error message is addeed to the list
 	 */
-	public boolean validate(IForm form, List<Message> mesages);
+	public boolean isValid(Form form, List<Message> mesages);
 }

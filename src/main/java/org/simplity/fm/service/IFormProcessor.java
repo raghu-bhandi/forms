@@ -19,63 +19,28 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
 
-import java.util.regex.Pattern;
+package org.simplity.fm.service;
+
+import java.util.List;
+
+import org.simplity.fm.IForm;
+import org.simplity.fm.Message;
 
 /**
- * validation parameters for a text value
- * 
+ * interface for providing custom logic on a form at any stage of a service 
  * @author simplity.org
  *
  */
-public class TextType extends DataType {
-	private final String regex;
-
+public interface IFormProcessor {
 	/**
-	 * 
-	 * @param minLength
-	 * @param maxLength
-	 * @param regex
-	 * @param errorMessageId
+	 * carry out custom logic  
+	 * @param form
+	 * @param messages
+	 * @return true if it is OK to continue. in such a case, no error message
+	 *         should have been added to the list.
+	 *         false if it is not ok to continue. at least one error message
+	 *         should have been added to the list
 	 */
-	public TextType(int minLength, int maxLength, String regex, String errorMessageId) {
-		this.valueType = ValueType.Text;
-		this.minLength = minLength;
-		this.maxLength = maxLength;
-		this.messageId = errorMessageId;
-		this.regex = regex;
-	}
-
-	@Override
-	public boolean validate(String value) {
-		if (value == null) {
-			return true;
-		}
-		return this.isOk(value);
-	}
-
-	private boolean isOk(String value) {
-		int len = value.length();
-		if(len < this.minLength ||(this.maxLength > 0 &&  len>this.maxLength)) {
-			return false;
-		}
-		if (this.regex == null) {
-			return true;
-		}
-		return Pattern.matches(this.regex, value);
-	}
-
-	@Override
-	public Object getDefaultValue() {
-		return "";
-	}
-
-	@Override
-	public Object parse(String value) {
-		if (this.isOk(value)) {
-			return value;
-		}
-		return null;
-	}
+	public boolean process(IForm form, List<Message> messages);
 }
