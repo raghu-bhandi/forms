@@ -31,87 +31,107 @@ import org.simplity.fm.data.types.InvalidValueException;
  */
 public class Message {
 	/**
+	 * create an error message for a message id
+	 * 
+	 * @param messageId
+	 * @return an error message for this message id
+	 */
+	public static Message newError(String messageId) {
+		return new Message(MessageType.Error, messageId, null, null, null, 0);
+	}
+
+	/**
 	 * @param e
 	 * @return a validation message based on the exception
 	 */
-	public static Message getValidationMessage(InvalidValueException e) {
-		return new Message(MessageType.Error, e.getMessageId(), e.getFieldName(), null, 0);
+	public static Message newValidationError(InvalidValueException e) {
+		return new Message(MessageType.Error, e.getMessageId(), e.getFieldName(), e.getParams(), null, 0);
 	}
 
 	/**
-	 * create a message that is not associated with any field
+	 * create a validation error message for a field
 	 * 
+	 * @param fieldName
+	 * @param messageId
+	 * @param params
+	 * @return validation error message
+	 */
+	public static Message newFieldError(String fieldName, String messageId, String params) {
+		return new Message(MessageType.Error, messageId, fieldName, params, null, 0);
+	}
+
+	/**
+	 * create a validation error message for a field
+	 * 
+	 * @param tableName
+	 *            table name (primary field name in the parent form)
+	 * @param columnName
+	 *            column name field name of the child form)
+	 * 
+	 * @param messageId
+	 * @param params
+	 * @param rowNumber
+	 *            1-based row number in which the error is detected
+	 * @return validation error message
+	 */
+	public static Message newColumnError(String tableName, String columnName, String messageId, String params,
+			int rowNumber) {
+		return new Message(MessageType.Error, messageId, tableName, params, columnName, 0);
+	}
+
+
+	/**
+	 * generic message could be warning/info etc..
 	 * @param messageType
 	 * @param messageId
-	 * @param fieldName
-	 *            null if this message does not refer to any field
-	 * @param gridName
-	 *            null if this message does not refer to any field in a grid
-	 * @param rowNumber
-	 *            zero based row in the grid,if grid is relevant
-	 * @return a message that is not associated with any field
+	 * @param params
+	 * @return message
 	 */
-	public static Message getGenericMessage(MessageType messageType, String messageId, String fieldName,
-			String gridName, int rowNumber) {
-		return new Message(messageType, messageId, fieldName, gridName, rowNumber);
+	public static Message newMessage(MessageType messageType, String messageId, String params) {
+		return new Message(messageType, messageId, null, params, null, 0);
 	}
-
-	/**
-	 * create a validation error message for a field
-	 * 
-	 * @param fieldName
-	 * @param messageId
-	 * @return validation error message
-	 */
-	public static Message getValidationMessage(String fieldName, String messageId) {
-		return new Message(MessageType.Error, messageId, fieldName, null, 0);
-	}
-
-	/**
-	 * create a validation error message for a field
-	 * 
-	 * @param fieldName
-	 * @param messageId
-	 * @param gridName
-	 * @param rowNumber
-	 * @return validation error message
-	 */
-	public static Message getValidationMessage(String fieldName, String messageId, String gridName, int rowNumber) {
-		return new Message(MessageType.Error, messageId, fieldName, gridName, rowNumber);
-	}
-
-	/**
-	 * name of the field/column that is in error. null if the error is not
-	 * specific to a field
-	 */
-	public final String fieldName;
-
-	/**
-	 * error message id for this error. non-null;
-	 */
-	public final String messageId;
-
-	/**
-	 * name of the data grid in error. Null , if this is a field, and not a grid
-	 */
-	public final String gridName;
-
-	/**
-	 * zero based row number in case this is a data grid
-	 */
-	public final int rowNumber;
 
 	/**
 	 * message type/severity.
 	 */
 	public MessageType messageType;
+	/**
+	 * error message id for this error. non-null;
+	 */
+	public final String messageId;
+	/**
+	 * name of the field that is in error. null if the error is not
+	 * specific to a field. Could be a simple field name, or the name of a
+	 * tabular data element
+	 */
+	public final String fieldName;
 
-	private Message(MessageType messageType, String messageId, String fieldName, String gridName, int rowNumber) {
+	/**
+	 * If the field in error is tabular one, this is the name of teh column that
+	 * is in error
+	 */
+	public final String columnName;
+
+	/**
+	 * 1-based row number in case this is a data tabular data
+	 */
+	public final int rowNumber;
+
+	/**
+	 * possibly comma separated list of parameters that go into the body of the
+	 * message, in case the message is a template with place-holders for
+	 * run-time parameter
+	 */
+	public final String params;
+
+	private Message(MessageType messageType, String messageId, String fieldName, String params, String columnName,
+			int rowNumber) {
 		this.messageType = messageType;
 		this.messageId = messageId;
-		this.rowNumber = rowNumber;
 		this.fieldName = fieldName;
-		this.gridName = gridName;
+		this.params = params;
+		this.columnName = columnName;
+		this.rowNumber = rowNumber;
 	}
 
 	@Override

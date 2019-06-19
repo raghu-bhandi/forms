@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.data.Form;
-import org.simplity.fm.data.FormOperation;
-import org.simplity.fm.data.FormStructure;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormOperation;
+import org.simplity.fm.form.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 
 /**

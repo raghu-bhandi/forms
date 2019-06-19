@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.data;
+package org.simplity.fm.form;
 
 /**
  * represents data structure for field in a form that is designed to hold

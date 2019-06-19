@@ -166,7 +166,8 @@ public class Agent {
 		try (Writer writer = resp.getWriter()) {
 			ServiceResult result = null;
 			if (fields != null) {
-				logger.log(Level.INFO, "Calling Service " + service.getClass().getName() + " with " + fields.size() + " fields");
+				logger.log(Level.INFO,
+						"Calling Service " + service.getClass().getName() + " with " + fields.size() + " fields");
 				result = service.serve(user, fields, writer);
 			} else {
 				logger.log(Level.INFO, "Calling Service " + service.getClass().getName() + "with json");
@@ -176,13 +177,14 @@ public class Agent {
 				logger.log(Level.INFO, "All Ok");
 				this.setHeaders(resp);
 			} else {
-				for(Message msg : result.messages)
-				logger.log(Level.INFO, "Message :" + msg);
+				for (Message msg : result.messages)
+					logger.log(Level.INFO, "Message :" + msg);
 				this.respondWithError(resp, result.messages, writer);
 			}
 		} catch (Throwable e) {
 			/*
-			 * TODO : wire this to error handling process provided by the configuration
+			 * TODO : wire this to error handling process provided by the
+			 * configuration
 			 */
 			resp.setStatus(STATUS_INTERNAL_ERROR);
 			return;
@@ -197,19 +199,37 @@ public class Agent {
 	 */
 	private void respondWithError(HttpServletResponse resp, Message[] messages, Writer writer) {
 		resp.setStatus(STATUS_INVALID_DATA);
+		if (messages == null || messages.length == 0) {
+			return;
+		}
 		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
 			gen.writeStartObject();
 			gen.writeFieldName("messages");
 			gen.writeStartArray();
-			for(Message msg: messages) {
-				gen.writeObject(msg);
+			for (Message msg : messages) {
+				gen.writeStartObject();
+				gen.writeStringField("severity", msg.messageType.name());
+				gen.writeStringField("messageId", msg.messageId);
+				if (msg.fieldName != null) {
+					gen.writeStringField("fieldName", msg.fieldName);
+				}
+				if (msg.columnName != null) {
+					gen.writeStringField("columnName", msg.columnName);
+				}
+				if (msg.params != null) {
+					gen.writeStringField("params", msg.params);
+				}
+				if (msg.rowNumber != 0) {
+					gen.writeNumberField("rowNumber", msg.rowNumber);
+				}
+				gen.writeEndObject();
 			}
 			gen.writeEndArray();
 			gen.writeEndObject();
-		}catch(Exception e) {
+		} catch (Exception e) {
 			//
 		}
-		
+
 	}
 
 	/**
@@ -246,17 +266,24 @@ public class Agent {
 	private IService getService(HttpServletRequest req) {
 		String serviceName = req.getHeader(SERVICE_NAME);
 		if (serviceName == null) {
-			logger.log(Level.INFO,  "header "+ SERVICE_NAME + " not recd");
-			
+			logger.log(Level.INFO, "header " + SERVICE_NAME + " not recd");
+
 			return null;
 		}
 		IService service = Services.getService(serviceName);
-		if(service == null) {
+		if (service == null) {
 			logger.log(Level.INFO, serviceName + " is not a service");
 		}
 		return service;
 	}
 
+	/**
+	 * temp method in the absence of real authentication and session. We use
+	 * AUthorization token as userId as well
+	 * 
+	 * @param req
+	 * @return
+	 */
 	private LoggedInUser getUser(HttpServletRequest req) {
 		String token = req.getHeader(AUTH_HEADER);
 		if (token == null) {
@@ -266,9 +293,10 @@ public class Agent {
 		if (user == null) {
 			/*
 			 * we assume that the token is valid when we get called. Hence we
-			 * have to create a user!!
+			 * have to create a user. token is used as userId, there by allowing
+			 * testing with different users
 			 */
-			user = LoggedInUser.newUser("dummyPan", token);
+			user = LoggedInUser.newUser(token, token);
 			this.activeUsers.put(token, user);
 		}
 		return user;

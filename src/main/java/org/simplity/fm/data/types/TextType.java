@@ -21,6 +21,7 @@
  */
 package org.simplity.fm.data.types;
 
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -31,51 +32,38 @@ import java.util.regex.Pattern;
  */
 public class TextType extends DataType {
 	private final String regex;
+	private final Set<String> validValues;
 
 	/**
 	 * 
+	 * @param errorMessageId
 	 * @param minLength
 	 * @param maxLength
 	 * @param regex
-	 * @param errorMessageId
+	 * @param valueList
 	 */
-	public TextType(int minLength, int maxLength, String regex, String errorMessageId) {
-		this.valueType = ValueType.Text;
+	public TextType(String errorMessageId, int minLength, int maxLength, String regex, Set<String> valueList) {
+		this.valueType = ValueType.TEXT;
 		this.minLength = minLength;
 		this.maxLength = maxLength;
 		this.messageId = errorMessageId;
 		this.regex = regex;
+		this.validValues = valueList;
 	}
 
 	@Override
-	public boolean validate(String value) {
-		if (value == null) {
-			return true;
+	protected boolean isOk(Object val) {
+		String value = val.toString();
+		if (this.validValues != null) {
+			return this.validValues.contains(value);
 		}
-		return this.isOk(value);
-	}
-
-	private boolean isOk(String value) {
 		int len = value.length();
-		if(len < this.minLength ||(this.maxLength > 0 &&  len>this.maxLength)) {
+		if (len < this.minLength || (this.maxLength > 0 && len > this.maxLength)) {
 			return false;
 		}
 		if (this.regex == null) {
 			return true;
 		}
 		return Pattern.matches(this.regex, value);
-	}
-
-	@Override
-	public Object getDefaultValue() {
-		return "";
-	}
-
-	@Override
-	public Object parse(String value) {
-		if (this.isOk(value)) {
-			return value;
-		}
-		return null;
 	}
 }

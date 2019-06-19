@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.data;
+package org.simplity.fm.form;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -28,11 +28,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.simplity.fm.ApplicationError;
 import org.simplity.fm.DateUtil;
-import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
-import org.simplity.fm.MessageType;
 import org.simplity.fm.data.types.InvalidValueException;
 import org.simplity.fm.data.types.ValueType;
 import org.simplity.fm.http.LoggedInUser;
@@ -181,19 +178,18 @@ public class Form implements IForm {
 
 	@Override
 	public void deserialize(String data) {
-		throw new ApplicationError(
-				"internal serialization method not yet implemented for form. Use json format instead");
+		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
 	}
 
 	@Override
 	public boolean deserialize(String data, List<Message> errors) {
-		throw new ApplicationError(
+		throw new Error(
 				"internal serialization method not yet implemented for form. Use json format instead");
 	}
 
 	@Override
 	public String serialize() {
-		throw new ApplicationError(
+		throw new Error(
 				"internal serialization method not yet implemented for form. Use json format instead");
 	}
 
@@ -276,7 +272,7 @@ public class Form implements IForm {
 
 			if (errors != null) {
 				if (n < field.minRows || (n != 0 && n > field.maxRows)) {
-					errors.add(Message.getValidationMessage(fieldName, field.errorMessageId));
+					errors.add(Message.newFieldError(fieldName, field.errorMessageId, null));
 					continue;
 				}
 			}
@@ -291,7 +287,7 @@ public class Form implements IForm {
 				JsonNode col = node.get(j);
 				if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
 					if (errors != null) {
-						errors.add(Message.getGenericMessage(MessageType.Error, IService.MSG_INVALID_DATA, null, fieldName, 0));
+						errors.add(Message.newError(IService.MSG_INVALID_DATA));
 					}
 					break;
 				}
@@ -322,7 +318,7 @@ public class Form implements IForm {
 			}
 		} catch (InvalidValueException e) {
 			if (errors != null) {
-				errors.add(Message.getValidationMessage(field.getFieldName(), field.getMessageId()));
+				errors.add(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
 			}
 		}
 	}
@@ -397,7 +393,7 @@ public class Form implements IForm {
 		}
 
 		Field field = this.structure.getFields()[idx];
-		if (field.getValueType() == ValueType.Text) {
+		if (field.getValueType() == ValueType.TEXT) {
 			this.fieldValues[idx] = value;
 			return true;
 		}
@@ -499,7 +495,7 @@ public class Form implements IForm {
 			return false;
 		}
 		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.Text) {
+		if (vt == ValueType.TEXT) {
 			this.fieldValues[idx] = value;
 			return true;
 		}
@@ -513,7 +509,7 @@ public class Form implements IForm {
 			return false;
 		}
 		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.Date) {
+		if (vt == ValueType.DATE) {
 			this.fieldValues[idx] = value;
 			return true;
 		}
@@ -527,7 +523,7 @@ public class Form implements IForm {
 			return false;
 		}
 		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.Boolean) {
+		if (vt == ValueType.BOOLEAN) {
 			this.fieldValues[idx] = value;
 			return true;
 		}
@@ -541,7 +537,7 @@ public class Form implements IForm {
 			return false;
 		}
 		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.Integer) {
+		if (vt == ValueType.NUMBER) {
 			this.fieldValues[idx] = value;
 			return true;
 		}

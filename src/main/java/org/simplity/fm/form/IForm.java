@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm;
+package org.simplity.fm.form;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.simplity.fm.Message;
 import org.simplity.fm.data.types.ValueType;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;

@@ -20,26 +20,24 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.data;
-
-import java.util.List;
-
-import org.simplity.fm.Message;
+package org.simplity.fm.form;
 
 /**
- * represents a validation at the form level, including inter-field
- * validations.This should not be used for field level validations. (Field level
- * validations are handled at <code>DataElement</code> level
- * 
+ * various operations that are implemented on a form
  * @author simplity.org
  *
  */
-public interface IFormValidation {
+public enum FormOperation { 
 	/**
-	 * execute this validation for a form
-	 * @param form
-	 * @param mesages
-	 * @return true if all OK. false if an error message is addeed to the list
+	 * get/retrieve this form from storage. get a blank form, possibly populated with some default values
 	 */
-	public boolean isValid(Form form, List<Message> mesages);
+	GET, 
+	/**
+	 * save the form as draft 
+	 */
+	SAVE, 
+	/**
+	 * submit the form for further processing
+	 */
+	SUBMIT
 }

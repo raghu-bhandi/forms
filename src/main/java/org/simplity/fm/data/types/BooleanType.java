@@ -28,42 +28,17 @@ package org.simplity.fm.data.types;
  *
  */
 public class BooleanType extends DataType {
-	private static final char ZERO = '0';
-	private static final char ONE = '1';
 
 	/**
 	 * @param errorId
 	 */
 	public BooleanType(String errorId) {
 		this.messageId = errorId;
-		this.valueType = ValueType.Boolean;
+		this.valueType = ValueType.BOOLEAN;
 	}
 
 	@Override
-	public boolean validate(String value) {
-		if (value == null || value.isEmpty()) {
-			return true;
-		}
-		if (value.length() > 0) {
-			return false;
-		}
-		char c = value.charAt(0);
-		return c == ZERO || c == ONE;
-	}
-
-	@Override
-	public Object getDefaultValue() {
-		return false;
-	}
-
-	@Override
-	public Object parse(String value) {
-		if ("1".equals(value) || "true".equals(value)) {
-			return true;
-		}
-		if ("0".equals(value) || "false".equals(value)) {
-			return false;
-		}
-		return null;
+	protected boolean isOk(Object value) {
+		return true;
 	}
 }

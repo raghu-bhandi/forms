@@ -19,7 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data;
+package org.simplity.fm.form;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -115,6 +115,11 @@ public class FormStructure {
 	 * is a auto-service to submit this form ok?
 	 */
 	protected boolean submitOk;
+
+	/**
+	 * is a auto-service to submit this form ok?
+	 */
+	protected boolean partialOk;
 
 	/*
 	 * following fields are derived from others. Defined for improving

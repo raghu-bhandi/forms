@@ -1,11 +1,11 @@
 
 package example.project.form;
 
-import org.simplity.fm.data.Field;
-import org.simplity.fm.data.FormStructure;
-import org.simplity.fm.data.FromToValidation;
-import org.simplity.fm.data.IFormValidation;
-import org.simplity.fm.data.TabularField;
+import org.simplity.fm.form.Field;
+import org.simplity.fm.form.FormStructure;
+import org.simplity.fm.form.FromToValidation;
+import org.simplity.fm.form.IFormValidation;
+import org.simplity.fm.form.TabularField;
 
 /**
  * class that is generated based on the spread sheet
@@ -21,10 +21,12 @@ public class Form1 extends FormStructure {
 	public static final int intField2 = 6;
 	public static final int derivedField = 7;
 	public static final int currentFy = 8;
+	public static final int orderLines = 0; 
+
 	/**
 	 * 
 	 */
-	public Form1(){
+	public Form1() {
 		this.uniqueName = "form1";
 		Field[] flds = { new Field("customerId", DataTypes.customerId, true, null, true, null, false, true),
 				new Field("financialYear", DataTypes.fy, true, null, true, null, false, true),
@@ -35,14 +37,15 @@ public class Form1 extends FormStructure {
 				new Field("intField2", DataTypes.qty, false, "45", true, null, false, false),
 				new Field("derivedField", DataTypes.qty, false, null, false, null, true, false),
 				new Field("currentFy", DataTypes.fy, false, null, false, null, false, false) };
-		this.fields = (flds);
+		this.fields = flds;
 		this.userIdFieldName = "customerId";
-		TabularField[] tables = {new TabularField("orderLines", new Form2(), 1, 200, "invalidOrderLines")};
+		TabularField[] tables = { new TabularField("orderLines", new Form2(), 1, 200, "invalidOrderLines") };
 		this.tabularFields = tables;
-		
-		IFormValidation[] valns = { new FromToValidation("fromDate", "toDate", true, "invalidDateRange"), new Form1Validation() };
+
+		IFormValidation[] valns = { new FromToValidation("fromDate", "toDate", true, "invalidDateRange"),
+				new Form1Validation() };
 		this.validations = valns;
-		
+
 		this.getOk = true;
 		this.saveOk = true;
 		this.submitOk = true;

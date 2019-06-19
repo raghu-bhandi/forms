@@ -22,6 +22,8 @@
 
 package org.simplity.fm.data.types;
 
+import org.simplity.fm.DateUtil;
+
 /**
  * text, number etc..
  * 
@@ -32,17 +34,79 @@ public enum ValueType {
 	/**
 	 * text
 	 */
-	Text,
+	TEXT(TextType.class) {
+		@Override
+		Object parse(String value) {
+			return value;
+		}
+	},
 	/**
 	 * whole number
 	 */
-	Integer, 
+	NUMBER(NumberType.class) {
+		@Override
+		Object parse(String value) {
+			try {
+				return Long.parseLong(value);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+	},
 	/**
 	 * date, represented in milliseconds from epoch
 	 */
-	Date, 
+	DATE(DateType.class) {
+		@Override
+		Object parse(String value) {
+			return DateUtil.parseDateWithOptionalTime(value);
+		}
+	},
 	/**
 	 * 0 is false and 1 is true
 	 */
-	Boolean
+	BOOLEAN(BooleanType.class) {
+		@Override
+		Object parse(String value) {
+			if ("1".equals(value)) {
+				return true;
+			}
+			if ("0".equals(value)) {
+				return false;
+			}
+			String v = value.toUpperCase();
+			if ("TRUE".equals(v)) {
+				return true;
+			}
+			if ("FALSE".equals(v)) {
+				return true;
+			}
+			return null;
+		}
+	};
+
+	private final Class<? extends DataType> dataType;
+
+	ValueType(Class<? extends DataType> dataType) {
+		this.dataType = dataType;
+	}
+
+	/**
+	 * 
+	 * @return extended concrete class for this value type
+	 */
+	public Class<? extends DataType> getDataTypeClass() {
+		return this.dataType;
+	}
+
+	/**
+	 * this is called ONLY from DataType
+	 * 
+	 * @param value
+	 *            non-null
+	 * @return parsed value of this type. null if value is null or the value can
+	 *         not be parsed to the desired type
+	 */
+	abstract Object parse(String value);
+
 }

@@ -1,8 +1,8 @@
 
 package example.project.form;
 
-import org.simplity.fm.data.Field;
-import org.simplity.fm.data.FormStructure;
+import org.simplity.fm.form.Field;
+import org.simplity.fm.form.FormStructure;
 
 /**
  * class that is generated based on the spread sheet

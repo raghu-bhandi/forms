@@ -4,7 +4,7 @@ package example.project.form;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.data.FormStructure;
+import org.simplity.fm.form.FormStructure;
 
 /**
  * class that is generated based on the all the form-structures defined under

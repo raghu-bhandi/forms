@@ -1,0 +1,14 @@
+
+package example.project.form;
+
+import org.simplity.fm.data.types.BooleanType;
+import org.simplity.fm.data.types.DateType;
+import org.simplity.fm.data.types.IntegerType;
+import org.simplity.fm.data.types.TextType;
+
+/**
+ * generated class based on datTypes.json
+ * Each data type is defined as a static member of this class
+ *
+ */
+public class DataTypes {

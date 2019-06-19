@@ -4,8 +4,8 @@ package example.project.form;
 import java.util.List;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.data.Form;
-import org.simplity.fm.data.IFormValidation;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.IFormValidation;
 
 /**
  * custom validation for form1

@@ -19,45 +19,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
 
-import java.util.Date;
-
-import org.simplity.fm.DateUtil;
+package org.simplity.fm.form;
 
 /**
- * validation parameters for a an integral value
  * 
  * @author simplity.org
  *
  */
-public class DateType extends DataType {
-	private final int minValue;
-	private final int maxValue;
+public abstract class FormValidation implements IFormValidation {
+
+	protected final String name1;
+	protected final String name2;
+	protected final boolean boolValue;
+	protected final String errorMessageId;
 
 	/**
-	 * @param errorId
 	 * 
-	 * @param minDays
-	 *            0 means today is OK. -100 means 100 days before today is the
-	 *            min, 100
-	 *            means 100 days after today is the min
-	 * @param maxDays
-	 *            0 means today is OK. -100 means 100 days before today is the
-	 *            max. 100
-	 *            means 100 days after today is the max
+	 * @param fieldNam1
+	 * @param fieldName2
+	 * @param boolValue
+	 * @param errorMessageId
 	 */
-	public DateType( String errorId, int minDays, int maxDays) {
-		this.valueType = ValueType.DATE;
-		this.minValue = minDays;
-		this.maxValue = maxDays;
-		this.messageId = errorId;
-	}
-
-	@Override
-	protected boolean isOk(Object value) {
-		Date date = (Date)value;
-		int days = DateUtil.daysFromToday(date.getTime());
-		return days >= this.minValue && days <= this.maxValue;
+	public FormValidation(String fieldNam1, String fieldName2, boolean boolValue, String errorMessageId) {
+		this.name1 = fieldNam1;
+		this.name2 = fieldName2;
+		this.boolValue = boolValue;
+		this.errorMessageId = errorMessageId;
 	}
 }

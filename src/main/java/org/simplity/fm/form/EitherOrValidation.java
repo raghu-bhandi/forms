@@ -20,24 +20,36 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.data;
+package org.simplity.fm.form;
+
+import java.util.List;
+
+import org.simplity.fm.Message;
 
 /**
- * various operations that are implemented on a form
+ * a pair of mutually fields that are mutually exclusive. That is, bit should
+ * not be specified
+ * 
  * @author simplity.org
  *
  */
-public enum FormOperation { 
+public class EitherOrValidation extends FormValidation {
+
+
 	/**
-	 * get/retrieve this form from storage. get a blank form, possibly populated with some default values
+	 * 
+	 * @param fieldNam1
+	 * @param fieldName2
+	 * @param boolValue
+	 * @param errorMessageId
 	 */
-	GET, 
-	/**
-	 * save the form as draft 
-	 */
-	SAVE, 
-	/**
-	 * submit the form for further processing
-	 */
-	SUBMIT
+	public EitherOrValidation(String fieldNam1, String fieldName2, boolean boolValue, String errorMessageId) {
+		super(fieldNam1, fieldName2, boolValue, errorMessageId);
+	}
+
+	@Override
+	public boolean isValid(Form form, List<Message> mesages) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

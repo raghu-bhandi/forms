@@ -20,30 +20,27 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm;
+package org.simplity.fm.form;
+
+import java.util.List;
+
+import org.simplity.fm.Message;
 
 /**
+ * represents a validation at the form level, including inter-field
+ * validations.This should not be used for field level validations. (Field level
+ * validations are handled at <code>DataElement</code> level
+ * 
  * @author simplity.org
  *
  */
-public class ApplicationError extends RuntimeException{
-	private static final long serialVersionUID = 1L;
-	//logging teh error or raising the tiket, sending mail etc..
+public interface IFormValidation {
 	/**
+	 * execute this validation for a form
 	 * 
-	 * @param msg
+	 * @param form
+	 * @param mesages
+	 * @return true if all OK. false if an error message is added to the list
 	 */
-	public ApplicationError(String msg){
-		super(msg);
-		this.printStackTrace();
-	}
-	/**
-	 * 
-	 * @param msg
-	 * @param e
-	 */
-	public ApplicationError(String msg, Exception e){
-		super(msg + " caused by exception with message " + e.getMessage());
-		e.printStackTrace();
-	}
+	public boolean isValid(Form form, List<Message> mesages);
 }

@@ -19,45 +19,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
 
-import java.util.Date;
+package example.project.custom;
 
-import org.simplity.fm.DateUtil;
+import java.util.List;
+
+import org.simplity.fm.Message;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.IFormValidation;
 
 /**
- * validation parameters for a an integral value
- * 
  * @author simplity.org
  *
  */
-public class DateType extends DataType {
-	private final int minValue;
-	private final int maxValue;
-
-	/**
-	 * @param errorId
-	 * 
-	 * @param minDays
-	 *            0 means today is OK. -100 means 100 days before today is the
-	 *            min, 100
-	 *            means 100 days after today is the min
-	 * @param maxDays
-	 *            0 means today is OK. -100 means 100 days before today is the
-	 *            max. 100
-	 *            means 100 days after today is the max
-	 */
-	public DateType( String errorId, int minDays, int maxDays) {
-		this.valueType = ValueType.DATE;
-		this.minValue = minDays;
-		this.maxValue = maxDays;
-		this.messageId = errorId;
-	}
+public class Form1Validation implements IFormValidation{
 
 	@Override
-	protected boolean isOk(Object value) {
-		Date date = (Date)value;
-		int days = DateUtil.daysFromToday(date.getTime());
-		return days >= this.minValue && days <= this.maxValue;
+	public boolean isValid(Form form, List<Message> mesages) {
+		// TODO Auto-generated method stub
+		return false;
 	}
+
 }

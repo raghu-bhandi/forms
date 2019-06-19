@@ -28,9 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.data.Form;
-import org.simplity.fm.data.FormOperation;
-import org.simplity.fm.data.FormStructure;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormOperation;
+import org.simplity.fm.form.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
 import org.simplity.fm.io.IoConsumer;
@@ -72,7 +72,7 @@ public class SaveService extends AbstractService {
 
 		/*
 		 * TODO: if this is partial-save, then we should load existing data from
-		 * store before, extracting data fromuser pay load
+		 * store before, extracting data from user pay load
 		 */
 		boolean ok = this.retrieveForm(user, form, messages, null);
 		if (!ok) {

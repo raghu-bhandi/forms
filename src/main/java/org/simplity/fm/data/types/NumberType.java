@@ -21,7 +21,7 @@
  */
 package org.simplity.fm.data.types;
 
-import java.util.HashSet;
+import java.util.Set;
 
 /**
  * validation parameters for a an integral value
@@ -29,80 +29,40 @@ import java.util.HashSet;
  * @author simplity.org
  *
  */
-public class IntegerType extends DataType {
+public class NumberType extends DataType {
 	private final long minValue;
 	private final long maxValue;
+	private final Set<Long> validValues;
 
 	/**
 	 * 
+	 * @param errorMessageId
 	 * @param minValue
 	 * @param maxValue
-	 * @param errorId
+	 * @param valueList
 	 */
-	public IntegerType(long minValue, long maxValue, String errorId) {
-		this.valueType = ValueType.Integer;
+	public NumberType(String errorMessageId, long minValue, long maxValue, Set<Long> valueList) {
+		this.valueType = ValueType.NUMBER;
+		this.messageId = errorMessageId;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
+
 		if (this.minValue >= 0) {
 			this.minLength = ("" + this.minValue).length();
 		}
 		if (this.maxValue >= 0) {
 			this.maxLength = ("" + this.maxValue).length();
 		}
-		this.messageId = errorId;
-	}
 
-	/**
-	 * 
-	 * @param minValue
-	 * @param maxValue
-	 * @param errorId
-	 * @param validValues
-	 */
-	public IntegerType(long minValue, long maxValue, String errorId, int[] validValues) {
-		this(minValue, maxValue, errorId);
-		if (validValues != null && validValues.length > 0) {
-			this.validValues = new HashSet<>();
-			for (int val : validValues) {
-				this.validValues.add(val);
-			}
-		}
+		this.validValues = valueList;
 	}
 
 	@Override
-	public boolean validate(String value) {
-		if (value == null || value.isEmpty()) {
-			return true;
+	protected boolean isOk(Object val) {
+		if (this.validValues != null) {
+			return this.validValues.contains(val);
 		}
-		long val = 0;
-		try {
-			val = Long.parseLong(value, 10);
-		} catch (Exception e) {
-			return false;
-		}
-		return this.isOk(val);
-	}
-
-	private boolean isOk(long value) {
+		long value = (Long) val;
 		return value >= this.minValue && value <= this.maxValue;
-	}
-
-	@Override
-	public Object getDefaultValue() {
-		return 0;
-	}
-
-	@Override
-	public Object parse(String value) {
-		long n = 0;
-		try {
-			n = Long.parseLong(value, 10);
-		} catch (Exception e) {
-			return null;
-		}
-		if (this.isOk(n)) {
-			return n;
-		}
-		return null;
 	}
 }

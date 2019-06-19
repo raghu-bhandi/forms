@@ -29,10 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.MessageType;
-import org.simplity.fm.data.Form;
-import org.simplity.fm.data.FormOperation;
-import org.simplity.fm.data.FormStructure;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormOperation;
+import org.simplity.fm.form.FormStructure;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
 import org.simplity.fm.io.IoConsumer;
@@ -74,7 +73,7 @@ public abstract class AbstractService implements IService {
 		/*
 		 * extended class will over-ride this to provide required functionality
 		 */
-		Message[] msgs = { Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0) };
+		Message[] msgs = { Message.newError(MSG_NOT_AUTHORIZED) };
 		return new ServiceResult(msgs, false);
 	}
 
@@ -83,7 +82,7 @@ public abstract class AbstractService implements IService {
 		/*
 		 * extended class will over-ride this to provide required functionality
 		 */
-		Message[] msgs = { Message.getGenericMessage(MessageType.Error, MSG_NOT_AUTHORIZED, null, null, 0) };
+		Message[] msgs = { Message.newError(MSG_NOT_AUTHORIZED) };
 		return new ServiceResult(msgs, false);
 	}
 
@@ -222,7 +221,7 @@ public abstract class AbstractService implements IService {
 	}
 
 	protected ServiceResult failed(String messageId) {
-		Message[] msgs = { Message.getGenericMessage(MessageType.Error, messageId, null, null, 0) };
+		Message[] msgs = { Message.newError(messageId) };
 		return new ServiceResult(msgs, false);
 	}
 
@@ -243,7 +242,7 @@ public abstract class AbstractService implements IService {
 	}
 
 	protected void addMessage(String messageId, List<Message> messages) {
-		messages.add(Message.getGenericMessage(MessageType.Error, messageId, null, null, 0));
+		messages.add(Message.newError(messageId));
 	}
 
 	protected boolean processForm(int processType, Form form, List<Message> messages) {

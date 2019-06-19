@@ -20,55 +20,36 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.data;
+package org.simplity.fm.form;
 
-import java.util.Date;
 import java.util.List;
 
 import org.simplity.fm.Message;
 
 /**
+ * a pair of mutually fields that are mutually exclusive. That is, bit should
+ * not be specified
+ * 
  * @author simplity.org
  *
  */
-public class FromToValidation implements IFormValidation{
+public class DependentFieldValidation extends FormValidation {
 
-	private final String fromName;
-	private final String toName;
-	private final boolean equalValueOk;
-	private final String errorMessageId;
-	
+
 	/**
 	 * 
-	 * @param fromName
-	 * @param toName
-	 * @param equalValueOk 
-	 * @param errorMessageId 
+	 * @param fieldNam1
+	 * @param fieldName2
+	 * @param boolValue
+	 * @param errorMessageId
 	 */
-	public FromToValidation(String fromName, String toName, boolean equalValueOk, String errorMessageId) {
-		this.fromName = fromName;
-		this.toName = toName;
-		this.equalValueOk = equalValueOk;
-		this.errorMessageId = errorMessageId;
-	}
-	@Override
-	public boolean isValid(Form form, List<Message> messages) {
-		Date fromDate = form.getDateValue(this.fromName);
-		Date toDate = form.getDateValue(this.toName);
-		if(fromDate == null || toDate == null) {
-			return true;
-		}
-		if(this.equalValueOk) {
-			if(!fromDate.after(toDate)) {
-				return true;
-			}
-		}else {
-			if(toDate.after(fromDate)) {
-				return true;
-			}
-		}
-		messages.add(Message.getValidationMessage(this.fromName, this.errorMessageId));
-		return false;
+	public DependentFieldValidation(String fieldNam1, String fieldName2, boolean boolValue, String errorMessageId) {
+		super(fieldNam1, fieldName2, boolValue, errorMessageId);
 	}
 
+	@Override
+	public boolean isValid(Form form, List<Message> mesages) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

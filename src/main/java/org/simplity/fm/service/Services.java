@@ -4,7 +4,7 @@ package org.simplity.fm.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.data.FormStructure;
+import org.simplity.fm.form.FormStructure;
 
 import example.project.form.FormStructures;
 

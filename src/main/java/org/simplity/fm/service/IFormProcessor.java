@@ -24,8 +24,8 @@ package org.simplity.fm.service;
 
 import java.util.List;
 
-import org.simplity.fm.IForm;
 import org.simplity.fm.Message;
+import org.simplity.fm.form.IForm;
 
 /**
  * interface for providing custom logic on a form at any stage of a service 

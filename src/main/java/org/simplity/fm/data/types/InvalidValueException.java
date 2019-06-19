@@ -25,36 +25,50 @@ package org.simplity.fm.data.types;
  * @author simplity.org
  *
  */
-public class InvalidValueException extends Exception{
+public class InvalidValueException extends Exception {
 	private static final long serialVersionUID = 1L;
 	private String messageId;
 	private String fieldName;
-	
+	private String params;
+
 	/**
-	 * a field has failed validations 
+	 * a field has failed validations
+	 * 
 	 * @param fieldName
 	 * @param msgId
+	 * @param params
 	 */
-	public InvalidValueException(String fieldName, String msgId){
+	public InvalidValueException(String msgId, String fieldName, String params) {
 		this.messageId = msgId;
 		this.fieldName = fieldName;
+		this.params = params;
 	}
-	
+
 	@Override
 	public String getMessage() {
-		return "validation for field " + this.fieldName + " failed with messageId=" + this.messageId;
+		return "validation for faield " + this.fieldName + " failed with messageId=" + this.messageId
+				+ " and additional params=" + this.params;
 	}
-	
+
 	/**
 	 * @return the messageId
 	 */
 	public String getMessageId() {
 		return this.messageId;
 	}
+
 	/**
 	 * @return the fieldName
 	 */
 	public String getFieldName() {
 		return this.fieldName;
+	}
+
+	/**
+	 * @return comma separated list of parameters to be used for formatting this
+	 *         message. null if no params
+	 */
+	public String getParams() {
+		return this.params;
 	}
 }
