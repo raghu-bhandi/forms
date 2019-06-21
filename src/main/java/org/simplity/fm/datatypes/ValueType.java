@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.data.types;
+package org.simplity.fm.datatypes;
 
 import org.simplity.fm.DateUtil;
 
@@ -34,7 +34,7 @@ public enum ValueType {
 	/**
 	 * text
 	 */
-	TEXT(TextType.class) {
+	TEXT(TextType.class, 0) {
 		@Override
 		Object parse(String value) {
 			return value;
@@ -43,7 +43,7 @@ public enum ValueType {
 	/**
 	 * whole number
 	 */
-	NUMBER(NumberType.class) {
+	NUMBER(NumberType.class, 1) {
 		@Override
 		Object parse(String value) {
 			try {
@@ -54,18 +54,9 @@ public enum ValueType {
 		}
 	},
 	/**
-	 * date, represented in milliseconds from epoch
-	 */
-	DATE(DateType.class) {
-		@Override
-		Object parse(String value) {
-			return DateUtil.parseDateWithOptionalTime(value);
-		}
-	},
-	/**
 	 * 0 is false and 1 is true
 	 */
-	BOOLEAN(BooleanType.class) {
+	BOOLEAN(BooleanType.class, 2) {
 		@Override
 		Object parse(String value) {
 			if ("1".equals(value)) {
@@ -83,12 +74,23 @@ public enum ValueType {
 			}
 			return null;
 		}
+	},
+	/**
+	 * date, represented in milliseconds from epoch
+	 */
+	DATE(DateType.class, 3) {
+		@Override
+		Object parse(String value) {
+			return DateUtil.parseDateWithOptionalTime(value);
+		}
 	};
 
 	private final Class<? extends DataType> dataType;
+	private final int idx;
 
-	ValueType(Class<? extends DataType> dataType) {
+	ValueType(Class<? extends DataType> dataType, int idx) {
 		this.dataType = dataType;
+		this.idx = idx;
 	}
 
 	/**
@@ -109,4 +111,10 @@ public enum ValueType {
 	 */
 	abstract Object parse(String value);
 
+	/**
+	 * @return  0-based index that can be used to represent valueType as int..
+	 */
+	public int getIdx() {
+		return this.idx;
+	}
 }

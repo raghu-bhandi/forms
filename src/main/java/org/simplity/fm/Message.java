@@ -21,7 +21,7 @@
  */
 package org.simplity.fm;
 
-import org.simplity.fm.data.types.InvalidValueException;
+import org.simplity.fm.datatypes.InvalidValueException;
 
 /**
  * represents a validation error while accepting data from a client for a field

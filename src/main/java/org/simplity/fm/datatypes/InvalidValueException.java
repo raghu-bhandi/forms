@@ -19,51 +19,56 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
-
-import java.util.Set;
-import java.util.regex.Pattern;
+package org.simplity.fm.datatypes;
 
 /**
- * validation parameters for a text value
- * 
  * @author simplity.org
  *
  */
-public class TextType extends DataType {
-	private final String regex;
-	private final Set<String> validValues;
+public class InvalidValueException extends Exception {
+	private static final long serialVersionUID = 1L;
+	private String messageId;
+	private String fieldName;
+	private String params;
 
 	/**
+	 * a field has failed validations
 	 * 
-	 * @param errorMessageId
-	 * @param minLength
-	 * @param maxLength
-	 * @param regex
-	 * @param valueList
+	 * @param fieldName
+	 * @param msgId
+	 * @param params
 	 */
-	public TextType(String errorMessageId, int minLength, int maxLength, String regex, Set<String> valueList) {
-		this.valueType = ValueType.TEXT;
-		this.minLength = minLength;
-		this.maxLength = maxLength;
-		this.messageId = errorMessageId;
-		this.regex = regex;
-		this.validValues = valueList;
+	public InvalidValueException(String msgId, String fieldName, String params) {
+		this.messageId = msgId;
+		this.fieldName = fieldName;
+		this.params = params;
 	}
 
 	@Override
-	protected boolean isOk(Object val) {
-		String value = val.toString();
-		if (this.validValues != null) {
-			return this.validValues.contains(value);
-		}
-		int len = value.length();
-		if (len < this.minLength || (this.maxLength > 0 && len > this.maxLength)) {
-			return false;
-		}
-		if (this.regex == null) {
-			return true;
-		}
-		return Pattern.matches(this.regex, value);
+	public String getMessage() {
+		return "validation for faield " + this.fieldName + " failed with messageId=" + this.messageId
+				+ " and additional params=" + this.params;
+	}
+
+	/**
+	 * @return the messageId
+	 */
+	public String getMessageId() {
+		return this.messageId;
+	}
+
+	/**
+	 * @return the fieldName
+	 */
+	public String getFieldName() {
+		return this.fieldName;
+	}
+
+	/**
+	 * @return comma separated list of parameters to be used for formatting this
+	 *         message. null if no params
+	 */
+	public String getParams() {
+		return this.params;
 	}
 }

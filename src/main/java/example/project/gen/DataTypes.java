@@ -1,13 +1,13 @@
 package example.project.gen;
 
-import org.simplity.fm.data.types.TextType;
-import org.simplity.fm.data.types.NumberType;
-import org.simplity.fm.data.types.DateType;
-import org.simplity.fm.data.types.BooleanType;
+import org.simplity.fm.datatypes.BooleanType;
+import org.simplity.fm.datatypes.DateType;
+import org.simplity.fm.datatypes.NumberType;
+import org.simplity.fm.datatypes.TextType;
 
 /**
  * static class that has static attributes for all data types defined for this project
-/* <br /> generated at 19 Jun, 2019 4:30:40 PM
+ * <br /> generated at 20 Jun, 2019 6:43:40 PM
  */ 
 public class DataTypes {
 	public static final TextType customerId = new TextType("invalidCustId",10,10,"[A-Z]{3}-[\\d]{2}-[A-Z]{3}",null);

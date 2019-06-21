@@ -24,7 +24,9 @@ package org.simplity.fm.gen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
@@ -36,6 +38,8 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class Field {
 	private static final String C = ", ";
+	private static final int NAME_CELL = 0;
+
 	private String name;
 	private String label;
 	private String desc;
@@ -51,15 +55,14 @@ class Field {
 	static Field[] fromSheet(Sheet sheet) {
 		List<Field> list = new ArrayList<>();
 		int n = sheet.getPhysicalNumberOfRows();
-		for(int i = 1; i < n; i++) {
+		for (int i = 1; i < n; i++) {
 			Row row = sheet.getRow(i);
-			if(row == null || row.getPhysicalNumberOfCells() == 0) {
-				System.out.println("Row " + i + " is empty in fields sheet. Stopping..");
+			if (Util.toStop(row, NAME_CELL)) {
 				break;
 			}
 			list.add(fromRow(row));
 		}
-		if(list.size() == 0 ) {
+		if (list.size() == 0) {
 			return null;
 		}
 		return list.toArray(new Field[0]);
@@ -90,5 +93,28 @@ class Field {
 		sbf.append(C).append(this.isRequired).append(C).append(Util.escape(this.defaultValue));
 		sbf.append(C).append(this.isEditable).append(C).append(Util.escape(this.errorId));
 		sbf.append(C).append(this.isDerived).append(C).append(this.isKey).append(')');
+	}
+
+	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists) {
+		
+		String vl = null;
+		ValueList list = valueLists.get(this.dataType);
+		if(list != null) {
+			sbf.append("\n\tvl = [");
+			list.emitTs(sbf);
+			sbf.append("\n\t\t\t];");
+			vl = "vl";
+		}
+
+		sbf.append("\n\t\tthis.fields.set('").append(this.name).append("', new Field('").append(this.name);
+		sbf.append("', ").append(Util.escape(this.label)).append(C).append(Util.escape(this.placeHolder)).append(C);
+		sbf.append(Util.escape(this.defaultValue)).append(C).append(this.isRequired).append(C).append(this.isEditable);
+		sbf.append(C).append(this.isDerived).append(C).append(this.isKey);
+		/*
+		 * rest of the params emitted by data type
+		 */
+		dataTypes.get(this.dataType).emitTs(sbf, this.errorId, vl);
+		sbf.append("));");
+		
 	}
 }

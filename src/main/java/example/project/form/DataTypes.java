@@ -4,10 +4,10 @@ package example.project.form;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.simplity.fm.data.types.BooleanType;
-import org.simplity.fm.data.types.DateType;
-import org.simplity.fm.data.types.NumberType;
-import org.simplity.fm.data.types.TextType;
+import org.simplity.fm.datatypes.BooleanType;
+import org.simplity.fm.datatypes.DateType;
+import org.simplity.fm.datatypes.NumberType;
+import org.simplity.fm.datatypes.TextType;
 
 /**
  * generated class based on datTypes.json

@@ -36,6 +36,7 @@ import org.apache.poi.ss.usermodel.Workbook;
  *
  */
 class Validation {
+	private static final int NAME_CELL = 0;
 	private static final int TYPE_CUSTOM = 3;
 
 	private static final String[] SHEET_NAMES = { "fromToValidations", "eitherOrValidations",
@@ -62,8 +63,7 @@ class Validation {
 		int n = sheet.getPhysicalNumberOfRows();
 		for(int i = 1; i < n; i++) {
 			Row row = sheet.getRow(i);
-			if(row == null || row.getPhysicalNumberOfCells() == 0) {
-				System.out.println("Row " + i + " is empty in fields sheet. Stopping..");
+			if (Util.toStop(row, NAME_CELL)) {
 				break;
 			}
 			if(idx == TYPE_CUSTOM) {

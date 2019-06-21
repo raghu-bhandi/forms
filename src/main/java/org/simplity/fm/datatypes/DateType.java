@@ -19,56 +19,45 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
+package org.simplity.fm.datatypes;
+
+import java.util.Date;
+
+import org.simplity.fm.DateUtil;
 
 /**
+ * validation parameters for a an integral value
+ * 
  * @author simplity.org
  *
  */
-public class InvalidValueException extends Exception {
-	private static final long serialVersionUID = 1L;
-	private String messageId;
-	private String fieldName;
-	private String params;
+public class DateType extends DataType {
+	private final int minValue;
+	private final int maxValue;
 
 	/**
-	 * a field has failed validations
+	 * @param errorId
 	 * 
-	 * @param fieldName
-	 * @param msgId
-	 * @param params
+	 * @param minDays
+	 *            0 means today is OK. -100 means 100 days before today is the
+	 *            min, 100
+	 *            means 100 days after today is the min
+	 * @param maxDays
+	 *            0 means today is OK. -100 means 100 days before today is the
+	 *            max. 100
+	 *            means 100 days after today is the max
 	 */
-	public InvalidValueException(String msgId, String fieldName, String params) {
-		this.messageId = msgId;
-		this.fieldName = fieldName;
-		this.params = params;
+	public DateType( String errorId, int minDays, int maxDays) {
+		this.valueType = ValueType.DATE;
+		this.minValue = minDays;
+		this.maxValue = maxDays;
+		this.messageId = errorId;
 	}
 
 	@Override
-	public String getMessage() {
-		return "validation for faield " + this.fieldName + " failed with messageId=" + this.messageId
-				+ " and additional params=" + this.params;
-	}
-
-	/**
-	 * @return the messageId
-	 */
-	public String getMessageId() {
-		return this.messageId;
-	}
-
-	/**
-	 * @return the fieldName
-	 */
-	public String getFieldName() {
-		return this.fieldName;
-	}
-
-	/**
-	 * @return comma separated list of parameters to be used for formatting this
-	 *         message. null if no params
-	 */
-	public String getParams() {
-		return this.params;
+	protected boolean isOk(Object value) {
+		Date date = (Date)value;
+		int days = DateUtil.daysFromToday(date.getTime());
+		return days >= this.minValue && days <= this.maxValue;
 	}
 }

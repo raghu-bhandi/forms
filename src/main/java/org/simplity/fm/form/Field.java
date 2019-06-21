@@ -21,9 +21,9 @@
  */
 package org.simplity.fm.form;
 
-import org.simplity.fm.data.types.DataType;
-import org.simplity.fm.data.types.InvalidValueException;
-import org.simplity.fm.data.types.ValueType;
+import org.simplity.fm.datatypes.DataType;
+import org.simplity.fm.datatypes.InvalidValueException;
+import org.simplity.fm.datatypes.ValueType;
 
 /**
  * @author simplity.org

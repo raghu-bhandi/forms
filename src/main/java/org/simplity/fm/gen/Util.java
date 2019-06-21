@@ -22,7 +22,11 @@
 
 package org.simplity.fm.gen;
 
+import java.text.DateFormat;
+import java.util.Date;
+
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 
 /**
  * Utility methods for dealing with work book
@@ -95,11 +99,13 @@ class Util {
 		System.err.println("Found " + cell.getStringCellValue() + " when we were looking for an integer");
 		return 0;
 	}
-	
+
 	/**
 	 * this is actually just string escape, nothing to do with XLSX
+	 * 
 	 * @param s
-	 * @return string with \ and " escaped for it to be printed inside quotes as java literal
+	 * @return string with \ and " escaped for it to be printed inside quotes as
+	 *         java literal
 	 */
 	static String escape(String s) {
 		if (s == null) {
@@ -110,14 +116,41 @@ class Util {
 
 	/**
 	 * write an import statement for the class
+	 * 
 	 * @param sbf
 	 * @param cls
 	 */
 	static void emitImport(StringBuilder sbf, Class<?> cls) {
 		sbf.append("\nimport ").append(cls.getName()).append(';');
 	}
-	
+
 	static String toClassName(String name) {
-		return name.substring(0,1).toUpperCase() + name.substring(1);
+		return name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
+
+	/**
+	 * 
+	 * @param row
+	 * @param idx
+	 * @return true i the row is null, or cell at idx is empty
+	 */
+	static boolean toStop(Row row, int idx) {
+		if(row == null || row.getPhysicalNumberOfCells() == 0) {
+			return true;
+		}
+		if(row.getCell(idx).getCellType() == Cell.CELL_TYPE_BLANK) {
+			System.out.println("Sheet " + row.getSheet().getSheetName() 
+					+ " has its cell at " + idx + " empty on row " + row.getRowNum() 
+					+ ". This is considered as end of the sheet, and rest of rows, if any are skipped");
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * @return time stamp
+	 */
+	public static Object timeStamp() {
+		return DateFormat.getDateTimeInstance().format(new Date());
 	}
 }

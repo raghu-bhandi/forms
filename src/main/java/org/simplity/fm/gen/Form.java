@@ -24,6 +24,7 @@ package org.simplity.fm.gen;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Workbook;
 import org.simplity.fm.form.DependentFieldValidation;
@@ -60,7 +61,7 @@ class Form {
 		return form;
 	}
 
-	void emitJavaClass(StringBuilder sbf, String customPackageName, String generatedPackageName) {
+	void emitJavaClass(StringBuilder sbf, String customPackageName, String generatedPackageName, String fileName) {
 		sbf.append("package ").append(generatedPackageName).append(';');
 		sbf.append('\n');
 		Util.emitImport(sbf, org.simplity.fm.form.Field.class);
@@ -73,7 +74,7 @@ class Form {
 		String cls = Util.toClassName(this.name);
 		sbf.append("\n\n/**\n * class that represents structure of ");
 		sbf.append(this.name);
-		sbf.append("\n * <br /> generated at ").append(DateFormat.getDateTimeInstance().format(new Date()));
+		sbf.append("\n * <br /> generated at ").append(Util.timeStamp()).append(" from file ").append(fileName);
 		sbf.append("\n */ ");
 		sbf.append("\npublic class ").append(cls).append(" extends FormStructure {");
 
@@ -113,7 +114,7 @@ class Form {
 	}
 
 	private void emitJavaFields(StringBuilder sbf) {
-		sbf.append("\n\t\tField[] flds = {");
+		sbf.append("\n\n\t\tField[] flds = {");
 		for (int i = 0; i < this.fields.length; i++) {
 			if (i != 0) {
 				sbf.append(',');
@@ -124,7 +125,7 @@ class Form {
 	}
 
 	private void emitJavaTables(StringBuilder sbf) {
-		sbf.append("\n\t\tTabularField[] tbls = {");
+		sbf.append("\n\n\t\tTabularField[] tbls = {");
 		for (int i = 0; i < this.tables.length; i++) {
 			if (i != 0) {
 				sbf.append(',');
@@ -135,13 +136,55 @@ class Form {
 	}
 
 	private void emitJavaValidations(StringBuilder sbf, String customPackageName) {
-		sbf.append("\n\t\tIFormValidation[] valns = {");
+		sbf.append("\n\n\t\tIFormValidation[] vlds = {");
 		for (int i = 0; i < this.validations.length; i++) {
 			if (i != 0) {
 				sbf.append(',');
 			}
 			this.validations[i].emitJavaCode(sbf, customPackageName, this.name);
 		}
-		sbf.append("\n\t\t};\n\t\tthis.tabularFields = tbls;");
+		sbf.append("\n\t\t};\n\t\tthis.validations = vlds;");
+	}
+
+	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists, String fileName) {
+		sbf.append("import { Form } from '../form/form';");
+		sbf.append("\nimport { Field } from '../form/field';");
+		sbf.append("\nimport { Table } from '../form/table';");
+		
+		if(this.tables != null) {
+			for(Table table : this.tables) {
+				String fn = table.getFormName();
+				sbf.append("\nimport { ").append(Util.toClassName(fn)).append(" } from '../forms/").append(fn).append("';");
+			}
+		}
+
+		sbf.append("\n\n/**\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp()).append("\n */");
+		
+		String cls = Util.toClassName(this.name);
+		sbf.append("\nexport class ").append(cls).append(" extends Form {");
+		sbf.append("\n\tprivate static instance = new ").append(cls).append("();");
+		
+		sbf.append("\n\n\t/**\n\t * @returns singleton instance of ").append(cls).append("\n\t */");
+		
+		sbf.append("\n\tpublic static getInstance(): ").append(cls).append(" {");
+		sbf.append("\n\t\t return ").append(cls).append(".instance;\n\t}");
+		
+		sbf.append("\n\n\tprivate constructor() {");
+		sbf.append("\n\t\tsuper();");
+		sbf.append("\n\t\tthis.name = '").append(this.name).append("';");
+		sbf.append("\n\t\tlet vl: any = null;");
+		
+		for(Field field :this.fields) {
+			field.emitTs(sbf, dataTypes, valueLists);
+		}
+		
+		if(this.tables != null && this.tables.length != 0) {
+			sbf.append("\n\n\t\tthis.tables = new Map();");
+			for(Table table : this.tables) {
+				table.emitTs(sbf);
+			}
+		}
+		
+		sbf.append("\n\t}\n}\n");
 	}
 }

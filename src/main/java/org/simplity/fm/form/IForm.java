@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.data.types.ValueType;
+import org.simplity.fm.datatypes.ValueType;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 

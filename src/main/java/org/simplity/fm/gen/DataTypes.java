@@ -35,7 +35,7 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.simplity.fm.data.types.ValueType;
+import org.simplity.fm.datatypes.ValueType;
 
 /**
  * @author simplity.org
@@ -68,12 +68,7 @@ public class DataTypes {
 		int n = sheet.getLastRowNum();
 		for (int i = 1; i < n; i++) {
 			Row row = sheet.getRow(i);
-			if (row == null) {
-				break;
-			}
-			Cell cell = row.getCell(0);
-			if (cell == null || cell.getCellType() == Cell.CELL_TYPE_BLANK) {
-				System.out.println("Row " + i + " is empty?? Stopping");
+			if (Util.toStop(row, 0)) {
 				break;
 			}
 			DataType dt = DataType.fromRow(row);
@@ -142,5 +137,16 @@ public class DataTypes {
 
 		sbf.append("\n}\n");
 	}
-
+	
+	protected Map<String, DataType> getTypes(){
+		Map<String, DataType> types = new HashMap<>(this.dataTypes.length);
+		for(DataType d :this.dataTypes) {
+			types.put(d.getName(), d);
+		}
+		return types;
+	}
+	
+	protected Map<String, ValueList> getLists(){
+		return this.lists;
+	}
 }

@@ -23,7 +23,7 @@
 package org.simplity.fm.gen;
 
 import org.apache.poi.ss.usermodel.Row;
-import org.simplity.fm.data.types.ValueType;
+import org.simplity.fm.datatypes.ValueType;
 
 /**
  * represents a row in our spreadsheet for each data type
@@ -32,7 +32,7 @@ import org.simplity.fm.data.types.ValueType;
  *
  */
 class DataType {
-	private static final char C = ',';
+	private static final String C = ", ";
 	/*
 	 * all columns in the fields sheet
 	 */
@@ -108,5 +108,19 @@ class DataType {
 		dt.trueLabel = Util.textValueOf(row.getCell(9));
 		dt.falseLabel = Util.textValueOf(row.getCell(10));
 		return dt;
+	}
+
+	protected String getName() {
+		return this.fieldName;
+	}
+
+	void emitTs(StringBuilder sbf, String errorId, String vl) {
+		String eid = errorId;
+		if(eid == null || eid.isEmpty()) {
+			eid = this.messageId;
+		}
+		sbf.append(C).append(this.valueType.getIdx()).append(C).append(Util.escape(this.regex));
+		sbf.append(C).append(Util.escape(eid)).append(C).append(this.minLength).append(C).append(this.maxLength);
+		sbf.append(C).append(this.minValue).append(C).append(this.maxValue).append(C).append(vl);
 	}
 }

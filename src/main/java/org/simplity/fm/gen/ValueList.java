@@ -76,6 +76,18 @@ abstract class ValueList {
 			sbf.append("\n\t}");
 		}
 
+		@Override
+		protected void emitTs(StringBuilder sbf) {
+			for(int i = 0; i < this.labels.length; i++) {
+				if(i == 0) {
+					sbf.append("\n\t\t\t");
+				}else {
+					sbf.append("\n\t\t\t,");
+				}
+				sbf.append("['").append(this.labels[i].replace("'", "''")).append("', '");
+				sbf.append(this.values[i].replace("'", "''")).append("']");
+			}
+		}
 	}
 
 	/**
@@ -101,6 +113,17 @@ abstract class ValueList {
 			}
 			sbf.append("\n\t}");
 		}
+		@Override
+		protected void emitTs(StringBuilder sbf) {
+			for(int i = 0; i < this.labels.length; i++) {
+				if(i == 0) {
+					sbf.append("\n\t\t\t");
+				}else {
+					sbf.append("\n\t\t\t,");
+				}
+				sbf.append("[").append(this.values[i]).append(", '").append(this.labels[i].replace("'", "''")).append("']");
+			}
+		}
 	}
 
 	/**
@@ -123,9 +146,7 @@ abstract class ValueList {
 		}
 
 		protected ValueList addRow(Row row) {
-			if (row == null || row.getPhysicalNumberOfCells() == 0
-					|| row.getCell(1).getCellType() == Cell.CELL_TYPE_BLANK) {
-				System.out.println("Row is null. Last row??");
+			if (Util.toStop(row, 1)) {
 				return this.build();
 			}
 			ValueList list = null;
@@ -185,4 +206,9 @@ abstract class ValueList {
 			return new TextList(this.name, this.labels.toArray(new String[0]), this.tVals.toArray(new String[0]));
 		}
 	}
+
+	/**
+	 * @param sbf
+	 */
+	protected abstract void emitTs(StringBuilder sbf);
 }

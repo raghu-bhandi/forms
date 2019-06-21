@@ -36,6 +36,8 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class Table {
 	private static final String C = ", ";
+	private static final int NAME_CELL = 0;
+
 	private String name;
 	private String label;
 	private String description;
@@ -49,8 +51,7 @@ class Table {
 		int n = sheet.getPhysicalNumberOfRows();
 		for(int i = 1; i < n; i++) {
 			Row row = sheet.getRow(i);
-			if(row == null || row.getPhysicalNumberOfCells() == 0) {
-				System.out.println("Row " + i + " is empty in fields sheet. Stopping..");
+			if (Util.toStop(row, NAME_CELL)) {
 				break;
 			}
 			list.add(fromRow(row));
@@ -60,6 +61,7 @@ class Table {
 		}
 		return list.toArray(new Table[0]);
 	}
+	
 	private static Table fromRow(Row row) {
 		Table t = new Table();
 		t.name = Util.textValueOf(row.getCell(0));
@@ -82,4 +84,13 @@ class Table {
 		sbf.append(C).append(Util.escape(this.errorId)).append(")");
 	}
 	
+	String getFormName() {
+		return this.formName;
+	}
+
+	void emitTs(StringBuilder sbf) {
+		sbf.append("\n\t\tthis.tables.set('").append(this.name).append("', new Table('").append(this.name).append("', '");
+		sbf.append(this.label).append("', ").append(Util.toClassName(this.formName)).append(".getInstane(), ");
+		sbf.append(this.minRows).append(C).append(this.maxRows).append(C).append(Util.escape(this.errorId)).append("));");
+	}
 }

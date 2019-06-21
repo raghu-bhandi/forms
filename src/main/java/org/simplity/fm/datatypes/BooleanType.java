@@ -19,11 +19,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
-
-import java.util.Date;
-
-import org.simplity.fm.DateUtil;
+package org.simplity.fm.datatypes;
 
 /**
  * validation parameters for a an integral value
@@ -31,33 +27,18 @@ import org.simplity.fm.DateUtil;
  * @author simplity.org
  *
  */
-public class DateType extends DataType {
-	private final int minValue;
-	private final int maxValue;
+public class BooleanType extends DataType {
 
 	/**
 	 * @param errorId
-	 * 
-	 * @param minDays
-	 *            0 means today is OK. -100 means 100 days before today is the
-	 *            min, 100
-	 *            means 100 days after today is the min
-	 * @param maxDays
-	 *            0 means today is OK. -100 means 100 days before today is the
-	 *            max. 100
-	 *            means 100 days after today is the max
 	 */
-	public DateType( String errorId, int minDays, int maxDays) {
-		this.valueType = ValueType.DATE;
-		this.minValue = minDays;
-		this.maxValue = maxDays;
+	public BooleanType(String errorId) {
 		this.messageId = errorId;
+		this.valueType = ValueType.BOOLEAN;
 	}
 
 	@Override
 	protected boolean isOk(Object value) {
-		Date date = (Date)value;
-		int days = DateUtil.daysFromToday(date.getTime());
-		return days >= this.minValue && days <= this.maxValue;
+		return true;
 	}
 }

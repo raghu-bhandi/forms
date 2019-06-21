@@ -10,7 +10,7 @@ import org.simplity.fm.form.DependentFieldValidation;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 20 Jun, 2019 2:27:37 AM
+ * <br /> generated at 21 Jun, 2019 1:05:38 PM
  */ 
 public class Form1 extends FormStructure {
 	public static final int customerId = 0;
@@ -34,6 +34,7 @@ public class Form1 extends FormStructure {
 			this.saveOk = true;
 			this.submitOk = true;
 			this.partialOk = true;
+
 		Field[] flds = {
 			new Field("customerId", DataTypes.customerId, true, "", true, "", false, true),
 			new Field("finacialYear", DataTypes.fy, true, "", true, "", false, true),
@@ -46,15 +47,17 @@ public class Form1 extends FormStructure {
 			new Field("currentFy", DataTypes.fy, false, "", false, "", false, false)
 		};
 		this.fields = flds;
+
 		TabularField[] tbls = {
 			new TabularField("orderLines", new Form2(), 1, 200, "")
 		};
 		this.tabularFields = tbls;
-		IFormValidation[] valns = {
+
+		IFormValidation[] vlds = {
 			new FromToValidation("fromdate", "toDate", false, "invalidDateRange"),
 			new example.project.custom.Form1Validation()
 		};
-		this.tabularFields = tbls;
+		this.validations = vlds;
 
 		this.initialize();
 	}

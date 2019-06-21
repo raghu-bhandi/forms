@@ -19,7 +19,7 @@ public class FormStructures {
 	/**
 	 * 
 	 * @param structureName
-	 * @return for structure, or null if there is such form structure
+	 * @return form structure, or null if there is such form structure
 	 */
 	public static FormStructure getStructure(String structureName) {
 		return allStructures.get(structureName);

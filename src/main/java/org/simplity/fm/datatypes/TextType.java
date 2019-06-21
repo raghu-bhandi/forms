@@ -19,26 +19,51 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.data.types;
+package org.simplity.fm.datatypes;
+
+import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
- * validation parameters for a an integral value
+ * validation parameters for a text value
  * 
  * @author simplity.org
  *
  */
-public class BooleanType extends DataType {
+public class TextType extends DataType {
+	private final String regex;
+	private final Set<String> validValues;
 
 	/**
-	 * @param errorId
+	 * 
+	 * @param errorMessageId
+	 * @param minLength
+	 * @param maxLength
+	 * @param regex
+	 * @param valueList
 	 */
-	public BooleanType(String errorId) {
-		this.messageId = errorId;
-		this.valueType = ValueType.BOOLEAN;
+	public TextType(String errorMessageId, int minLength, int maxLength, String regex, Set<String> valueList) {
+		this.valueType = ValueType.TEXT;
+		this.minLength = minLength;
+		this.maxLength = maxLength;
+		this.messageId = errorMessageId;
+		this.regex = regex;
+		this.validValues = valueList;
 	}
 
 	@Override
-	protected boolean isOk(Object value) {
-		return true;
+	protected boolean isOk(Object val) {
+		String value = val.toString();
+		if (this.validValues != null) {
+			return this.validValues.contains(value);
+		}
+		int len = value.length();
+		if (len < this.minLength || (this.maxLength > 0 && len > this.maxLength)) {
+			return false;
+		}
+		if (this.regex == null) {
+			return true;
+		}
+		return Pattern.matches(this.regex, value);
 	}
 }

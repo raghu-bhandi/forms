@@ -30,8 +30,8 @@ import java.util.Map;
 
 import org.simplity.fm.DateUtil;
 import org.simplity.fm.Message;
-import org.simplity.fm.data.types.InvalidValueException;
-import org.simplity.fm.data.types.ValueType;
+import org.simplity.fm.datatypes.InvalidValueException;
+import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.service.IService;
 
