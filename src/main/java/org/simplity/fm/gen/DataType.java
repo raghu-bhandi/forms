@@ -68,10 +68,10 @@ class DataType {
 		case BOOLEAN:
 			break;
 		case DATE:
-			sbf.append(C).append(this.minValue).append(C).append(this.maxValue);
+			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append('L');
 			break;
 		case NUMBER:
-			sbf.append(C).append(this.minValue).append(C).append(this.maxValue).append(C).append(listName);
+			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append("L, ").append(listName);
 			break;
 		case TEXT:
 			sbf.append(C).append(this.minLength).append(C).append(this.maxLength).append(C).append(Util.escape(this.regex))
