@@ -10,7 +10,7 @@ import org.simplity.fm.form.DependentFieldValidation;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 21 Jun, 2019 1:05:38 PM
+ * <br /> generated at 23 Jun, 2019 9:54:19 AM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\spec\struct\form1.xlsx
  */ 
 public class Form1 extends FormStructure {
 	public static final int customerId = 0;
@@ -34,22 +34,28 @@ public class Form1 extends FormStructure {
 			this.saveOk = true;
 			this.submitOk = true;
 			this.partialOk = true;
+			this.formProcessors[0] = new example.project.custom.Junk1();
+			this.formProcessors[1] = new example.project.custom.Junk2();
+			this.formProcessors[2] = new example.project.custom.Junk3();
+			this.formProcessors[3] = new example.project.custom.Junk4();
+			this.formProcessors[4] = new example.project.custom.Junk5();
+			this.formProcessors[5] = new example.project.custom.Junk6();
 
 		Field[] flds = {
-			new Field("customerId", DataTypes.customerId, true, "", true, "", false, true),
-			new Field("finacialYear", DataTypes.fy, true, "", true, "", false, true),
-			new Field("boolField", DataTypes.trueFalse, false, "", true, "", false, false),
-			new Field("fromDate", DataTypes.futureDate, false, "", true, "", false, false),
-			new Field("toDate", DataTypes.futureDate, false, "", true, "", false, false),
-			new Field("intField1", DataTypes.qty, true, "33", true, "", false, false),
-			new Field("intField2", DataTypes.qty, false, "45", true, "", true, false),
-			new Field("derivedField", DataTypes.qty, false, "", false, "", true, false),
-			new Field("currentFy", DataTypes.fy, false, "", false, "", false, false)
+			new Field("customerId", DataTypes.customerId, true, null, true, null, false, true),
+			new Field("finacialYear", DataTypes.fy, true, null, true, null, false, true),
+			new Field("boolField", DataTypes.trueFalse, false, null, true, null, false, false),
+			new Field("fromDate", DataTypes.futureDate, false, null, true, null, false, false),
+			new Field("toDate", DataTypes.futureDate, false, null, true, null, false, false),
+			new Field("intField1", DataTypes.qty, true, "33", true, null, false, false),
+			new Field("intField2", DataTypes.qty, false, "45", true, null, true, false),
+			new Field("derivedField", DataTypes.qty, false, null, false, null, true, false),
+			new Field("currentFy", DataTypes.fy, false, null, false, null, false, false)
 		};
 		this.fields = flds;
 
 		TabularField[] tbls = {
-			new TabularField("orderLines", new Form2(), 1, 200, "")
+			new TabularField("orderLines", new Form2(), 1, 200, "wrongLines")
 		};
 		this.tabularFields = tbls;
 

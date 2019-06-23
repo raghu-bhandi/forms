@@ -93,7 +93,7 @@ public class SaveService extends AbstractService {
 		}
 
 		DataStore store = DataStore.getStore();
-		store.Store(form.getDocumentId(), new IoConsumer<Writer>() {
+		store.store(form.getDocumentId(), new IoConsumer<Writer>() {
 
 			@Override
 			public void accept(Writer w) throws IOException {

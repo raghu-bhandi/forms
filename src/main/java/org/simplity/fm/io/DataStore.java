@@ -45,7 +45,7 @@ public abstract class DataStore {
 	 * retrieve data and provide it to the consumer
 	 * 
 	 * @param id
-	 *            non-null unique id of the data
+	 *            non-null unique id of the document
 	 * @param consumer
 	 *            to which reader is provided for reading the content
 	 * @return true if all ok. false if file is not located
@@ -55,14 +55,34 @@ public abstract class DataStore {
 	public abstract boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException;
 
 	/**
+	 * trash the document
+	 * 
+	 * @param id
+	 *            unique id of the document
+	 * @throws IOException
+	 *             in case of any error in persistence process
+	 */
+	public abstract void trash(String id) throws IOException;
+
+	/**
+	 * move the document to the staging  area with a new id
+	 * 
+	 * @param id
+	 *            existing id of the document
+	 * @param StagingId unique id in the staging area
+	 * @throws IOException
+	 *             in case of any error in persistence process
+	 */
+	public abstract void moveToStaging(String id, String StagingId) throws IOException;
+	/**
 	 * store the data from the
 	 * 
 	 * @param id
-	 *            unique id of this form across all forms handled by this store
+	 *            unique id of the document to be stored
 	 * @param consumer
 	 *            to which a writer is supplied to write the data to
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
-	public abstract void Store(String id, IoConsumer<Writer> consumer) throws IOException;
+	public abstract void store(String id, IoConsumer<Writer> consumer) throws IOException;
 }

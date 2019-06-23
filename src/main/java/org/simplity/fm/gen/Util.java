@@ -96,6 +96,13 @@ class Util {
 		if (ct == Cell.CELL_TYPE_BLANK) {
 			return 0;
 		}
+		if (ct == Cell.CELL_TYPE_STRING) {
+			try {
+				return Long.parseLong(cell.getStringCellValue());
+			} catch (Exception e) {
+				//
+			}
+		}
 		System.err.println("Found " + cell.getStringCellValue() + " when we were looking for an integer");
 		return 0;
 	}
@@ -108,7 +115,7 @@ class Util {
 	 *         java literal
 	 */
 	static String escape(String s) {
-		if (s == null) {
+		if (s == null || s.isEmpty()) {
 			return "null";
 		}
 		return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
@@ -135,12 +142,12 @@ class Util {
 	 * @return true i the row is null, or cell at idx is empty
 	 */
 	static boolean toStop(Row row, int idx) {
-		if(row == null || row.getPhysicalNumberOfCells() == 0) {
+		if (row == null || row.getPhysicalNumberOfCells() == 0) {
 			return true;
 		}
-		if(row.getCell(idx).getCellType() == Cell.CELL_TYPE_BLANK) {
-			System.out.println("Sheet " + row.getSheet().getSheetName() 
-					+ " has its cell at " + idx + " empty on row " + row.getRowNum() 
+		if (row.getCell(idx).getCellType() == Cell.CELL_TYPE_BLANK) {
+			System.out.println("Sheet " + row.getSheet().getSheetName() + " has its cell at " + idx + " empty on row "
+					+ row.getRowNum()
 					+ ". This is considered as end of the sheet, and rest of rows, if any are skipped");
 			return true;
 		}

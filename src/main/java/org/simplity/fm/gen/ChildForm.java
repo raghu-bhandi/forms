@@ -34,7 +34,7 @@ import org.apache.poi.ss.usermodel.Sheet;
  * @author simplity.org
  *
  */
-class Table {
+class ChildForm {
 	private static final String C = ", ";
 	private static final int NAME_CELL = 0;
 
@@ -46,8 +46,8 @@ class Table {
 	private int maxRows;
 	private String errorId;
 	
-	static Table[] fromSheet(Sheet sheet) {
-		List<Table> list = new ArrayList<>();
+	static ChildForm[] fromSheet(Sheet sheet) {
+		List<ChildForm> list = new ArrayList<>();
 		int n = sheet.getPhysicalNumberOfRows();
 		for(int i = 1; i < n; i++) {
 			Row row = sheet.getRow(i);
@@ -59,11 +59,11 @@ class Table {
 		if(list.size() == 0 ) {
 			return null;
 		}
-		return list.toArray(new Table[0]);
+		return list.toArray(new ChildForm[0]);
 	}
 	
-	private static Table fromRow(Row row) {
-		Table t = new Table();
+	private static ChildForm fromRow(Row row) {
+		ChildForm t = new ChildForm();
 		t.name = Util.textValueOf(row.getCell(0));
 		t.label = Util.textValueOf(row.getCell(1));
 		t.description = Util.textValueOf(row.getCell(2));
@@ -89,8 +89,8 @@ class Table {
 	}
 
 	void emitTs(StringBuilder sbf) {
-		sbf.append("\n\t\tthis.tables.set('").append(this.name).append("', new Table('").append(this.name).append("', '");
-		sbf.append(this.label).append("', ").append(Util.toClassName(this.formName)).append(".getInstane(), ");
+		sbf.append("\n\t\tthis.childForms.set('").append(this.name).append("', new ChildForm('").append(this.name).append("', '");
+		sbf.append(this.label).append("', new ").append(Util.toClassName(this.formName)).append("(), ");
 		sbf.append(this.minRows).append(C).append(this.maxRows).append(C).append(Util.escape(this.errorId)).append("));");
 	}
 }

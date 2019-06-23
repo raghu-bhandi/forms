@@ -10,7 +10,7 @@ import org.simplity.fm.form.DependentFieldValidation;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 21 Jun, 2019 1:05:38 PM
+ * <br /> generated at 23 Jun, 2019 9:54:19 AM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\spec\struct\form2.xlsx
  */ 
 public class Form2 extends FormStructure {
 	public static final int productId = 0;
@@ -24,9 +24,9 @@ public class Form2 extends FormStructure {
 		this.uniqueName = "form2";
 
 		Field[] flds = {
-			new Field("productId", DataTypes.textId, true, "", true, "", false, true),
-			new Field("Qty", DataTypes.orderQty, true, "", true, "", false, false),
-			new Field("color", DataTypes.color, true, "", true, "", false, false)
+			new Field("productId", DataTypes.textId, true, null, true, null, false, true),
+			new Field("Qty", DataTypes.orderQty, true, null, true, null, false, false),
+			new Field("color", DataTypes.color, true, null, true, null, false, false)
 		};
 		this.fields = flds;
 

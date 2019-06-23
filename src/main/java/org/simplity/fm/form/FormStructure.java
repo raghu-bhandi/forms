@@ -126,7 +126,7 @@ public class FormStructure {
 	 * performance of some methods
 	 */
 
-	private IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
+	protected IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
 	/**
 	 * index to the values array for the key fields. this is derived based on
 	 * fields. This based on the field meta data attribute isKeyField

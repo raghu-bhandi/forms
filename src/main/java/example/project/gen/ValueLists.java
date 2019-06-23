@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 /**
  * Static class that has all valid value lists for data types
- * <br /> generated at 22 Jun, 2019 9:23:04 AM
+ * <br /> generated at 23 Jun, 2019 9:47:14 AM
  */ 
 public class ValueLists {
 	public static final Set<Long> severity = new HashSet<>(4);

@@ -47,10 +47,11 @@ public class RdbStore extends DataStore{
 	private static final String TABLE_NAME = "formData";
 	private static final String KEY_NAME = "key";
 	private static final String CLOB = "data";
-	private static final String WHERE = " where " + KEY_NAME + "=?";
-	private static final String INSERT = "insert into " + TABLE_NAME + " values(?,?)";
+	private static final String WHERE = " where submitted = 0 AND " + KEY_NAME + "=?";
+	private static final String INSERT = "insert into " + TABLE_NAME + " values(?,0,?)";
 	private static final String SELECT = "select " + CLOB + " from " + TABLE_NAME + WHERE;
-	private static final String DELETE = "delete  " + TABLE_NAME + WHERE;
+	private static final String DELETE = "delete " + TABLE_NAME + WHERE;
+	private static final String UPDATE = "update " + TABLE_NAME + " set submitted = 1, key =? " + WHERE;
 
 	@Override
 	public boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException {
@@ -73,7 +74,7 @@ public class RdbStore extends DataStore{
 	}
 
 	@Override
-	public void Store(String id, IoConsumer<Writer> consumer) throws IOException {
+	public void store(String id, IoConsumer<Writer> consumer) throws IOException {
 		try (Connection con = DriverManager.getConnection(CON_STRING)) {
 			/*
 			 * TODO: We have four options. We do not know which one is better.
@@ -95,6 +96,33 @@ public class RdbStore extends DataStore{
 				st.setClob(2, clob);
 				consumer.accept(writer);
 				st.executeUpdate();
+			}
+		} catch (SQLException e) {
+			throw new IOException(e);
+		}
+	}
+
+	@Override
+	public void trash(String id) throws IOException {
+		try (Connection con = DriverManager.getConnection(CON_STRING)) {
+			try (PreparedStatement st = con.prepareStatement(DELETE)) {
+				st.setString(1, id);
+				st.executeUpdate();
+				st.close();
+			}
+		} catch (SQLException e) {
+			throw new IOException(e);
+		}
+	}
+
+	@Override
+	public void moveToStaging(String id, String newId) throws IOException {
+		try (Connection con = DriverManager.getConnection(CON_STRING)) {
+			try (PreparedStatement st = con.prepareStatement(UPDATE)) {
+				st.setString(1, id);
+				st.setString(2, newId);
+				st.executeUpdate();
+				st.close();
 			}
 		} catch (SQLException e) {
 			throw new IOException(e);

@@ -22,8 +22,6 @@
 
 package org.simplity.fm.gen;
 
-import java.text.DateFormat;
-import java.util.Date;
 import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Workbook;
@@ -48,7 +46,7 @@ class Form {
 	private String name;
 	private SpecialInstructions si;
 	private Field[] fields;
-	private Table[] tables;
+	private ChildForm[] childForms;
 	private Validation[] validations;
 
 	static Form fromBook(Workbook book, String formName) {
@@ -56,7 +54,7 @@ class Form {
 		form.name = formName;
 		form.si = SpecialInstructions.fromSheet(book.getSheet(SI));
 		form.fields = Field.fromSheet(book.getSheet(FIELDS));
-		form.tables = Table.fromSheet(book.getSheet(TABLES));
+		form.childForms = ChildForm.fromSheet(book.getSheet(TABLES));
 		form.validations = Validation.fromBook(book);
 		return form;
 	}
@@ -89,7 +87,7 @@ class Form {
 			this.emitJavaFields(sbf);
 		}
 
-		if (this.tables != null) {
+		if (this.childForms != null) {
 			this.emitJavaTables(sbf);
 		}
 
@@ -106,9 +104,9 @@ class Form {
 				this.fields[i].emitJavaConstant(sbf, i);
 			}
 		}
-		if (this.tables != null) {
-			for (int i = 0; i < this.tables.length; i++) {
-				this.tables[i].emitJavaConstant(sbf, i);
+		if (this.childForms != null) {
+			for (int i = 0; i < this.childForms.length; i++) {
+				this.childForms[i].emitJavaConstant(sbf, i);
 			}
 		}
 	}
@@ -126,11 +124,11 @@ class Form {
 
 	private void emitJavaTables(StringBuilder sbf) {
 		sbf.append("\n\n\t\tTabularField[] tbls = {");
-		for (int i = 0; i < this.tables.length; i++) {
+		for (int i = 0; i < this.childForms.length; i++) {
 			if (i != 0) {
 				sbf.append(',');
 			}
-			this.tables[i].emitJavaCode(sbf);
+			this.childForms[i].emitJavaCode(sbf);
 		}
 		sbf.append("\n\t\t};\n\t\tthis.tabularFields = tbls;");
 	}
@@ -146,45 +144,41 @@ class Form {
 		sbf.append("\n\t\t};\n\t\tthis.validations = vlds;");
 	}
 
-	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists, String fileName) {
+	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,
+			String fileName) {
 		sbf.append("import { Form } from '../form/form';");
 		sbf.append("\nimport { Field } from '../form/field';");
-		sbf.append("\nimport { Table } from '../form/table';");
-		
-		if(this.tables != null) {
-			for(Table table : this.tables) {
+
+		if (this.childForms != null) {
+			sbf.append("\nimport { ChildForm } from '../form/childForm';");
+			for (ChildForm table : this.childForms) {
 				String fn = table.getFormName();
-				sbf.append("\nimport { ").append(Util.toClassName(fn)).append(" } from '../forms/").append(fn).append("';");
+				sbf.append("\nimport { ").append(Util.toClassName(fn)).append(" } from './").append(fn).append("';");
 			}
 		}
 
-		sbf.append("\n\n/**\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp()).append("\n */");
-		
+		sbf.append("\n\n/**\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp())
+				.append("\n */");
+
 		String cls = Util.toClassName(this.name);
 		sbf.append("\nexport class ").append(cls).append(" extends Form {");
-		sbf.append("\n\tprivate static instance = new ").append(cls).append("();");
-		
-		sbf.append("\n\n\t/**\n\t * @returns singleton instance of ").append(cls).append("\n\t */");
-		
-		sbf.append("\n\tpublic static getInstance(): ").append(cls).append(" {");
-		sbf.append("\n\t\t return ").append(cls).append(".instance;\n\t}");
-		
-		sbf.append("\n\n\tprivate constructor() {");
+		sbf.append("\n\n\tconstructor() {");
 		sbf.append("\n\t\tsuper();");
 		sbf.append("\n\t\tthis.name = '").append(this.name).append("';");
+		sbf.append("\n\n\tthis.fields = new Map();");
 		sbf.append("\n\t\tlet vl: any = null;");
-		
-		for(Field field :this.fields) {
+
+		for (Field field : this.fields) {
 			field.emitTs(sbf, dataTypes, valueLists);
 		}
-		
-		if(this.tables != null && this.tables.length != 0) {
-			sbf.append("\n\n\t\tthis.tables = new Map();");
-			for(Table table : this.tables) {
+
+		if (this.childForms != null && this.childForms.length != 0) {
+			sbf.append("\n\n\t\tthis.childForms = new Map();");
+			for (ChildForm table : this.childForms) {
 				table.emitTs(sbf);
 			}
 		}
-		
+
 		sbf.append("\n\t}\n}\n");
 	}
 }

@@ -33,7 +33,8 @@ import java.io.Writer;
  *
  */
 public class FileSystemStore extends DataStore {
-	private static final String FOLDER = "c:/forms/";
+	private static final String FOLDER = "c:/forms/draft/";
+	private static final String SUBMIT_FOLDER = "c:/forms/submit/";
 	private static final String EXTN = ".json";
 	static {
 		File f = new File(FOLDER);
@@ -55,7 +56,7 @@ public class FileSystemStore extends DataStore {
 	}
 
 	@Override
-	public void Store(String id, IoConsumer<Writer> consumer) throws IOException {
+	public void store(String id, IoConsumer<Writer> consumer) throws IOException {
 		File f = new File(FOLDER + id + EXTN);
 		if (!f.exists()) {
 			f.createNewFile();
@@ -63,5 +64,20 @@ public class FileSystemStore extends DataStore {
 		try (Writer writer = new FileWriter(f)) {
 			consumer.accept(writer);
 		}
+	}
+
+	@Override
+	public void trash(String id) throws IOException {
+		File f = new File(FOLDER + id + EXTN);
+		if (!f.exists()) {
+			f.delete();
+		}
+	}
+
+	@Override
+	public void moveToStaging(String id, String finalId) {
+		File fm = new File(FOLDER + id + EXTN);
+		File to = new File(SUBMIT_FOLDER + finalId + EXTN);
+		fm.renameTo(to);
 	}
 }
