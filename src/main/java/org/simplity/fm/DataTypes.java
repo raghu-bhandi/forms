@@ -20,24 +20,37 @@
  * SOFTWARE.
  */
 
-package example.project.custom;
+package org.simplity.fm;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.simplity.fm.Message;
-import org.simplity.fm.form.IFormData;
-import org.simplity.fm.service.IFormProcessor;
+import org.simplity.fm.datatypes.DataType;
 
 /**
+ * static class that locates a data type instance
  * @author simplity.org
  *
  */
-public class Junk2 implements IFormProcessor {
-
-	@Override
-	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
+public class DataTypes {
+	private static final Map<String, DataType> allTypes = new HashMap<>();
+	
+	/**
+	 * 
+	 * @param name
+	 * @return data type instance, or null if there is no such data type
+	 */
+	public static DataType getDataType(String name) {
+		DataType dt = allTypes.get(name);
+		if(dt != null) {
+			return dt;
+		}
+		try {
+			dt = (DataType)Class.forName(Config.getQualifiedClassName(name)).newInstance();
+		}catch(Exception e) {
+			return null;
+		}
+		allTypes.put(name, dt);
+		return dt;
 	}
-
 }

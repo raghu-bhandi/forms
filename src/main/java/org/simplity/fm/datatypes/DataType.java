@@ -44,26 +44,6 @@ public abstract class DataType {
 	}
 
 	/**
-	 * 
-	 * @param value
-	 * @return true if the value passes validation. false otherwise.
-	 */
-	public final boolean isValid(String value) {
-		if (value == null) {
-			return true;
-		}
-		int n = value.length();
-		if (n < this.minLength || (this.maxLength > 0 && n > this.maxLength)) {
-			return false;
-		}
-		Object val = this.valueType.parse(value);
-		if (val == null) {
-			return false;
-		}
-		return this.isOk(val);
-	}
-
-	/**
 	 * @return the valueType
 	 */
 	public ValueType getValueType() {
@@ -83,7 +63,7 @@ public abstract class DataType {
 		}
 		Object val = this.valueType.parse(value);
 		if (val == null) {
-			return false;
+			return null;
 		}
 		if (this.isOk(val)) {
 			return val;

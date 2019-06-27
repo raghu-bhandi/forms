@@ -38,6 +38,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  *
  */
 public class JettyHandler extends AbstractHandler {
+	private static final int STATUS_METHOD_NOT_ALLOWED = 405;
 
 	/*
 	 * TODO : to research about use of baseREquest and request objects
@@ -46,7 +47,21 @@ public class JettyHandler extends AbstractHandler {
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
 		baseRequest.setHandled(true);
-		Agent.getAgent().serve(baseRequest, response, baseRequest.getContentLength() > 0);
+		Agent agent = Agent.getAgent();
+		String method = baseRequest.getMethod().toUpperCase();
+		if(method.equals("POST")) {
+			agent.serve(baseRequest, response, true);
+			return;
+		}
+		if(method.equals("GET")) {
+			agent.serve(baseRequest, response, false);
+			return;
+		}
+		if(method.equals("OPTIONS")) {
+			agent.setOptions(baseRequest, response);
+			return;
+		}
+		response.setStatus(STATUS_METHOD_NOT_ALLOWED);
 	}
 
 	/**

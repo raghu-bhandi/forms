@@ -19,528 +19,308 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
 package org.simplity.fm.form;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Date;
-import java.util.List;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.DateUtil;
-import org.simplity.fm.Message;
-import org.simplity.fm.datatypes.InvalidValueException;
-import org.simplity.fm.datatypes.ValueType;
-import org.simplity.fm.http.LoggedInUser;
+import org.simplity.fm.service.GetService;
+import org.simplity.fm.service.IFormProcessor;
 import org.simplity.fm.service.IService;
-
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.simplity.fm.service.SaveService;
+import org.simplity.fm.service.SubmitService;
+import org.simplity.fm.validn.IValidation;
 
 /**
  * @author simplity.org
  *
  */
-public class Form implements IForm {
-	private static final char KEY_JOINER = '_';
-	/**
-	 * data structure describes the template for which this object provides
-	 * actual data
-	 */
-	private final FormStructure structure;
-	/**
-	 * field values. null if this template has no fields
-	 */
-	private final Object[] fieldValues;
-	/**
-	 * grid data. null if this template has no fields
-	 */
-	private final Object[][][] gridData;
+public class Form {
 
 	/**
-	 * operation for which this form is created
+	 * array index for pre get form processors
 	 */
-	private final FormOperation operation;
+	public static final int PRE_GET = 0;
+	/**
+	 * array index for post get form processors
+	 */
+	public static final int POST_GET = 1;
+	/**
+	 * array index for pre save form processors
+	 */
+	public static final int PRE_SAVE = 2;
+	/**
+	 * array index for post save form processors
+	 */
+	public static final int POST_SAVE = 3;
+	/**
+	 * array index for pre submit form processors
+	 */
+	public static final int PRE_SUBMIT = 4;
+	/**
+	 * array index for post submit form processors
+	 */
+	public static final int POST_SUBMIT = 5;
+
+	private static final int NBR_PROCESSORS = 6;
+	/**
+	 * get operation
+	 */
+	public static final String SERVICE_TYPE_GET = "get";
+	/**
+	 * get operation
+	 */
+	public static final String SERVICE_TYPE_SAVE = "save";
+	/**
+	 * get operation
+	 */
+	public static final String SERVICE_TYPE_SUBMIT = "submit";
+	/**
+	 * this is the unique id given this to this form, it is an independent
+	 * form. It is the section name in case it is a section of a composite form
+	 */
+	protected String uniqueName;
+	/**
+	 * Fields in this form.
+	 */
+	protected Field[] fields;
 
 	/**
-	 * @param formStructure
-	 *            data structure describes the template for which this object
-	 *            provides
-	 *            actual data
-	 * @param operation
-	 * @param values
-	 *            grid data. null if this template has no fields
-	 * @param tables
-	 *            grid data. null if this template has no fields
+	 * field name that has the user id. Used for access control 
 	 */
-	public Form(FormStructure formStructure, FormOperation operation, Object[] values, Object[][][] tables) {
-		this.structure = formStructure;
-		this.fieldValues = values;
-		this.gridData = tables;
-		this.operation = operation;
+	protected String userIdFieldName;
+
+	/**
+	 * name of grids/tabular dta. null if there are no grids. grid name is the
+	 * "fieldName" used in this form for the tabular data. like orderLines.;
+	 */
+	protected ChildForm[] childForms;
+
+	/**
+	 * describes all the inter-field validations, and form-level validations
+	 */
+	protected IValidation[] validations;
+
+	/**
+	 * is a auto-service to get this form ok?
+	 */
+	protected boolean getOk;
+
+	/**
+	 * is a auto-service to save this form ok?
+	 */
+	protected boolean saveOk;
+
+	/**
+	 * is a auto-service to submit this form ok?
+	 */
+	protected boolean submitOk;
+
+	/**
+	 * is a auto-service to submit this form ok?
+	 */
+	protected boolean partialOk;
+
+	/*
+	 * following fields are derived from others. Defined for improving
+	 * performance of some methods
+	 */
+
+	protected IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
+	/**
+	 * index to the values array for the key fields. this is derived based on
+	 * fields. This based on the field meta data attribute isKeyField
+	 */
+	private int[] keyIndexes;
+	/**
+	 * fields are also stored as Maps for ease of access
+	 */
+	private Map<String, Field> fieldMap;
+	/**
+	 * indexes of tabular fields are also stored in map for ease of access
+	 */
+	private Map<String, ChildForm> childMap;
+
+	/**
+	 * index to the field that represents the userId. User access may be
+	 * implemented based on this field
+	 */
+	private int userIdFieldIdx = -1;
+
+	/**
+	 * for extended classes to set the attributes later
+	 */
+	public Form() {
+		//
+	}
+
+	protected void setUserId(String name) {
+		if (name != null) {
+			this.userIdFieldIdx = this.fieldMap.get(name).getIndex();
+		}
 	}
 
 	/**
-	 * @return the operation
+	 * MUST BE CALLED after setting all protected fields
 	 */
-	public FormOperation getOperation() {
-		return this.operation;
+	protected void initialize() {
+		if (this.fields != null) {
+			int n = this.fields.length;
+			this.fieldMap = new HashMap<>(n, 1);
+			int[] keys = new int[n];
+			int keyIdx = 0;
+			for (Field field : this.fields) {
+				this.fieldMap.put(field.getFieldName(), field);
+				if (field.isKeyField()) {
+					keys[keyIdx] = field.getIndex();
+					keyIdx++;
+				}
+			}
+			if (keyIdx != 0) {
+				this.keyIndexes = Arrays.copyOf(keys, keyIdx);
+			}
+		}
+
+		if(this.childForms != null) {
+			int n = this.childForms.length;
+			this.childMap = new HashMap<>(n, 1);
+			for (ChildForm child :  this.childForms) {
+				this.childMap.put(child.fieldName, child);
+			}
+		}
+		
+		if(this.userIdFieldName != null) {
+			this.userIdFieldIdx = this.getField(this.userIdFieldName).getIndex();
+		}
 	}
 
-	@Override
+	/**
+	 * set/attach a pre-slotted for processor for standard services based on
+	 * this form
+	 * 
+	 * @param processorType
+	 * @param processor
+	 */
+	public void setFormProcessor(int processorType, IFormProcessor processor) {
+		if (processorType >= NBR_PROCESSORS) {
+			return;
+		}
+		this.formProcessors[processorType] = processor;
+	}
+
+	/**
+	 * @param processorType
+	 * @return pre-slotted for processor for standard services based on this
+	 *         form
+	 */
+	public IFormProcessor getFormProcessor(int processorType) {
+		if (processorType >= NBR_PROCESSORS) {
+			return null;
+		}
+		return this.formProcessors[processorType];
+	}
+
+	/**
+	 * @return the userIdFieldIdx. -1 if user id field is not present in this
+	 *         form
+	 */
+	public int getUserIdFieldIdx() {
+		return this.userIdFieldIdx;
+	}
+
+	/**
+	 * unique id assigned to this form. like customerDetails. This is unique
+	 * across all types of forms within a project
+	 * 
+	 * @return non-null unique id
+	 */
 	public String getFormId() {
-		return this.structure.getFormId();
+		return this.uniqueName;
 	}
 
-	@Override
-	public String getDocumentId() {
-		/*
-		 * concatenate key fields to get document id
-		 */
-		int[] indexes = this.structure.getKeyIndexes();
-		if (indexes == null || indexes.length == 0) {
-			return null;
-		}
-		String key = this.getFormId();
-		for (int idx : indexes) {
-			Object obj = this.fieldValues[idx];
-			if (obj == null) {
-				return null;
-			}
-			key += KEY_JOINER + obj.toString();
-		}
-		return key;
+	/**
+	 * @return the keyIndexes
+	 */
+	public int[] getKeyIndexes() {
+		return this.keyIndexes;
+	}
+
+	/**
+	 * @return the fieldNames. non-null. could be empty
+	 */
+	public Field[] getFields() {
+		return this.fields;
+	}
+
+	/**
+	 * @return the grid names. non-null. could be empty
+	 */
+	public ChildForm[] getChildForms() {
+		return this.childForms;
+	}
+
+	/**
+	 * @param fieldName
+	 * @return data element or null if there is no such field
+	 */
+	public Field getField(String fieldName) {
+		return this.fieldMap.get(fieldName);
 	}
 
 	/**
 	 * 
-	 * @return value of user id field in this form. null if such a field is not
-	 *         defined, or that field has no value.
+	 * @param childName
+	 * @return child-form structure that represents the sub-form in this form
 	 */
-	public String getUserId() {
-		int idx = this.structure.getUserIdFieldIdx();
-		if (idx == -1) {
-			return null;
-		}
-		Object obj = this.fieldValues[idx];
-		if (obj == null) {
-			return null;
-		}
-		return obj.toString();
+	public ChildForm getChildForm(String childName) {
+		return this.childMap.get(childName);
 	}
 
 	/**
-	 * set owner for this form
+	 * @return the validations
+	 */
+	public IValidation[] getValidations() {
+		return this.validations;
+	}
+
+	/**
 	 * 
-	 * @param user
-	 * @return true if the owner was indeed set. false in case of any issue in
-	 *         setting it
+	 * @param operation
+	 * @return A form that can take field/table values
 	 */
-	public boolean setOwner(LoggedInUser user) {
-		int idx = this.structure.getUserIdFieldIdx();
-		if (idx == -1) {
-			return false;
+	public FormData newFormData(FormOperation operation) {
+		Object[] values = null;
+		Object[][][] tables = null;
+		if (this.fields != null && this.fields.length != 0) {
+			values = new Object[this.fields.length];
 		}
-		Field field = this.structure.fields[idx];
-
-		try {
-			this.fieldValues[idx] = field.parse(user.getUserId());
-			return true;
-		} catch (InvalidValueException e) {
-			return false;
+		if (this.childForms != null && this.childForms.length != 0) {
+			tables = new Object[this.childForms.length][][];
 		}
+		return new FormData(this, operation, values, tables);
 	}
 
 	/**
-	 * does this form belong the the user
 	 * 
-	 * @param user
-	 *            logged in user object
-	 * @return true if this form belongs to the logged in user. false if it does
-	 *         not,or if we can't say
+	 * @param operation
+	 * @return a service for the specified operation. null if such an operation
+	 *         is not valid for this form
 	 */
-	public boolean isOwner(LoggedInUser user) {
-		String uidIn = user.getUserId();
-		if (uidIn == null) {
-			return false;
-		}
-		String uid = this.getUserId();
-		if (uid == null) {
-			return false;
-		}
-		return uid.equals(uidIn);
-	}
-
-	@Override
-	public void deserialize(String data) {
-		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
-	}
-
-	@Override
-	public boolean deserialize(String data, List<Message> errors) {
-		throw new Error(
-				"internal serialization method not yet implemented for form. Use json format instead");
-	}
-
-	@Override
-	public String serialize() {
-		throw new Error(
-				"internal serialization method not yet implemented for form. Use json format instead");
-	}
-
-	@Override
-	public void load(ObjectNode json) {
-		this.validateAndLoad(json, null);
-	}
-
-	@Override
-	public void loadKeys(Map<String, String> values, List<Message> errors) {
-		int[] indexes = this.structure.getKeyIndexes();
-		if (indexes == null) {
-			return;
-		}
-
-		Field[] fields = this.structure.getFields();
-		for (int idx : indexes) {
-			Field f = fields[idx];
-			validateAndSet(f, values.get(f.getFieldName()), this.fieldValues, idx, errors);
-		}
-	}
-
-	@Override
-	public void loadKeys(ObjectNode json, List<Message> errors) {
-		int[] indexes = this.structure.getKeyIndexes();
-		if (indexes == null) {
-			return;
-		}
-		Field[] fields = this.structure.getFields();
-		for (int idx : indexes) {
-			Field f = fields[idx];
-			String value = getChildAsText(json, f.getFieldName());
-			validateAndSet(f, value, this.fieldValues, idx, errors);
-		}
-	}
-
-	/**
-	 * @param validations
-	 */
-	private void validateForm(List<Message> errors) {
-		IFormValidation[] validations = this.structure.getValidations();
-		if (validations != null) {
-			for (IFormValidation vln : validations) {
-				vln.isValid(this, errors);
+	public IService getService(String operation) {
+		if (SERVICE_TYPE_GET.equals(operation)) {
+			if (this.getOk) {
+				return new GetService(this);
 			}
-		}
-	}
-
-	@Override
-	public void validateAndLoad(ObjectNode json, List<Message> errors) {
-		setFeilds(json, this.structure, this.fieldValues, errors);
-		/*
-		 * TODO: we have to re-design as to when to validate the entire form
-		 */
-		this.validateForm(errors);
-
-		TabularField[] tables = this.structure.getTabularFields();
-		if (tables == null) {
-			return;
-		}
-
-
-		for (int i = 0; i < tables.length; i++) {
-			TabularField  field = tables[i];
-			String fieldName = field.fieldName;
-			JsonNode child = json.get(fieldName);
-			FormStructure struct = field.structure;
-			ArrayNode node = null;
-			if (child != null && child.getNodeType() == JsonNodeType.ARRAY) {
-				node = (ArrayNode) child;
+		} else if (SERVICE_TYPE_SAVE.equals(operation)) {
+			if (this.saveOk) {
+				return new SaveService(this);
 			}
-			/*
-			 * TODO: if this table had rows in the saved form, should we retain
-			 * that or reset that to null?
-			 */
-			if (node == null) {
-				// continue;
-			}
-			int n = node == null ? 0 : node.size();
-
-			if (errors != null) {
-				if (n < field.minRows || (n != 0 && n > field.maxRows)) {
-					errors.add(Message.newFieldError(fieldName, field.errorMessageId, null));
-					continue;
-				}
-			}
-			if (n == 0 || node == null) {
-				continue;
-			}
-
-			int nbrCols = struct.getFields().length;
-			Object[][] grid = new Object[n][];
-			this.gridData[i] = grid;
-			for (int j = 0; j < n; j++) {
-				JsonNode col = node.get(j);
-				if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
-					if (errors != null) {
-						errors.add(Message.newError(IService.MSG_INVALID_DATA));
-					}
-					break;
-				}
-
-				Object[] row = new Object[nbrCols];
-				setFeilds((ObjectNode) col, struct, row, errors);
-				grid[j] = row;
-			}
-		}
-	}
-
-	private static void setFeilds(ObjectNode json, FormStructure struct, Object[] row, List<Message> errors) {
-		Field[] fields = struct.getFields();
-		for (int i = 0; i < fields.length; i++) {
-			Field field = fields[i];
-			String value = getChildAsText(json, field.getFieldName());
-			validateAndSet(field, value, row, i, errors);
-		}
-	}
-
-	private static void validateAndSet(Field field, String value, Object[] row, int idx, List<Message> errors) {
-		// TODO : Handling nulls: We need a complete relook at it.Specifically,
-		// to see how client can delete an optional value
-		try {
-			Object obj = field.parse(value);
-			if (obj != null) {
-				row[idx] = obj;
-			}
-		} catch (InvalidValueException e) {
-			if (errors != null) {
-				errors.add(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
-			}
-		}
-	}
-
-	@Override
-	public void serializeAsJson(Writer writer) throws IOException {
-		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
-			gen.writeStartObject();
-			this.writeFields(gen, this.fieldValues, this.structure.getFields());
-			if (this.gridData != null) {
-				this.writeGrids(gen);
-			}
-			gen.writeEndObject();
-		}
-	}
-
-	private void writeGrids(JsonGenerator gen) throws IOException {
-		TabularField[] tableFields = this.structure.getTabularFields();
-		for (int i = 0; i < this.gridData.length; i++) {
-			Object[][] grid = this.gridData[i];
-			if (grid == null) {
-				continue;
-			}
-			TabularField field = tableFields[i];
-			gen.writeArrayFieldStart(field.fieldName);
-			this.writeGrid(gen, grid, field.structure);
-			gen.writeEndArray();
-		}
-	}
-
-	private void writeGrid(JsonGenerator gen, Object[][] grid, FormStructure gridStructure) throws IOException {
-		Field[] columns = gridStructure.getFields();
-		for (int i = 0; i < grid.length; i++) {
-			gen.writeStartObject();
-			this.writeFields(gen, grid[i], columns);
-			gen.writeEndObject();
-		}
-	}
-
-	private void writeFields(JsonGenerator gen, Object[] values, Field[] fields) throws IOException {
-		for (int j = 0; j < values.length; j++) {
-			Object value = values[j];
-			if (value == null) {
-				continue;
-			}
-			gen.writeFieldName(fields[j].getFieldName());
-			if (value instanceof Date) {
-				gen.writeString(DateUtil.formatDateTime((Date) value));
-			} else {
-				gen.writeObject(value);
-			}
-		}
-	}
-
-	@Override
-	public String getValue(String fieldName) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx >= 0) {
-			Object obj = this.fieldValues[idx];
-			if (obj != null) {
-				return obj.toString();
+		} else if (SERVICE_TYPE_SUBMIT.equals(operation)) {
+			if (this.submitOk) {
+				return new SubmitService(this);
 			}
 		}
 		return null;
-	}
-
-	@Override
-	public boolean setValue(String fieldName, String value) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx < 0) {
-			return false;
-		}
-
-		Field field = this.structure.getFields()[idx];
-		if (field.getValueType() == ValueType.TEXT) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-
-		long val = 0;
-		if (value != null) {
-			try {
-				val = Long.parseLong(value);
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		this.fieldValues[idx] = val;
-		return true;
-	}
-
-	private static String getChildAsText(JsonNode json, String fieldName) {
-		JsonNode node = json.get(fieldName);
-		if (node == null) {
-			return null;
-		}
-		JsonNodeType nt = node.getNodeType();
-		if (nt == JsonNodeType.NULL || nt == JsonNodeType.MISSING) {
-			return null;
-		}
-		return node.asText();
-	}
-
-	@Override
-	public ValueType getValueType(String fieldName) {
-		Field field = this.structure.getField(fieldName);
-		if (field == null) {
-			return null;
-		}
-		return field.getValueType();
-	}
-
-	@Override
-	public long getLongValue(String fieldName) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx >= 0) {
-			Object obj = this.fieldValues[idx];
-			if (obj != null && obj instanceof Number) {
-				return ((Number) obj).longValue();
-			}
-		}
-		return 0;
-	}
-
-	@Override
-	public String getStringValue(String fieldName) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return null;
-		}
-		Object obj = this.fieldValues[idx];
-		if (obj == null) {
-			return null;
-		}
-		return this.structure.getFields()[idx].getDataType().toTextValue(obj);
-	}
-
-	@Override
-	public Date getDateValue(String fieldName) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return null;
-		}
-		Object obj = this.fieldValues[idx];
-		if (obj != null && obj instanceof Date) {
-			return (Date) obj;
-		}
-		return null;
-	}
-
-	@Override
-	public boolean getBoolValue(String fieldName) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return false;
-		}
-		Object obj = this.fieldValues[idx];
-		if (obj == null) {
-			return false;
-		}
-		if (obj instanceof Boolean) {
-			return (Boolean) obj;
-		}
-		if (obj instanceof Number) {
-			return ((Number) obj).intValue() != 0;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setStringValue(String fieldName, String value) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return false;
-		}
-		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.TEXT) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setDateValue(String fieldName, Date value) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return false;
-		}
-		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.DATE) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setBoolValue(String fieldName, boolean value) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return false;
-		}
-		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.BOOLEAN) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setLongValue(String fieldName, long value) {
-		int idx = this.structure.getFieldIndex(fieldName);
-		if (idx == -1) {
-			return false;
-		}
-		ValueType vt = this.structure.getFields()[idx].getValueType();
-		if (vt == ValueType.NUMBER) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
 	}
 }

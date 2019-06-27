@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.simplity.fm.form.FormStructure;
 
 /**
  * @author simplity.org
@@ -108,7 +107,7 @@ public class FormGenerator {
 
 		Util.emitImport(sbf, HashMap.class);
 		Util.emitImport(sbf, Map.class);
-		Util.emitImport(sbf, FormStructure.class);
+		Util.emitImport(sbf, Form.class);
 
 		sbf.append("\n\n/**\n * static class that has a static attribute for each form defined in this project\n */");
 		sbf.append("\n public class FormStructures {");

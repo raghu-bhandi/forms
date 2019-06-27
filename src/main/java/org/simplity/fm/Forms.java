@@ -20,24 +20,38 @@
  * SOFTWARE.
  */
 
-package example.project.custom;
+package org.simplity.fm;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.simplity.fm.Message;
-import org.simplity.fm.form.IFormData;
-import org.simplity.fm.service.IFormProcessor;
+import org.simplity.fm.form.Form;
 
 /**
+ * static class that can locate a design-time
  * @author simplity.org
  *
  */
-public class Junk2 implements IFormProcessor {
-
-	@Override
-	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
+public final class Forms {
+	private static final Map<String, Form> allForms = new HashMap<>();
+	
+	/**
+	 * 
+	 * @param formName
+	 * @return form , or null if there is such form
+	 */
+	public static Form getForm(String formName) {
+		Form form = allForms.get(formName);
+		if(form != null) {
+			return form;
+		}
+		try {
+			form = (Form)Class.forName(Config.getQualifiedClassName(formName)).newInstance();
+			allForms.put(formName, form);
+			return form;
+		}catch(Exception e) {
+			return null;
+		}
+		
 	}
-
 }

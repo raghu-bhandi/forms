@@ -20,24 +20,37 @@
  * SOFTWARE.
  */
 
-package example.project.custom;
+package org.simplity.fm;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.simplity.fm.Message;
-import org.simplity.fm.form.IFormData;
-import org.simplity.fm.service.IFormProcessor;
+import org.simplity.fm.validn.KeyedValueList;
 
 /**
+ * locator for generated keyedValueList
  * @author simplity.org
  *
  */
-public class Junk2 implements IFormProcessor {
+public final class KeyedValueLists {
+	private static final Map<String, KeyedValueList> allLists = new HashMap<>();
 
-	@Override
-	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
+	/**
+	 * 
+	 * @param listName
+	 * @return list of valid values, null if no such named list
+	 */
+	public static KeyedValueList getList(String listName) {
+		KeyedValueList list = allLists.get(listName);
+		if (list != null) {
+			return list;
+		}
+		try {
+			list = (KeyedValueList)Class.forName(Config.getQualifiedClassName(listName)).newInstance();
+			allLists.put(listName, list);
+			return list;
+		} catch (Exception e) {
+			return null;
+		}
 	}
-
 }

@@ -30,75 +30,130 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.simplity.fm.datatypes.ValueType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
-public class DataTypes {
+class DataTypes {
+	static final Logger logger = LoggerFactory.getLogger(DataTypes.class);
 	private static final String LIST_SHEET_NAME = "valueLists";
+	private static final String KEYED_LIST_SHEET_NAME = "keyedValueLists";
 	private static final String TYPES_SHEET_NAME = "dataTypes";
-	protected DataType[] dataTypes;
-	protected Map<String, ValueList> lists;
 
-	protected static DataTypes fromWorkBook(XSSFWorkbook book) {
+	DataType[] dataTypes;
+	Map<String, ValueList> lists;
+	Map<String, KeyedValueList> keyedLists;
+
+	static DataTypes fromWorkBook(XSSFWorkbook book) {
 		DataTypes dt = new DataTypes();
 		try {
-			dt.loadLists(book.getSheet(LIST_SHEET_NAME));
 			dt.loadTypes(book.getSheet(TYPES_SHEET_NAME));
+			dt.loadLists(book.getSheet(LIST_SHEET_NAME));
+			dt.loadKeyedLists(book.getSheet(KEYED_LIST_SHEET_NAME));
 			return dt;
 		} catch (Exception e) {
+			logger.error(e.getMessage());
 			e.printStackTrace();
 			return null;
 		}
 	}
 
+	private void loadKeyedLists(XSSFSheet sheet) {
+		this.keyedLists = new HashMap<>();
+		if(sheet == null) {
+			logger.error("Sheet {} not found. keyed value lists will not be parsed.", KEYED_LIST_SHEET_NAME);
+			return;
+		}
+		//we iterate up to a non-existing row to trigger build
+		int n = sheet.getLastRowNum() + 1;
+		logger.info("Started parsing {} for keyed values lists. Going to parse till row {}", KEYED_LIST_SHEET_NAME, (n-1));
+		KeyedValueList.Builder builder = KeyedValueList.getBuilder();
+		for (int i = 1; i < n;i++) {
+			Row row = sheet.getRow(i);
+			if(Util.hasContent(row, 4) == false) {
+				row = null;
+			}
+			KeyedValueList list = builder.addRow(row);
+			if (list != null) {
+				this.keyedLists.put(list.name, list);
+				logger.info("Keyed Valueist {} parsed and added to the list", list.name);
+			}
+		}
+		n = this.keyedLists.size();
+		if(n == 0) {
+			logger.info("No keyed value lists added.");
+		}else {
+			logger.info("{} keyed value lists added.", n);
+		}
+	}
+
 	private void loadTypes(Sheet sheet) {
 		if (sheet == null) {
-			System.out.println("No valueLists sheet found for data types.");
+			logger.error("No sheet named {}. No data Types to generate.", TYPES_SHEET_NAME);
 			return;
 		}
 		List<DataType> typeList = new ArrayList<>();
-		int n = sheet.getLastRowNum();
-		for (int i = 1; i < n; i++) {
-			Row row = sheet.getRow(i);
-			if (Util.toStop(row, 0)) {
-				break;
+		logger.info("Sheet {} being read..", TYPES_SHEET_NAME);
+		Util.consumeRows(sheet, 11, new Consumer<Row>() {
+			
+			@Override
+			public void accept(Row row) {
+				DataType dt = DataType.fromRow(row);
+				if (dt != null) {
+					typeList.add(dt);
+				}
 			}
-			DataType dt = DataType.fromRow(row);
-			if (dt == null) {
-				break;
-			}
-			typeList.add(dt);
-
+		});
+		
+		int n = typeList.size();
+		if(n == 0) {
+			logger.error("No valid data type parsed!!");
+			return;
 		}
+		logger.info("{} data types parsed.");
 		this.dataTypes = typeList.toArray(new DataType[0]);
 	}
 
 	private void loadLists(Sheet sheet) {
-		int n = sheet.getPhysicalNumberOfRows();
 		this.lists = new HashMap<>();
+		if(sheet == null) {
+			logger.error("Sheet {} not found. No value lists are going to be added.");
+			return;
+		}
+		//we iterate up to a non-existing row to trigger build
+		int n = sheet.getLastRowNum() + 1;
+		logger.info("Started parsing {} for values lists. Going to parse till row {}", LIST_SHEET_NAME, (n-1));
 		ValueList.Builder builder = ValueList.getBuilder();
 		for (int i = 1; i < n;i++) {
 			Row row = sheet.getRow(i);
+			if(Util.hasContent(row, 3) == false) {
+				row = null;
+			}
 			ValueList list = builder.addRow(row);
 			if (list != null) {
-				list.getIntoMap(this.lists);
+				this.lists.put(list.name, list);
+				logger.info("Valueist {} parsed and added to the list", list.name);
 			}
-			if (row == null || row.getPhysicalNumberOfCells() == 0) {
-				System.out.println(" row " + i + " is empty! Stopping.");
-				return;
-			}
+		}
+		n = this.lists.size();
+		if(n == 0) {
+			logger.info("No value lists added.");
+		}else {
+			logger.info("{} value lists added.", n);
 		}
 	}
 
-	protected void emitJavaTypes(StringBuilder sbf, String packageName) {
+	void emitJavaTypes(StringBuilder sbf, String packageName) {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
 		for (ValueType vt : ValueType.values()) {
@@ -111,13 +166,13 @@ public class DataTypes {
 		sbf.append("\npublic class DataTypes {");
 
 		for (DataType dt : this.dataTypes) {
-			dt.emitJava(sbf, this.lists.containsKey(dt.fieldName));
+			dt.emitJava(sbf, this.lists.containsKey(dt.name));
 		}
 
 		sbf.append("\n}\n");
 	}
 
-	protected void emitJavaLists(StringBuilder sbf, String packageName) {
+	void emitJavaLists(StringBuilder sbf, String packageName) {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
 		Util.emitImport(sbf, Set.class);
@@ -138,15 +193,15 @@ public class DataTypes {
 		sbf.append("\n}\n");
 	}
 	
-	protected Map<String, DataType> getTypes(){
+	Map<String, DataType> getTypes(){
 		Map<String, DataType> types = new HashMap<>(this.dataTypes.length);
 		for(DataType d :this.dataTypes) {
-			types.put(d.getName(), d);
+			types.put(d.name, d);
 		}
 		return types;
 	}
 	
-	protected Map<String, ValueList> getLists(){
+	Map<String, ValueList> getLists(){
 		return this.lists;
 	}
 }

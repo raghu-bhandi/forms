@@ -69,8 +69,8 @@ public class Agent {
 
 	private static final String AUTH_HEADER = "Authorization";
 	private static final String[] HDR_NAMES = { "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
-			"Access-Control-Max-Age", "Access-Control-Allow-Origin", "Connection", "Cache-Control", "Expires" };
-	private static final String[] HDR_TEXTS = { "POST, GET, OPTIONS", "authorization,content-type", "1728000", "*",
+			"Access-Control-Max-Age", "Connection", "Cache-Control", "Expires" };
+	private static final String[] HDR_TEXTS = { "POST, GET, OPTIONS", "authorization,content-type", "1728000",
 			"Keep-Alive", "no-cache, no-store, must-revalidate", "0" };
 	private static final int STATUS_ALL_OK = 200;
 	private static final int STATUS_AUTH_REQUIRED = 401;
@@ -87,13 +87,18 @@ public class Agent {
 
 	/**
 	 * response for a pre-flight request
+	 * @param req 
 	 * 
 	 * @param resp
 	 */
-	public void setOptions(HttpServletResponse resp) {
+	public void setOptions (HttpServletRequest req, HttpServletResponse resp) {
 		for (int i = 0; i < HDR_NAMES.length; i++) {
 			resp.setHeader(HDR_NAMES[i], HDR_TEXTS[i]);
 		}
+		/*
+		 * we have no issue with CORS. We are ready to respond to any client so long the auth is taken care of
+		 */
+		resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
 		resp.setStatus(STATUS_ALL_OK);
 	}
 

@@ -20,63 +20,63 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
+package org.simplity.fm.validn;
 
-import java.io.Writer;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
-import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.Form;
-import org.simplity.fm.http.LoggedInUser;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Simple service that just saves the form with no saves the form received from
+ * a pair of mutually fields that are mutually exclusive. That is, bit should
+ * not be specified
  * 
  * @author simplity.org
  *
  */
-public class SubmitService extends SaveService {
+public class InclusiveValidation implements IValidation {
+	private final int mainIndex;
+	private final int depndentIndex;
+	private final String mainValue;
+	private final String fieldName;
+	private final String messageId;
 
 	/**
-	 * @param formStructure
+	 * 
+	 * @param mainIndex
+	 * @param dependentIndex
+	 * @param mainValue
+	 * @param fieldName
+	 * @param messageId
 	 */
-	public SubmitService(Form formStructure) {
-		super(formStructure);
-		this.operation = FormOperation.SUBMIT;
+	public InclusiveValidation(int mainIndex, int dependentIndex, String mainValue, String fieldName,  String messageId) {
+		this.mainIndex = mainIndex;
+		this.depndentIndex = dependentIndex;
+		this.mainValue = mainValue;
+		this.fieldName = fieldName;
+		this.messageId = messageId;
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
-		List<Message> messages = new ArrayList<>();
-		FormData form = this.newForm(user, json, messages);
-		if (form == null) {
-			return this.failed(messages);
+	public boolean isValid(FormData formData, List<Message> messages) {
+		Object main = formData.getValue(this.mainIndex);
+		/*
+		 * rule applicable only if main is non-null
+		 */
+		if(main == null) {
+			return true;
 		}
-
-		boolean ok = this.doSave(form, user, json, false, messages);
-		if(!ok) {
-			return this.failed(messages);
-		}
-
-		if(!this.processForm(Form.PRE_SUBMIT, form, messages)) {
-			return this.failed(messages);
+		/*
+		 * value constraint on main?
+		 */
+		if(this.mainValue!= null && main.toString().equals(this.mainValue) == false) {
+			return true;
 		}
 		
-
-		/*
-		 * TODO : do whatever we have to do to submit this form...
-		 */
-		if(!this.processForm(Form.POST_SUBMIT, form, messages)) {
-			return this.failed(messages);
+		if(formData.getValue(this.depndentIndex) != null) {
+			return true;
 		}
-
-		return this.succeeded();
+		messages.add(Message.newFieldError(this.fieldName, this.messageId, null));
+		return false;
 	}
-	
-	
 }

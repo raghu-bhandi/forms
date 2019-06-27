@@ -28,9 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.FormStructure;
+import org.simplity.fm.form.Form;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
 import org.simplity.fm.io.IoConsumer;
@@ -49,7 +49,7 @@ public class SaveService extends AbstractService {
 	 * 
 	 * @param formStructure
 	 */
-	public SaveService(FormStructure formStructure) {
+	public SaveService(Form formStructure) {
 		super(formStructure);
 		this.operation = FormOperation.SAVE;
 	}
@@ -57,18 +57,18 @@ public class SaveService extends AbstractService {
 	@Override
 	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
 		List<Message> messages = new ArrayList<>();
-		Form form = this.newForm(user, json, messages);
+		FormData form = this.newForm(user, json, messages);
 		if (form == null) {
 			return this.failed(messages);
 		}
 
-		if(this.doSave(form, user, json, messages)) {
+		if(this.doSave(form, user, json, true, messages)) {
 			return this.succeeded();
 		}
 		return this.failed(messages);
 	}
 	
-	protected boolean doSave(Form form, LoggedInUser user, ObjectNode json, List<Message> messages) throws Exception {
+	protected boolean doSave(FormData form, LoggedInUser user, ObjectNode json, boolean allFieldsAreOptional, List<Message> messages) throws Exception {
 
 		/*
 		 * TODO: if this is partial-save, then we should load existing data from
@@ -83,12 +83,12 @@ public class SaveService extends AbstractService {
 		/*
 		 * now load data coming from client. It could be just a section
 		 */
-		form.validateAndLoad(json, messages);
+		form.validateAndLoad(json, allFieldsAreOptional, messages);
 		if (messages.size() > 0) {
 			return false;
 		}
 
-		if(!this.processForm(FormStructure.PRE_SAVE, form, messages)) {
+		if(!this.processForm(Form.PRE_SAVE, form, messages)) {
 			return false;
 		}
 
@@ -101,6 +101,6 @@ public class SaveService extends AbstractService {
 			}
 		});
 
-		return this.processForm(FormStructure.POST_SAVE, form, messages);
+		return this.processForm(Form.POST_SAVE, form, messages);
 	}
 }

@@ -20,52 +20,40 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.form;
-
-import java.util.Date;
-import java.util.List;
-
-import org.simplity.fm.DateUtil;
-import org.simplity.fm.Message;
+package org.simplity.fm;
 
 /**
- * TODO: hard coded for date. To be re-factored for all types
+ * all parameters used by this app that are loaded from config file
+ * TODO: read all these from a properties file. Will read-up best practices as
+ * of today and build that functionality
  * 
  * @author simplity.org
  *
  */
-public class FromToValidation extends FormValidation {
-
+public class Config {
+	/**
+	 * package name with trailing '.' that all generated classes belong to
+	 */
+	public static final String GENERATED_PACKAGE_NAME = "example.prohject.gen";
 
 	/**
-	 * @param fieldNam1
-	 * @param fieldName2
-	 * @param boolValue
-	 * @param errorMessageId
+	 * root source folder where sources are generated. folders are appended to
+	 * this by the generator based on package name
 	 */
-	public FromToValidation(String fieldNam1, String fieldName2, boolean boolValue, String errorMessageId) {
-		super(fieldNam1, fieldName2, boolValue, errorMessageId);
-	}
+	public static final String GENERATED_SOURCE_ROOT = "c:/";
 
-	@Override
-	public boolean isValid(Form form, List<Message> messages) {
-		Date fromDate = form.getDateValue(this.name1);
-		Date toDate = form.getDateValue(this.name2);
-		if (fromDate == null || toDate == null) {
-			return true;
-		}
-		if (this.boolValue) { 
-			if (!fromDate.after(toDate)) {
-				return true;
-			}
-		} else {
-			if (toDate.after(fromDate)) {
-				return true;
-			}
-		}
-		String params = DateUtil.format(fromDate) + ',' + DateUtil.formatDate(toDate);
-		messages.add(Message.newFieldError(this.name1, this.errorMessageId, params));
-		return false;
-	}
+	/**
+	 * dataTypes.xlsx is found in the this folder, and forms are stored under
+	 * forms folder inside of this
+	 */
+	public static final String XLS_RESOURCE_ROOT = "c:/";
 
+	/**
+	 * 
+	 * @param name
+	 * @return fully qualified class name (with package name) for the name
+	 */
+	public static String getQualifiedClassName(String name) {
+		return GENERATED_PACKAGE_NAME + name.substring(0, 1).toUpperCase() + name.substring(1);
+	}
 }

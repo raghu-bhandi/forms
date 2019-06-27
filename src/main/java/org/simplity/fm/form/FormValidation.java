@@ -22,12 +22,14 @@
 
 package org.simplity.fm.form;
 
+import org.simplity.fm.validn.IValidation;
+
 /**
  * 
  * @author simplity.org
  *
  */
-public abstract class FormValidation implements IFormValidation {
+public abstract class FormValidation implements IValidation {
 
 	protected final String name1;
 	protected final String name2;

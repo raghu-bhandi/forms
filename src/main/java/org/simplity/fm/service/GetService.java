@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.FormStructure;
+import org.simplity.fm.form.Form;
 import org.simplity.fm.http.LoggedInUser;
 
 /**
@@ -44,7 +44,7 @@ public class GetService extends AbstractService {
 	/**
 	 * @param formStructure
 	 */
-	public GetService(FormStructure formStructure) {
+	public GetService(Form formStructure) {
 		super(formStructure);
 		this.operation = FormOperation.GET;
 	}
@@ -52,7 +52,7 @@ public class GetService extends AbstractService {
 	@Override
 	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception{
 		List<Message> messages = new ArrayList<>();
-		Form form = this.newForm(user, keyFields, messages);
+		FormData form = this.newForm(user, keyFields, messages);
 		if(form == null) {
 			return this.failed(messages);
 		}

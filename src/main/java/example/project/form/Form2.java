@@ -2,13 +2,13 @@
 package example.project.form;
 
 import org.simplity.fm.form.Field;
-import org.simplity.fm.form.FormStructure;
+import org.simplity.fm.form.Form;
 
 /**
  * class that is generated based on the spread sheet
  * 
  */
-public class Form2 extends FormStructure {
+public class Form2 extends Form {
 	public static final int productId = 0;
 	public static final int qty = 0;
 	public static final int color = 0;

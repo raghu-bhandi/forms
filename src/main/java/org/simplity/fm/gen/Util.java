@@ -24,9 +24,11 @@ package org.simplity.fm.gen;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.function.Consumer;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
 
 /**
  * Utility methods for dealing with work book
@@ -72,12 +74,19 @@ class Util {
 	 */
 	static String textValueOf(Cell cell) {
 		if (cell == null) {
-			return "";
+			return null;
 		}
-		if (cell.getCellType() == Cell.CELL_TYPE_NUMERIC) {
+		int ct = cell.getCellType();
+		if(ct == Cell.CELL_TYPE_BLANK) {
+			return null;
+		}
+		if ( ct == Cell.CELL_TYPE_STRING) {
+			return cell.getStringCellValue();
+		}
+		if (ct == Cell.CELL_TYPE_NUMERIC) {
 			return "" + (long) cell.getNumericCellValue();
 		}
-		return cell.getStringCellValue();
+		return null;
 	}
 
 	/**
@@ -122,6 +131,16 @@ class Util {
 	}
 
 	/**
+	 * type-script prefers single quotes
+	 */
+	static String escapeTs(String s) {
+		if (s == null || s.isEmpty()) {
+			return "null";
+		}
+		return '\'' + s.replace("\\", "\\\\").replace("'", "''") + '\'';
+	}
+
+	/**
 	 * write an import statement for the class
 	 * 
 	 * @param sbf
@@ -141,17 +160,12 @@ class Util {
 	 * @param idx
 	 * @return true i the row is null, or cell at idx is empty
 	 */
-	static boolean toStop(Row row, int idx) {
+	static boolean hasContent(Row row, int nbrCells) {
 		if (row == null || row.getPhysicalNumberOfCells() == 0) {
-			return true;
+			return false;
 		}
-		if (row.getCell(idx).getCellType() == Cell.CELL_TYPE_BLANK) {
-			System.out.println("Sheet " + row.getSheet().getSheetName() + " has its cell at " + idx + " empty on row "
-					+ row.getRowNum()
-					+ ". This is considered as end of the sheet, and rest of rows, if any are skipped");
-			return true;
-		}
-		return false;
+
+		return row.getFirstCellNum() < nbrCells;
 	}
 
 	/**
@@ -159,5 +173,17 @@ class Util {
 	 */
 	public static Object timeStamp() {
 		return DateFormat.getDateTimeInstance().format(new Date());
+	}
+	
+	public static void consumeRows(Sheet sheet, int nbrCells, Consumer<Row> consumer) {
+		int n = sheet.getLastRowNum();
+		for (int i = 1; i < n; i++) {
+			Row row = sheet.getRow(i);
+			if (Util.hasContent(row, nbrCells)) {
+				Form.logger.error("row {} is empty. skipped.");
+				continue;
+			}
+			consumer.accept(row);
+		}
 	}
 }

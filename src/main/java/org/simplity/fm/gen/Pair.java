@@ -20,36 +20,18 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.form;
-
-import java.util.List;
-
-import org.simplity.fm.Message;
+package org.simplity.fm.gen;
 
 /**
- * a pair of mutually fields that are mutually exclusive. That is, bit should
- * not be specified
- * 
+ * label-value pair
  * @author simplity.org
  *
  */
-public class DependentFieldValidation extends FormValidation {
-
-
-	/**
-	 * 
-	 * @param fieldNam1
-	 * @param fieldName2
-	 * @param boolValue
-	 * @param errorMessageId
-	 */
-	public DependentFieldValidation(String fieldNam1, String fieldName2, boolean boolValue, String errorMessageId) {
-		super(fieldNam1, fieldName2, boolValue, errorMessageId);
-	}
-
-	@Override
-	public boolean isValid(Form form, List<Message> mesages) {
-		// TODO Auto-generated method stub
-		return false;
+class Pair {
+	final String label;
+	final String value;
+	Pair(String label, String value){
+		this.label = label;
+		this.value = value;
 	}
 }

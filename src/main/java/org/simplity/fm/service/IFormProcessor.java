@@ -25,7 +25,7 @@ package org.simplity.fm.service;
 import java.util.List;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.form.IForm;
+import org.simplity.fm.form.IFormData;
 
 /**
  * interface for providing custom logic on a form at any stage of a service 
@@ -42,5 +42,5 @@ public interface IFormProcessor {
 	 *         false if it is not ok to continue. at least one error message
 	 *         should have been added to the list
 	 */
-	public boolean process(IForm form, List<Message> messages);
+	public boolean process(IFormData form, List<Message> messages);
 }

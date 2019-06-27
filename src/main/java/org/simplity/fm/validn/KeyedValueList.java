@@ -20,27 +20,32 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.form;
+package org.simplity.fm.validn;
 
-import java.util.List;
-
-import org.simplity.fm.Message;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
- * represents a validation at the form level, including inter-field
- * validations.This should not be used for field level validations. (Field level
- * validations are handled at <code>DataElement</code> level
+ * maintains list of valid values by key. Like valid districts by state
  * 
  * @author simplity.org
- *
  */
-public interface IFormValidation {
+public abstract class KeyedValueList {
+	protected final Map<String, Set<String>> values = new HashMap<>();
+
 	/**
-	 * execute this validation for a form
+	 * is this key value pair valid?
 	 * 
-	 * @param form
-	 * @param mesages
-	 * @return true if all OK. false if an error message is added to the list
+	 * @param key
+	 * @param value
+	 * @return true if the value valid for the key
 	 */
-	public boolean isValid(Form form, List<Message> mesages);
+	public boolean isValid(String key, String value) {
+		Set<String> vals = this.values.get(key);
+		if (vals == null) {
+			return false;
+		}
+		return vals.contains(value);
+	}
 }

@@ -36,7 +36,7 @@ class DataType {
 	/*
 	 * all columns in the fields sheet
 	 */
-	String fieldName;
+	String name;
 	ValueType valueType;
 	String messageId;
 	String regexDesc;
@@ -48,18 +48,46 @@ class DataType {
 	String trueLabel;
 	String falseLabel;
 
+
+	static DataType fromRow(Row row) {
+		DataType dt = new DataType();
+		dt.name = Util.textValueOf(row.getCell(0));
+		if(dt.name == null) {
+			DataTypes.logger.error("Field name is empty. row {} skipped", row.getRowNum());
+			return null;
+		}
+		String s = Util.textValueOf(row.getCell(1)).toUpperCase();
+		try {
+			dt.valueType = ValueType.valueOf(s);
+		} catch (Exception e) {
+			DataTypes.logger.error("{} is not a valid data type. row {} skipped", s, row.getRowNum());
+			return null;
+		}
+
+		dt.messageId = Util.textValueOf(row.getCell(2));
+		dt.regexDesc = Util.textValueOf(row.getCell(3));
+		dt.regex = Util.textValueOf(row.getCell(4));
+		dt.minLength = (int) Util.longValueOf(row.getCell(5));
+		dt.maxLength = (int) Util.longValueOf(row.getCell(6));
+		dt.minValue = Util.longValueOf(row.getCell(7));
+		dt.maxValue = Util.longValueOf(row.getCell(8));
+		dt.trueLabel = Util.textValueOf(row.getCell(9));
+		dt.falseLabel = Util.textValueOf(row.getCell(10));
+		return dt;
+	}
+
 	void emitJava(StringBuilder sbf, boolean hasList) {
 		String cls = this.valueType.getDataTypeClass().getSimpleName();
 		String listName = null;
 		if (hasList) {
-			listName = "ValueLists." + this.fieldName;
+			listName = "ValueLists." + this.name;
 		}
 		/*
 		 * following is the type of line to be output
 		 * public static final {className} {fieldName} = new
 		 * {className}({errorMessageId}.......);
 		 */
-		sbf.append("\n\tpublic static final ").append(cls).append(" ").append(this.fieldName);
+		sbf.append("\n\tpublic static final ").append(cls).append(" ").append(this.name);
 		sbf.append(" = new ").append(cls).append("(").append(Util.escape(this.messageId));
 		/*
 		 * append parameters list based on the data type
@@ -87,40 +115,19 @@ class DataType {
 		sbf.append(");");
 	}
 
-	protected static DataType fromRow(Row row) {
-		DataType dt = new DataType();
-		String s = Util.textValueOf(row.getCell(1)).toUpperCase();
-		try {
-			dt.valueType = ValueType.valueOf(s);
-		} catch (Exception e) {
-			System.err.println(s + " is not a valid data type. ");
-			return null;
-		}
-
-		dt.fieldName = Util.textValueOf(row.getCell(0));
-		dt.messageId = Util.textValueOf(row.getCell(2));
-		dt.regexDesc = Util.textValueOf(row.getCell(3));
-		dt.regex = Util.textValueOf(row.getCell(4));
-		dt.minLength = (int) Util.longValueOf(row.getCell(5));
-		dt.maxLength = (int) Util.longValueOf(row.getCell(6));
-		dt.minValue = Util.longValueOf(row.getCell(7));
-		dt.maxValue = Util.longValueOf(row.getCell(8));
-		dt.trueLabel = Util.textValueOf(row.getCell(9));
-		dt.falseLabel = Util.textValueOf(row.getCell(10));
-		return dt;
-	}
-
-	protected String getName() {
-		return this.fieldName;
-	}
-
-	void emitTs(StringBuilder sbf, String errorId, String vl) {
+	void emitTs(StringBuilder sbf, String errorId) {
 		String eid = errorId;
 		if(eid == null || eid.isEmpty()) {
 			eid = this.messageId;
 		}
-		sbf.append(C).append(this.valueType.getIdx()).append(C).append(Util.escape(this.regex));
-		sbf.append(C).append(Util.escape(eid)).append(C).append(this.minLength).append(C).append(this.maxLength);
-		sbf.append(C).append(this.minValue).append(C).append(this.maxValue).append(C).append(vl);
+		sbf.append(C).append(this.valueType.getIdx());
+		sbf.append(C).append(Util.escape(this.regex));
+		sbf.append(C).append(Util.escape(eid));
+		sbf.append(C).append(this.minLength);
+		sbf.append(C).append(this.maxLength);
+		sbf.append(C).append(this.minValue);
+		sbf.append(C).append(this.maxValue);
+		sbf.append(C).append(Util.escapeTs(this.trueLabel));
+		sbf.append(C).append(Util.escapeTs(this.falseLabel));
 	}
 }

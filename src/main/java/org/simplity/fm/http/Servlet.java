@@ -70,7 +70,7 @@ public class Servlet extends HttpServlet {
 	 */
 	@Override
 	protected void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-		Agent.getAgent().setOptions(resp);
+		Agent.getAgent().setOptions(req, resp);
 	}
 
 	/*

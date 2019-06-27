@@ -21,9 +21,11 @@
  */
 package org.simplity.fm.form;
 
+import org.simplity.fm.ValueLists;
 import org.simplity.fm.datatypes.DataType;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.validn.ValueList;
 
 /**
  * @author simplity.org
@@ -36,22 +38,36 @@ public class Field {
 	 * refer to the same data element
 	 */
 	private final String fieldName;
+
+	/**
+	 * 0-based index of the field in the parent form;
+	 */
+	private final int index;
 	/**
 	 * data type describes the type of value and restrictions (validations) on
 	 * the value
 	 */
 	private final DataType dataType;
 	/**
-	 * Is this field editable by the client. If false, then this can be either a
-	 * "reference field" that is used for display or validation purposes. It is
-	 * typically not sent back from client.
+	 * default value is used only if this optional and the value is missing. not
+	 * used if the field is mandatory
 	 */
-	private final boolean isEditable;
+	private final String defaultValue;
+	/**
+	 * refers to the message id/code that is used for i18n of messages
+	 */
+	private final String messageId;
 	/**
 	 * required/mandatory. If set to true, text value of empty string and 0 for
 	 * integral are assumed to be not valid. Relevant only for editable fields.
 	 */
 	private final boolean isRequired;
+	/**
+	 * Is this field editable by the client. If false, then this can be either a
+	 * "reference field" that is used for display or validation purposes. It is
+	 * typically not sent back from client.
+	 */
+	private final boolean isEditable;
 	/**
 	 * if true, this field value is calculated based on other fields. Typically
 	 * not received from client, but some designs may receive and keep it for
@@ -62,21 +78,29 @@ public class Field {
 	 * is this part of the conceptual key (document-id) of the form.
 	 */
 	private boolean isKeyField;
+
 	/**
-	 * refers to the message id/code that is used for i18n of messages
+	 * if this field has a list of valid values (to be rendered on the client as
+	 * a drop-down)
+	 * this list may be design-time in which it is available in
+	 * <code>ValueLists</code> Otherwise this value list is fetched at run time
+	 * TODO: as of now, only design-time known list is supported
 	 */
-	private final String messageId;
+	private final String valueListName;
+
+
 	/**
-	 * default value is used only if this optional and the value is missing. not
-	 * used if the field is mandatory
+	 * cached value list for
 	 */
-	private final String defaultValue;
+	private ValueList valueList;
 
 	/**
 	 * this is generally invoked by the generated code for a Data Structure
 	 * 
 	 * @param fieldName
 	 *            unique within its data structure
+	 * @param index
+	 *            0-based index of this field in the prent form
 	 * @param dataType
 	 *            pre-defined data type. used for validating data coming from a
 	 *            client
@@ -95,14 +119,20 @@ public class Field {
 	 *            can be null in which case the id from dataType is used
 	 * @param isDerivedField
 	 *            true if this field value is derived/calculated based on other
-	 *            fields. Like sum of other fields, or calculated based on sume
+	 *            fields. Like sum of other fields, or calculated based on some
 	 *            rule
 	 * @param isKeyField
 	 *            is this a key (document id) field?
+	 * @param valueListName
+	 *            if this field has a list of valid values that are typically
+	 *            rendered in a drop-down. If the value list depends on value of
+	 *            another field, then it is part of inter-field validation, and
+	 *            not part of this field.
 	 */
-	public Field(String fieldName, DataType dataType, boolean isRequired, String defaultValue, boolean isEditable,
-			String messageId, boolean isDerivedField, boolean isKeyField) {
+	public Field(String fieldName, int index, DataType dataType, String defaultValue, String messageId,
+			boolean isRequired, boolean isEditable, boolean isDerivedField, boolean isKeyField, String valueListName) {
 		this.fieldName = fieldName;
+		this.index = index;
 		this.isRequired = isRequired;
 		this.isEditable = isEditable;
 		this.messageId = messageId;
@@ -110,6 +140,13 @@ public class Field {
 		this.isDerivedField = isDerivedField;
 		this.dataType = dataType;
 		this.isKeyField = isKeyField;
+		if (valueListName == null) {
+			this.valueListName = null;
+			this.valueList = null;
+		} else {
+			this.valueListName = valueListName;
+			this.valueList = ValueLists.getList(valueListName);
+		}
 
 	}
 
@@ -152,21 +189,6 @@ public class Field {
 	}
 
 	/**
-	 * @param value
-	 *            text value to be validated
-	 * @return true if this value is valid. false other wise.
-	 */
-	public boolean isValid(String value) {
-		if (value == null || value.isEmpty()) {
-			if (this.isRequired) {
-				return false;
-			}
-			return true;
-		}
-		return this.dataType.isValid(value);
-	}
-
-	/**
 	 * @return value type
 	 */
 	public ValueType getValueType() {
@@ -174,30 +196,32 @@ public class Field {
 	}
 
 	/**
-	 * parse into the desired type, validate and return the value. null if it
-	 * fails to validate
+	 * parse into the desired type, validate and return the value. caller should
+	 * check for exception for validation failure and not returned value as
+	 * null.
+	 * <br />
+	 * Caller may opt not to check for mandatory condition by checking for null
+	 * before calling this method. That is, in such a case, caller handles the
+	 * null condition, and calls this only if it is not null.
 	 * 
 	 * @param inputValue
-	 *            input text.
+	 *            input text. can be null, in which case it is validated for
+	 *            mandatory
 	 * @return object of the right type. or null if the value is null and it is
 	 *         valid
 	 * @throws InvalidValueException
-	 *             if the value is invalid
+	 *             if the value is invalid.
 	 */
 	public Object parse(String inputValue) throws InvalidValueException {
-		try {
-			if (inputValue == null) {
-				if (this.isRequired == false) {
-					return null;
-				}
-			} else {
-				Object obj = this.dataType.parse(inputValue);
-				if(obj != null) {
-					return obj;
-				}
+		if (inputValue == null) {
+			if (this.isRequired == false) {
+				return null;
 			}
-		} catch (Exception e) {
-			//
+		}else if (this.valueList == null || this.valueList.isValid(inputValue)) {
+			Object obj = this.dataType.parse(inputValue);
+			if (obj != null) {
+				return obj;
+			}
 		}
 		throw new InvalidValueException(this.getMessageId(), this.fieldName, null);
 	}
@@ -224,5 +248,18 @@ public class Field {
 	 */
 	public DataType getDataType() {
 		return this.dataType;
+	}
+
+	/**
+	 * @return the valueListName
+	 */
+	public String getValueListName() {
+		return this.valueListName;
+	}
+	/**
+	 * @return the index
+	 */
+	public int getIndex() {
+		return this.index;
 	}
 }

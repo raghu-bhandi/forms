@@ -58,7 +58,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author simplity.org
  *
  */
-public interface IForm {
+public interface IFormData {
 	/**
 	 * unique id assigned to this form. like customerDetails. This is unique
 	 * across all types of forms within a project
@@ -140,10 +140,14 @@ public interface IForm {
 	 * 
 	 * @param jsonNode
 	 *            non-null
+	 * @param allFieldsAreOptional
+	 *            true if this is for a draft-save operation, where we validate
+	 *            only the fields that the user has opted to type. MUST be
+	 *            called with true value for final submit operation
 	 * @param errors
 	 *            non-null to which any validation errors are added
 	 */
-	public void validateAndLoad(ObjectNode jsonNode, List<Message> errors);
+	public void validateAndLoad(ObjectNode jsonNode, boolean allFieldsAreOptional, List<Message> errors);
 
 	/**
 	 * @param writer
@@ -154,106 +158,113 @@ public interface IForm {
 	/**
 	 * 
 	 * @param fieldName
-	 * @return value type of this field. null if no such field
+	 * @return Field in this form. null if no such field
 	 */
 	public ValueType getValueType(String fieldName);
 
 	/**
 	 * 
 	 * @param fieldName
+	 * @return Field in this form. null if no such field
+	 */
+	public int getFieldIndex(String fieldName);
+
+	/**
+	 * 
+	 * @param fieldIndex
 	 * @return null if there is no such field, or the field has null value.
 	 *         String/Long/Date/Boolean depending on the type. Use more specific
 	 *         getXXX if you know the type
 	 */
-	public Object getValue(String fieldName);
+	public Object getValue(int fieldIndex);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 * @return value of the field as text. null if no such field, or the field
 	 *         has null value.
 	 *         "0"/"1" if boolean, milliseconds in case of date
 	 */
-	public String getStringValue(String fieldName);
+	public String getStringValue(int fieldIndex);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 * @return value of the field as a number. 0 if it is not field, or he field
 	 *         has null, or the field has non-numeric text
 	 *         0/1 for boolean and milliseconds for date
 	 */
-	public long getLongValue(String fieldName);
+	public long getLongValue(int fieldIndex);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 * @return value of the field as Date. null if the field is not a date
 	 *         field, or it has null value
 	 */
-	public Date getDateValue(String fieldName);
+	public Date getDateValue(int fieldIndex);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 * @return value of the field as boolean. false if no such field, or the
 	 *         field is null,or the field has empty string, 0 or false value
 	 *         true otherwise
 	 */
-	public boolean getBoolValue(String fieldName);
+	public boolean getBoolValue(int fieldIndex);
 
 	/**
 	 * parse the value to proper type and set it
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 *            name of the field
 	 * @param value
 	 *            ignored if null. parsed and set if valid
 	 * @return true if value was indeed set. false if field is not defined.
 	 */
-	public boolean setValue(String fieldName, String value);
+	public boolean setValue(int fieldIndex, String value);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 *            name of the field
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of String type. false otherwise, and
 	 *         the value is not set
 	 */
-	public boolean setStringValue(String fieldName, String value);
+	public boolean setStringValue(int fieldIndex, String value);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 *            name of the field
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of Date type. false otherwise, and
 	 *         the value is not set
 	 */
-	public boolean setDateValue(String fieldName, Date value);
+	public boolean setDateValue(int fieldIndex, Date value);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 *            name of the field
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of boolean type. false otherwise,
 	 *         and the value is not set
 	 */
-	public boolean setBoolValue(String fieldName, boolean value);
+	public boolean setBoolValue(int fieldIndex, boolean value);
 
 	/**
 	 * 
-	 * @param fieldName
+	 * @param fieldIndex
 	 *            name of the field
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of integer type. false otherwise,
 	 *         and the value is not set
 	 */
-	public boolean setLongValue(String fieldName, long value);
+	public boolean setLongValue(int fieldIndex, long value);
 }

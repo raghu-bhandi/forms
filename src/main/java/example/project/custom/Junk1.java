@@ -25,7 +25,7 @@ package example.project.custom;
 import java.util.List;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.form.IForm;
+import org.simplity.fm.form.IFormData;
 import org.simplity.fm.service.IFormProcessor;
 
 /**
@@ -35,7 +35,7 @@ import org.simplity.fm.service.IFormProcessor;
 public class Junk1 implements IFormProcessor {
 
 	@Override
-	public boolean process(IForm form, List<Message> messages) {
+	public boolean process(IFormData form, List<Message> messages) {
 		// TODO Auto-generated method stub
 		return false;
 	}

@@ -24,6 +24,8 @@ package org.simplity.fm.gen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.function.Consumer;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -36,38 +38,61 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class ChildForm {
 	private static final String C = ", ";
-	private static final int NAME_CELL = 0;
+	private static final int NBR_CELLS = 7;
 
-	private String name;
-	private String label;
-	private String description;
-	private String formName;
-	private int minRows;
-	private int maxRows;
-	private String errorId;
+	String name;
+	String label;
+	String formName;
+	boolean isTabular;
+	int minRows;
+	int maxRows;
+	String errorId;
+	int index;
 	
-	static ChildForm[] fromSheet(Sheet sheet) {
+	static ChildForm[] fromSheet(Sheet sheet, Set<String> names) {
 		List<ChildForm> list = new ArrayList<>();
-		int n = sheet.getPhysicalNumberOfRows();
-		for(int i = 1; i < n; i++) {
-			Row row = sheet.getRow(i);
-			if (Util.toStop(row, NAME_CELL)) {
-				break;
+		Util.consumeRows(sheet, NBR_CELLS, new Consumer<Row>() {
+			
+			@Override
+			public void accept(Row row) {
+				ChildForm child = fromRow(row);
+				if (child == null) {
+					return;
+				}
+				if (names.add(child.name)) {
+					list.add(child);
+				} else {
+					Form.logger.error("Child form name {} is duplicate at row {}. skipped", child.name, row.getRowNum());
+				}
 			}
-			list.add(fromRow(row));
-		}
-		if(list.size() == 0 ) {
+		});
+		int n = list.size();
+		if ( n == 0) {
 			return null;
 		}
-		return list.toArray(new ChildForm[0]);
+		ChildForm[] arr = new ChildForm[n];
+		for(int i = 0; i < arr.length; i++) {
+			ChildForm child = list.get(i);
+			child.index = i;
+			arr[i] = child;
+		}
+		return arr;
 	}
 	
-	private static ChildForm fromRow(Row row) {
+	static ChildForm fromRow(Row row) {
 		ChildForm t = new ChildForm();
 		t.name = Util.textValueOf(row.getCell(0));
+		if(t.name == null) {
+			Form.logger.error("Name missing in row {}. Skipped", row.getRowNum());
+			return null;
+		}
 		t.label = Util.textValueOf(row.getCell(1));
-		t.description = Util.textValueOf(row.getCell(2));
-		t.formName = Util.textValueOf(row.getCell(3));
+		t.formName = Util.textValueOf(row.getCell(2));
+		if(t.formName == null) {
+			Form.logger.error("formName is a MUST for a childForm. It is missing in row {}. Row kkipped", row.getRowNum());
+			return null;
+		}
+		t.isTabular = Util.boolValueOf(row.getCell(3));
 		t.minRows = (int)Util.longValueOf(row.getCell(4));
 		t.maxRows = (int)Util.longValueOf(row.getCell(5));
 		t.errorId = Util.textValueOf(row.getCell(6));
@@ -78,10 +103,21 @@ class ChildForm {
 		sbf.append("\n\tpublic static final int ").append(this.name).append(" = ").append(idx).append(';');
 	}
 
+	/**
+	 * push this as an element of an array
+	 * @param sbf
+	 */
 	void emitJavaCode(StringBuilder sbf) {
-		sbf.append("\n\t\t\tnew TabularField(\"").append(this.name).append("\", new ").append(Util.toClassName(this.formName)).append("()");
-		sbf.append(C).append(this.minRows).append(C).append(this.maxRows);
-		sbf.append(C).append(Util.escape(this.errorId)).append(")");
+		sbf.append("\n\t\t\tnew ChildForm(");
+		
+		sbf.append(Util.escape(this.name));
+		sbf.append(C).append(Util.escape(this.formName));
+		sbf.append(C).append(this.isTabular);
+		sbf.append(C).append(this.minRows);
+		sbf.append(C).append(this.maxRows);
+		sbf.append(C).append(Util.escape(this.errorId));
+		
+		sbf.append(')');
 	}
 	
 	String getFormName() {
@@ -89,8 +125,12 @@ class ChildForm {
 	}
 
 	void emitTs(StringBuilder sbf) {
-		sbf.append("\n\t\tthis.childForms.set('").append(this.name).append("', new ChildForm('").append(this.name).append("', '");
-		sbf.append(this.label).append("', new ").append(Util.toClassName(this.formName)).append("(), ");
-		sbf.append(this.minRows).append(C).append(this.maxRows).append(C).append(Util.escape(this.errorId)).append("));");
+		sbf.append("\n\t\tthis.").append(this.name).append(" = new ChildForm(").append(Util.escapeTs(this.name));
+		sbf.append(C).append(this.index);
+		sbf.append(C).append(Util.escapeTs(this.label));
+		sbf.append(C).append(Util.toClassName(this.formName)).append(".getInstance()");
+		sbf.append(C).append(this.minRows);
+		sbf.append(C).append(this.maxRows);
+		sbf.append(C).append(Util.escapeTs(this.errorId)).append(");");
 	}
 }

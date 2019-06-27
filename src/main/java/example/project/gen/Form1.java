@@ -1,18 +1,18 @@
 package example.project.gen;
 
 import org.simplity.fm.form.Field;
-import org.simplity.fm.form.FormStructure;
-import org.simplity.fm.form.IFormValidation;
-import org.simplity.fm.form.TabularField;
-import org.simplity.fm.form.FromToValidation;
-import org.simplity.fm.form.EitherOrValidation;
-import org.simplity.fm.form.DependentFieldValidation;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.ChildForm;
+import org.simplity.fm.validn.FromToValidation;
+import org.simplity.fm.validn.IValidation;
+import org.simplity.fm.validn.ExclusiveValidation;
+import org.simplity.fm.validn.InclusiveValidation;
 
 /**
  * class that represents structure of form1
  * <br /> generated at 23 Jun, 2019 9:54:19 AM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\spec\struct\form1.xlsx
  */ 
-public class Form1 extends FormStructure {
+public class Form1 extends Form {
 	public static final int customerId = 0;
 	public static final int finacialYear = 1;
 	public static final int boolField = 2;
@@ -54,12 +54,12 @@ public class Form1 extends FormStructure {
 		};
 		this.fields = flds;
 
-		TabularField[] tbls = {
-			new TabularField("orderLines", new Form2(), 1, 200, "wrongLines")
+		ChildForm[] tbls = {
+			new ChildForm("orderLines", new Form2(), 1, 200, "wrongLines")
 		};
-		this.tabularFields = tbls;
+		this.childForms = tbls;
 
-		IFormValidation[] vlds = {
+		IValidation[] vlds = {
 			new FromToValidation("fromdate", "toDate", false, "invalidDateRange"),
 			new example.project.custom.Form1Validation()
 		};

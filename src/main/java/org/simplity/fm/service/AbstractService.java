@@ -29,9 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.FormStructure;
+import org.simplity.fm.form.Form;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.io.DataStore;
 import org.simplity.fm.io.IoConsumer;
@@ -56,7 +56,7 @@ public abstract class AbstractService implements IService {
 	/**
 	 * null if no input is expected
 	 */
-	protected FormStructure formStructure;
+	protected Form formStructure;
 
 	/**
 	 * a simple service that just retrieves the required form.
@@ -64,7 +64,7 @@ public abstract class AbstractService implements IService {
 	 * @param formStructure
 	 * 
 	 */
-	public AbstractService(FormStructure formStructure) {
+	public AbstractService(Form formStructure) {
 		this.formStructure = formStructure;
 	}
 
@@ -93,8 +93,8 @@ public abstract class AbstractService implements IService {
 		return this.operation;
 	}
 
-	protected Form newForm(LoggedInUser user, Map<String, String> keyFields, List<Message> messages) {
-		Form form = this.formStructure.newForm(this.operation);
+	protected FormData newForm(LoggedInUser user, Map<String, String> keyFields, List<Message> messages) {
+		FormData form = this.formStructure.newFormData(this.operation);
 		form.setOwner(user);
 		form.loadKeys(keyFields, messages);
 		if (messages.size() > 0) {
@@ -104,8 +104,8 @@ public abstract class AbstractService implements IService {
 		return form;
 	}
 
-	protected Form newForm(LoggedInUser user, ObjectNode json, List<Message> messages) {
-		Form form = this.formStructure.newForm(this.operation);
+	protected FormData newForm(LoggedInUser user, ObjectNode json, List<Message> messages) {
+		FormData form = this.formStructure.newFormData(this.operation);
 		form.setOwner(user);
 		form.loadKeys(json, messages);
 		if (messages.size() > 0) {
@@ -132,7 +132,7 @@ public abstract class AbstractService implements IService {
 	 *         message is added to the list
 	 * @throws IOException
 	 */
-	protected boolean retrieveForm(LoggedInUser user, Form form, List<Message> messages, Writer writer)
+	protected boolean retrieveForm(LoggedInUser user, FormData form, List<Message> messages, Writer writer)
 			throws IOException {
 		String key = form.getDocumentId();
 		if (this.hasAccess(user, form) == false) {
@@ -140,14 +140,14 @@ public abstract class AbstractService implements IService {
 			return false;
 		}
 
-		if (!this.processForm(FormStructure.PRE_GET, form, messages)) {
+		if (!this.processForm(Form.PRE_GET, form, messages)) {
 			return false;
 		}
 
 		/*
 		 * if there is no Post processing, we can stream the content directly.
 		 */
-		IFormProcessor processor = this.formStructure.getFormProcessor(FormStructure.POST_GET);
+		IFormProcessor processor = this.formStructure.getFormProcessor(Form.POST_GET);
 		if (processor == null && writer != null) {
 			if (this.streamFromStore(key, writer)) {
 				return true;
@@ -174,7 +174,7 @@ public abstract class AbstractService implements IService {
 	 * @return true if the data was indeed retrieved and loaded into the form
 	 * @throws IOException
 	 */
-	protected boolean loadFromStore(String key, Form form) throws IOException {
+	protected boolean loadFromStore(String key, FormData form) throws IOException {
 		/*
 		 * small time cheating with lambda, to get a value set there..
 		 */
@@ -237,7 +237,7 @@ public abstract class AbstractService implements IService {
 	 * @return true if the logged in user can access this for, for this
 	 *         operation.
 	 */
-	protected boolean hasAccess(LoggedInUser user, Form form) {
+	protected boolean hasAccess(LoggedInUser user, FormData form) {
 		return form.isOwner(user);
 	}
 
@@ -245,7 +245,7 @@ public abstract class AbstractService implements IService {
 		messages.add(Message.newError(messageId));
 	}
 
-	protected boolean processForm(int processType, Form form, List<Message> messages) {
+	protected boolean processForm(int processType, FormData form, List<Message> messages) {
 		IFormProcessor processor = this.formStructure.getFormProcessor(processType);
 		if (processor == null) {
 			return true;

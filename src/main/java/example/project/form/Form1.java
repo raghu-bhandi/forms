@@ -2,16 +2,16 @@
 package example.project.form;
 
 import org.simplity.fm.form.Field;
-import org.simplity.fm.form.FormStructure;
-import org.simplity.fm.form.FromToValidation;
-import org.simplity.fm.form.IFormValidation;
-import org.simplity.fm.form.TabularField;
+import org.simplity.fm.form.Form;
+import org.simplity.fm.validn.FromToValidation;
+import org.simplity.fm.validn.IValidation;
+import org.simplity.fm.form.ChildForm;
 
 /**
  * class that is generated based on the spread sheet
  * 
  */
-public class Form1 extends FormStructure {
+public class Form1 extends Form {
 	public static final int customerId = 0;
 	public static final int financialYear = 1;
 	public static final int boolField = 2;
@@ -39,10 +39,10 @@ public class Form1 extends FormStructure {
 				new Field("currentFy", DataTypes.fy, false, null, false, null, false, false) };
 		this.fields = flds;
 		this.userIdFieldName = "customerId";
-		TabularField[] tables = { new TabularField("orderLines", new Form2(), 1, 200, "invalidOrderLines") };
-		this.tabularFields = tables;
+		ChildForm[] tables = { new ChildForm("orderLines", new Form2(), 1, 200, "invalidOrderLines") };
+		this.childForms = tables;
 
-		IFormValidation[] valns = { new FromToValidation("fromDate", "toDate", true, "invalidDateRange"),
+		IValidation[] valns = { new FromToValidation("fromDate", "toDate", true, "invalidDateRange"),
 				new Form1Validation() };
 		this.validations = valns;
 

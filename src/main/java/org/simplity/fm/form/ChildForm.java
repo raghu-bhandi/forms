@@ -22,6 +22,8 @@
 
 package org.simplity.fm.form;
 
+import org.simplity.fm.Forms;
+
 /**
  * represents data structure for field in a form that is designed to hold
  * tabular data
@@ -29,12 +31,21 @@ package org.simplity.fm.form;
  * @author simplity.org
  *
  */
-public class TabularField {
+public class ChildForm {
 	/**
 	 * name of this field
 	 */
 	public final String fieldName;
+	/**
+	 * columns in this table. or fields in this sub-form is described in a
+	 * separate form
+	 */
+	public final Form form;
 
+	/**
+	 * is this tabular data, or just a sub-form (section)
+	 */
+	public final boolean isTabular;
 	/**
 	 * minimum rows of data required. 0 if this is not a grid, or the data is
 	 * optional
@@ -52,16 +63,13 @@ public class TabularField {
 	public final String errorMessageId;
 
 	/**
-	 * columns in this table, described as a form
-	 */
-	public final FormStructure structure;
-
-	/**
 	 * 
 	 * @param fieldName
 	 *            non-null unique across all fields of the form
-	 * @param structure
-	 *            non-null form structure that describes columns in this table
+	 * @param formName
+	 *            non-null name of the form that describes fields/columns in the child-form
+	 * @param isTabular
+	 *            is this a tabular form, or just a sub-form
 	 * @param minRows
 	 *            for validation of data
 	 * @param maxRows
@@ -70,9 +78,11 @@ public class TabularField {
 	 * @param errorMessageId
 	 *            message id to be used if number of data rows fails validation
 	 */
-	public TabularField(String fieldName, FormStructure structure, int minRows, int maxRows, String errorMessageId) {
+	public ChildForm(String fieldName, String formName, boolean isTabular, int minRows, int maxRows,
+			String errorMessageId) {
 		this.fieldName = fieldName;
-		this.structure = structure;
+		this.form = Forms.getForm(formName);
+		this.isTabular = isTabular;
 		this.minRows = minRows;
 		this.maxRows = maxRows;
 		this.errorMessageId = errorMessageId;

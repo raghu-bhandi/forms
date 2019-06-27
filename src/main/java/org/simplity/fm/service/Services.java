@@ -4,16 +4,15 @@ package org.simplity.fm.service;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.form.FormStructure;
-
-import example.project.form.FormStructures;
+import org.simplity.fm.Forms;
+import org.simplity.fm.form.Form;
 
 /**
  * Place holder the serves as a source for service instances
  */
 public class Services {
 	/**
-	 * separator between operation and form name to suggets a service name, like get-form1
+	 * separator between operation and form name to suggest a service name, like get-form1
 	 */
 	public static final char SERVICE_SEPARATOR = '-';
 	private static final Services instance = new Services();
@@ -33,7 +32,7 @@ public class Services {
 		}
 
 		String formName = serviceName.substring(idx + 1);
-		FormStructure fs = FormStructures.getStructure(formName);
+		Form fs = Forms.getForm(formName);
 		if (fs == null) {
 			return null;
 		}

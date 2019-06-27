@@ -25,17 +25,17 @@ package example.project.custom;
 import java.util.List;
 
 import org.simplity.fm.Message;
-import org.simplity.fm.form.Form;
-import org.simplity.fm.form.IFormValidation;
+import org.simplity.fm.form.FormData;
+import org.simplity.fm.validn.IValidation;
 
 /**
  * @author simplity.org
  *
  */
-public class Form1Validation implements IFormValidation{
+public class Form1Validation implements IValidation{
 
 	@Override
-	public boolean isValid(Form form, List<Message> mesages) {
+	public boolean isValid(FormData form, List<Message> mesages) {
 		// TODO Auto-generated method stub
 		return false;
 	}

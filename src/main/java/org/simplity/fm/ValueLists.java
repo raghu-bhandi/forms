@@ -20,36 +20,36 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.form;
+package org.simplity.fm;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.simplity.fm.Message;
+import org.simplity.fm.validn.ValueList;
 
 /**
- * a pair of mutually fields that are mutually exclusive. That is, bit should
- * not be specified
- * 
  * @author simplity.org
  *
  */
-public class EitherOrValidation extends FormValidation {
-
+public final class ValueLists {
+	private static final Map<String, ValueList> allLists = new HashMap<>();
 
 	/**
 	 * 
-	 * @param fieldNam1
-	 * @param fieldName2
-	 * @param boolValue
-	 * @param errorMessageId
+	 * @param listName
+	 * @return list of valid values, null if no such named list
 	 */
-	public EitherOrValidation(String fieldNam1, String fieldName2, boolean boolValue, String errorMessageId) {
-		super(fieldNam1, fieldName2, boolValue, errorMessageId);
-	}
-
-	@Override
-	public boolean isValid(Form form, List<Message> mesages) {
-		// TODO Auto-generated method stub
-		return false;
+	public static ValueList getList(String listName) {
+		ValueList list = allLists.get(listName);
+		if (list != null) {
+			return list;
+		}
+		try {
+			list = (ValueList)Class.forName(Config.getQualifiedClassName(listName)).newInstance();
+			allLists.put(listName, list);
+			return list;
+		} catch (Exception e) {
+			return null;
+		}
 	}
 }

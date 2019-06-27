@@ -20,63 +20,28 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
+package org.simplity.fm.validn;
 
-import java.io.Writer;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
-import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.Form;
-import org.simplity.fm.http.LoggedInUser;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * Simple service that just saves the form with no saves the form received from
+ * represents a validation at the form level, including inter-field
+ * validations.This should not be used for field level validations. (Field level
+ * validations are handled at <code>DataElement</code> level
  * 
  * @author simplity.org
  *
  */
-public class SubmitService extends SaveService {
-
+public interface IValidation {
 	/**
-	 * @param formStructure
+	 * execute this validation for a form
+	 * 
+	 * @param form
+	 * @param mesages
+	 * @return true if all OK. false if an error message is added to the list
 	 */
-	public SubmitService(Form formStructure) {
-		super(formStructure);
-		this.operation = FormOperation.SUBMIT;
-	}
-
-	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
-		List<Message> messages = new ArrayList<>();
-		FormData form = this.newForm(user, json, messages);
-		if (form == null) {
-			return this.failed(messages);
-		}
-
-		boolean ok = this.doSave(form, user, json, false, messages);
-		if(!ok) {
-			return this.failed(messages);
-		}
-
-		if(!this.processForm(Form.PRE_SUBMIT, form, messages)) {
-			return this.failed(messages);
-		}
-		
-
-		/*
-		 * TODO : do whatever we have to do to submit this form...
-		 */
-		if(!this.processForm(Form.POST_SUBMIT, form, messages)) {
-			return this.failed(messages);
-		}
-
-		return this.succeeded();
-	}
-	
-	
+	public boolean isValid(FormData form, List<Message> mesages);
 }

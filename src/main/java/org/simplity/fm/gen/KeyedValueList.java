@@ -23,7 +23,9 @@
 package org.simplity.fm.gen;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.poi.ss.usermodel.Row;
 
@@ -31,33 +33,32 @@ import org.apache.poi.ss.usermodel.Row;
  * @author simplity.org
  *
  */
-class ValueList {
-	private static final int NBR_CELLS = 3;
+class KeyedValueList {
+	private static final int NBR_CELLS = 4;
 	private static final String C = ", ";
 	final String name;
-	final Pair[] pairs;
+	final Map<String, Pair[]> lists;
 
 	static Builder getBuilder() {
 		return new Builder();
 	}
-	
-	ValueList(String name, Pair[] pairs) {
+	KeyedValueList(String name, Map<String, Pair[]> lists) {
 		this.name = name;
-		this.pairs = pairs;
+		this.lists = lists;
 	}
 
 	void emitJava(StringBuilder sbf) {
 		sbf.append("\n\tpublic static final Set<String> ").append(this.name).append(" = new HashSet<>(")
-				.append(this.pairs.length).append(");");
+				.append(this.values.length).append(");");
 		sbf.append("\n\tstatic{");
-		for (int i = 0; i < this.pairs.length; i++) {
+		for (int i = 0; i < this.values.length; i++) {
 			sbf.append("\n\t\t").append(this.name).append(".add(").append(Util.escape(this.values[i])).append(");");
 		}
 		sbf.append("\n\t}");
 	}
 
 	protected void emitTs(StringBuilder sbf) {
-		for (int i = 0; i < this.pairs.length; i++) {
+		for (int i = 0; i < this.labels.length; i++) {
 			if (i == 0) {
 				sbf.append("\n\t\t\t");
 			} else {
@@ -74,6 +75,8 @@ class ValueList {
 	 */
 	static class Builder {
 		private String name = null;
+		private String keyName = null;
+		private Map<String, Pair[]> lists = new HashMap<>();
 		private List<Pair> pairs = new ArrayList<>();
 
 		protected Builder() {
@@ -86,14 +89,15 @@ class ValueList {
 		 * @return ValueList if the previous row was the last row for that list.
 		 *         null if this row is appended to the existing list
 		 */
-		ValueList addRow(Row row) {
+		KeyedValueList addRow(Row row) {
 			if (row == null) {
 				return this.build();
 			}
-			ValueList result = null;
+			KeyedValueList result = null;
 			String newName = Util.textValueOf(row.getCell(0));
-			String val = Util.textValueOf(row.getCell(1));
-			String label = Util.textValueOf(row.getCell(2));
+			String newKey = Util.textValueOf(row.getCell(1));
+			String val = Util.textValueOf(row.getCell(2));
+			String label = Util.textValueOf(row.getCell(3));
 			if (this.name == null) {
 				/*
 				 * this is the very first row being read.
@@ -102,31 +106,46 @@ class ValueList {
 					DataTypes.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
 					return null;
 				}
-				this.newList(newName);
+				this.newList(newName, newKey);
 			} else if (newName != null && newName.equals(this.name) == false) {
 				/*
 				 * this row is for the next list. build the previous one.
 				 */
 				result = this.build();
-				this.newList(newName);
+				this.newList(newName, newKey);
+			}else if(newKey != null && newKey.contentEquals(this.keyName) == false) {
+				this.addList(newKey);
 			}
 
 			this.pairs.add(new Pair(label, val));
 			return result;
 		}
 
-		private void newList(String newName) {
+		private void newList(String newName, String newKey) {
 			this.pairs.clear();
+			this.lists.clear();
+			this.keyName =newKey;
 			this.name = newName;
-			DataTypes.logger.info("New valueList initiated for {} ", this.name);
+			DataTypes.logger.info("New keyed value list initiated for for {} ", this.name);
 		}
 
-		private ValueList build() {
+		private void addList(String newKey) {
+			if (this.keyName == null || this.pairs.size() == 0) {
+				DataTypes.logger.error("empty line in lists??, valueList not created.");
+			}else {
+				this.lists.put(this.keyName, this.pairs.toArray(new Pair[0]));
+				this.pairs.clear();
+			}
+			this.keyName = newKey;
+		}
+
+		private KeyedValueList build() {
 			if (this.name == null) {
-				DataTypes.logger.error("empty line in lists??, Your list may be all mixed-up!!.");
+				DataTypes.logger.error("empty line in lists??, valueList not created.");
 				return null;
 			}
-			return new ValueList(this.name, this.pairs.toArray(new Pair[0]));
+			this.addList(null);
+			return new KeyedValueList(this.name, this.lists);
 		}
 	}
 }

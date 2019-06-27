@@ -20,24 +20,25 @@
  * SOFTWARE.
  */
 
-package example.project.custom;
+package org.simplity.fm.validn;
 
-import java.util.List;
-
-import org.simplity.fm.Message;
-import org.simplity.fm.form.IFormData;
-import org.simplity.fm.service.IFormProcessor;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
+ * contains list of valid values
+ * 
  * @author simplity.org
- *
  */
-public class Junk2 implements IFormProcessor {
+public abstract class ValueList {
+	protected final Set<String> values = new HashSet<>();
 
-	@Override
-	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
+	/**
+	 * 
+	 * @param value
+	 * @return true if the value is valid as per this list
+	 */
+	public boolean isValid(String value) {
+		return this.values.contains(value);
 	}
-
 }

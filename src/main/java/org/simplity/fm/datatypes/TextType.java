@@ -47,7 +47,11 @@ public class TextType extends DataType {
 		this.minLength = minLength;
 		this.maxLength = maxLength;
 		this.messageId = errorMessageId;
-		this.regex = regex;
+		if (regex == null || regex.isEmpty()) {
+			this.regex = null;
+		} else {
+			this.regex = regex;
+		}
 		this.validValues = valueList;
 	}
 
