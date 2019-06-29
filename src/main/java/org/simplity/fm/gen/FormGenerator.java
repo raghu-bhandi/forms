@@ -27,23 +27,21 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.simplity.fm.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
 public class FormGenerator {
+	private static final Logger logger = LoggerFactory.getLogger(DataTypeGenerator.class);
 	private static final String EXT = ".xlsx";
-	private static final String PACKAGE_NAME = "example.project.gen";
-	private static final String CUSTOM_PACKAGE_NAME = "example.project.custom";
-	private static final String XLSX = "C:/Users/raghu/eclipse-workspace/ef/src/main/resources/spec/struct/";
-	private static final String FOLDER = "C:/Users/raghu/eclipse-workspace/ef/src/main/java/example/project/gen/";
-	private static final String STRUCT_FILE_NAME = "FormStructures.java";
 
 	/**
 	 * 
@@ -51,83 +49,57 @@ public class FormGenerator {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		Config config = Config.getConfig();
+		String xlsRoot = config.getXlsRootFolder() + "form/";
+		File xlsDir = new File(xlsRoot);
+		if (xlsDir.exists() == false) {
+			logger.error("Root folder for forms {} does not exist. Aborting..", xlsRoot);
+			return;
+		}
+		logger.info("Going to prcess forms under folder {}", xlsRoot);
 		/*
-		 * ensure the directory exists
+		 * ensure that the output directory exists
 		 */
-		File f = new File(FOLDER);
+		String targetFolder = config.getGeneratedSourceRoot() + "form/";
+		File f = new File(targetFolder);
 		if (!f.exists()) {
 			if (!f.mkdirs()) {
-				System.err.println("Uable to create folder " + FOLDER);
+				logger.error("Uable to create folder {}. Aborting..." + targetFolder);
 				return;
 			}
 		}
-		f = new File(XLSX);
-		if (f.exists() == false) {
-			System.err.println("Folder " + XLSX + " does not exist. form work books are not converted to java");
-			return;
-		}
-		StringBuilder sbf = new StringBuilder();
 
+		StringBuilder sbf = new StringBuilder();
 		List<String> forms = new ArrayList<>();
-		for (File xls : f.listFiles()) {
+		for (File xls : xlsDir.listFiles()) {
 			String fn = xls.getName();
 			if (fn.endsWith(EXT) == false) {
-				System.out.println("Skipping non-xlsx file " + fn);
+				logger.info("Skipping non-xlsx file {} " + fn);
 				continue;
 			}
 			fn = fn.substring(0, fn.length() - EXT.length());
-			System.out.println("Going to generate form " + fn);
+			logger.info("Going to generate form " + fn);
 			Form form = null;
-			try (XSSFWorkbook book = new XSSFWorkbook(new FileInputStream(xls))) {
+			try (Workbook book = new XSSFWorkbook(new FileInputStream(xls))) {
 				form = Form.fromBook(book, fn);
 			} catch (Exception e) {
 				e.printStackTrace();
+				logger.error("Form {} not generated. Error : {}", fn, e.getMessage());
 				continue;
 			}
 			forms.add(fn);
 			sbf.setLength(0);
 			String fileName = xls.getAbsolutePath();
-			File outFile = new File(FOLDER + Util.toClassName(fn) + ".java");
-			form.emitJavaClass(sbf, CUSTOM_PACKAGE_NAME, PACKAGE_NAME, fileName);
+			File outFile = new File(targetFolder + Util.toClassName(fn) + ".java");
+			form.emitJavaClass(sbf, fileName);
 			try (Writer writer = new FileWriter(outFile)) {
 				writer.write(sbf.toString());
+				logger.info("{} generated.", outFile.getAbsolutePath());
+			}catch (Exception e) {
+				e.printStackTrace();
+				logger.error("Error while writing to file {}. Error : {}", outFile.getAbsolutePath(), e.getMessage());
+				continue;
 			}
 		}
-		sbf.setLength(0);
-		emitStructures(sbf, forms, PACKAGE_NAME);
-		f = new File(FOLDER + STRUCT_FILE_NAME);
-		try (Writer writer = new FileWriter(f)) {
-			writer.write(sbf.toString());
-		}
 	}
-
-	private static void emitStructures(StringBuilder sbf, List<String> names, String packageName) {
-		sbf.append("package ").append(packageName).append(';');
-		sbf.append("\n");
-
-		Util.emitImport(sbf, HashMap.class);
-		Util.emitImport(sbf, Map.class);
-		Util.emitImport(sbf, Form.class);
-
-		sbf.append("\n\n/**\n * static class that has a static attribute for each form defined in this project\n */");
-		sbf.append("\n public class FormStructures {");
-		sbf.append("\n\tprivate static final Map<String, FormStructure> allStructures = new HashMap<>();");
-		sbf.append("\n\n\t/**\n\t *\n\t * @param structureName");
-		sbf.append("\n\t * @return form structure, or null if no such form defined in the project\n\t */");
-
-		sbf.append("\n\tpublic static FormStructure getStructure(String structureName) {");
-		sbf.append("\n\t\treturn allStructures.get(structureName);\n\t}");
-
-		for (String name : names) {
-			sbf.append("\n\t/**\n\t * ").append(name).append("\n\t */");
-			sbf.append("\n\tpublic static final FormStructure ").append(name).append(" = new ");
-			sbf.append(Util.toClassName(name)).append("();");
-		}
-		sbf.append("\n\n\tstatic{");
-		for (String name : names) {
-			sbf.append("\n\t\tallStructures.put(\"").append(name).append("\", ").append(name).append(");");
-		}
-		sbf.append("\n\t}\n}\n");
-	}
-
 }

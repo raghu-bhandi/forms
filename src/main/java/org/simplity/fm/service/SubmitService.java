@@ -53,17 +53,17 @@ public class SubmitService extends SaveService {
 	@Override
 	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
 		List<Message> messages = new ArrayList<>();
-		FormData form = this.newForm(user, json, messages);
-		if (form == null) {
+		FormData formData = this.newForm(user, json, messages);
+		if (formData == null) {
 			return this.failed(messages);
 		}
 
-		boolean ok = this.doSave(form, user, json, false, messages);
+		boolean ok = this.doSave(formData, user, json, false, messages);
 		if(!ok) {
 			return this.failed(messages);
 		}
 
-		if(!this.processForm(Form.PRE_SUBMIT, form, messages)) {
+		if(!this.processForm(Form.PRE_SUBMIT, formData, messages)) {
 			return this.failed(messages);
 		}
 		
@@ -71,7 +71,7 @@ public class SubmitService extends SaveService {
 		/*
 		 * TODO : do whatever we have to do to submit this form...
 		 */
-		if(!this.processForm(Form.POST_SUBMIT, form, messages)) {
+		if(!this.processForm(Form.POST_SUBMIT, formData, messages)) {
 			return this.failed(messages);
 		}
 

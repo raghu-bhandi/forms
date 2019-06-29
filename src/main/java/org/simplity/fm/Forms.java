@@ -46,7 +46,9 @@ public final class Forms {
 			return form;
 		}
 		try {
-			form = (Form)Class.forName(Config.getQualifiedClassName(formName)).newInstance();
+			String cls = Config.getConfig().getGeneratedPackageName() + ".form."
+					+ formName.substring(0, 1).toUpperCase() + formName.substring(1);
+			form = (Form)Class.forName(cls).newInstance();
 			allForms.put(formName, form);
 			return form;
 		}catch(Exception e) {

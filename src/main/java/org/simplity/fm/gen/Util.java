@@ -29,6 +29,9 @@ import java.util.function.Consumer;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility methods for dealing with work book
@@ -37,6 +40,7 @@ import org.apache.poi.ss.usermodel.Sheet;
  *
  */
 class Util {
+	private static final Logger logger = LoggerFactory.getLogger(Util.class);
 	/**
 	 * get boolean value from a cell.
 	 * 
@@ -62,7 +66,7 @@ class Util {
 		if ("false".equals(s)) {
 			return true;
 		}
-		System.err.println("Found " + s + " when we were looking for true/false ");
+		logger.error("Found  {}  when we were looking for true/false ", s);
 		return false;
 	}
 
@@ -112,7 +116,7 @@ class Util {
 				//
 			}
 		}
-		System.err.println("Found " + cell.getStringCellValue() + " when we were looking for an integer");
+		logger.error("Found {} when we were looking for an integer", cell.getStringCellValue());
 		return 0;
 	}
 
@@ -161,11 +165,18 @@ class Util {
 	 * @return true i the row is null, or cell at idx is empty
 	 */
 	static boolean hasContent(Row row, int nbrCells) {
-		if (row == null || row.getPhysicalNumberOfCells() == 0) {
+		if (row == null) {
 			return false;
 		}
-
-		return row.getFirstCellNum() < nbrCells;
+		for(Cell cell : row) {
+			if(cell.getCellType() != Cell.CELL_TYPE_BLANK) {
+				return true;
+			}
+			if(cell.getColumnIndex() >= nbrCells) {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -176,14 +187,35 @@ class Util {
 	}
 	
 	public static void consumeRows(Sheet sheet, int nbrCells, Consumer<Row> consumer) {
-		int n = sheet.getLastRowNum();
-		for (int i = 1; i < n; i++) {
-			Row row = sheet.getRow(i);
-			if (Util.hasContent(row, nbrCells)) {
-				Form.logger.error("row {} is empty. skipped.");
+		boolean isFirst = true;
+		for (Row row : sheet) {
+			if(isFirst) {
+				isFirst = false;
 				continue;
+			}
+			if (hasContent(row, nbrCells) == false) {
+				logger.info("row {} is empty till column {}. This is considered as the last row. ", row.getRowNum(), nbrCells);
+				break;
 			}
 			consumer.accept(row);
 		}
 	}
+
+	static Sheet[] readSheets(Workbook book, String[] names) {
+		Sheet[] sheets = new Sheet[names.length];
+		for (int i = 0; i < sheets.length; i++) {
+			String s = names[i];
+			Sheet sheet = book.getSheet(s);
+			int n = sheet == null? 0 : sheet.getPhysicalNumberOfRows();
+			if (n == 0) {
+				logger.error("Sheet {} is missing in the workbook or it has no rows.", s);
+				sheet = book.createSheet(s);
+			}else {
+				logger.info("Sheet {} loaded with {} rows", s, n);
+			}
+			sheets[i] = sheet;
+		}
+		return sheets;
+	}
+
 }

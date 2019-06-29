@@ -22,7 +22,6 @@
 
 package org.simplity.fm.validn;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -31,7 +30,8 @@ import java.util.Set;
  * @author simplity.org
  */
 public abstract class ValueList {
-	protected final Set<String> values = new HashSet<>();
+	protected String name;
+	protected Set<String> values ;
 
 	/**
 	 * 
@@ -41,4 +41,12 @@ public abstract class ValueList {
 	public boolean isValid(String value) {
 		return this.values.contains(value);
 	}
-}
+	
+	/**
+	 * 
+	 * @return unique name of this list. A naming convention must be followed
+	 *         to ensure that names do not clash
+	 */
+	public String getName() {
+		return this.name;
+	}}

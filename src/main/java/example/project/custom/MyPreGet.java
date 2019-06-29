@@ -27,17 +27,19 @@ import java.util.List;
 import org.simplity.fm.Message;
 import org.simplity.fm.form.IFormData;
 import org.simplity.fm.service.IFormProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
-public class Junk2 implements IFormProcessor {
-
+public class MyPreGet implements IFormProcessor {
+	private static final Logger logger = LoggerFactory.getLogger(MyPreGet.class);
 	@Override
 	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
+		logger.info("FOrm reached at preGet for processing. We are syaing OK");
+		return true;
 	}
 
 }

@@ -26,12 +26,15 @@ import org.simplity.fm.datatypes.DataType;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.validn.ValueList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
 public class Field {
+	private static final Logger logger = LoggerFactory.getLogger(Field.class);
 	/**
 	 * field name is unique within a form/template. However, it is strongly
 	 * advised that the same name is used in different forms if they actually
@@ -82,12 +85,13 @@ public class Field {
 	/**
 	 * if this field has a list of valid values (to be rendered on the client as
 	 * a drop-down)
-	 * this list may be design-time in which it is available in
+	 * this list may be design-time in which it is available in valueLists.
+	 * if the valid value list depends on another field, then it is not
+	 * specified here, but as part of inter-field validations
 	 * <code>ValueLists</code> Otherwise this value list is fetched at run time
 	 * TODO: as of now, only design-time known list is supported
 	 */
 	private final String valueListName;
-
 
 	/**
 	 * cached value list for
@@ -213,16 +217,26 @@ public class Field {
 	 *             if the value is invalid.
 	 */
 	public Object parse(String inputValue) throws InvalidValueException {
+		logger.info("{}={}", this.fieldName, inputValue);
 		if (inputValue == null) {
 			if (this.isRequired == false) {
 				return null;
 			}
-		}else if (this.valueList == null || this.valueList.isValid(inputValue)) {
+		} else if (this.valueList != null) {
+			logger.info("{}={} being validated against list {}", this.fieldName, inputValue, this.valueListName);
+			if (this.valueList.isValid(inputValue)) {
+				logger.info("{}={} validated OK", this.fieldName, inputValue);
+				return this.getValueType().parse(inputValue);
+			}
+		} else {
+			logger.info("{}={} being validated as value", this.fieldName, inputValue);
 			Object obj = this.dataType.parse(inputValue);
 			if (obj != null) {
+				logger.info("{} validated ok for {} ", this.fieldName, obj);
 				return obj;
 			}
 		}
+
 		throw new InvalidValueException(this.getMessageId(), this.fieldName, null);
 	}
 
@@ -256,6 +270,7 @@ public class Field {
 	public String getValueListName() {
 		return this.valueListName;
 	}
+
 	/**
 	 * @return the index
 	 */

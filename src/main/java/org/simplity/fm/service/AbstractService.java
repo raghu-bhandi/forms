@@ -56,7 +56,7 @@ public abstract class AbstractService implements IService {
 	/**
 	 * null if no input is expected
 	 */
-	protected Form formStructure;
+	protected Form form;
 
 	/**
 	 * a simple service that just retrieves the required form.
@@ -65,7 +65,7 @@ public abstract class AbstractService implements IService {
 	 * 
 	 */
 	public AbstractService(Form formStructure) {
-		this.formStructure = formStructure;
+		this.form = formStructure;
 	}
 
 	@Override
@@ -94,25 +94,25 @@ public abstract class AbstractService implements IService {
 	}
 
 	protected FormData newForm(LoggedInUser user, Map<String, String> keyFields, List<Message> messages) {
-		FormData form = this.formStructure.newFormData(this.operation);
-		form.setOwner(user);
-		form.loadKeys(keyFields, messages);
+		FormData formData = this.form.newFormData(this.operation);
+		formData.setOwner(user);
+		formData.loadKeys(keyFields, messages);
 		if (messages.size() > 0) {
 			return null;
 		}
 
-		return form;
+		return formData;
 	}
 
 	protected FormData newForm(LoggedInUser user, ObjectNode json, List<Message> messages) {
-		FormData form = this.formStructure.newFormData(this.operation);
-		form.setOwner(user);
-		form.loadKeys(json, messages);
+		FormData formData = this.form.newFormData(this.operation);
+		formData.setOwner(user);
+		formData.loadKeys(json, messages);
 		if (messages.size() > 0) {
 			return null;
 		}
 
-		return form;
+		return formData;
 	}
 
 	/**
@@ -121,7 +121,7 @@ public abstract class AbstractService implements IService {
 	 * 
 	 * @param user
 	 *            non-null
-	 * @param form
+	 * @param formData
 	 *            non-null
 	 * @param messages
 	 *            non-null
@@ -132,49 +132,49 @@ public abstract class AbstractService implements IService {
 	 *         message is added to the list
 	 * @throws IOException
 	 */
-	protected boolean retrieveForm(LoggedInUser user, FormData form, List<Message> messages, Writer writer)
+	protected boolean retrieveForm(LoggedInUser user, FormData formData, List<Message> messages, Writer writer)
 			throws IOException {
-		String key = form.getDocumentId();
-		if (this.hasAccess(user, form) == false) {
+		String key = formData.getDocumentId();
+		if (this.hasAccess(user, formData) == false) {
 			this.addMessage(MSG_NOT_AUTHORIZED, messages);
 			return false;
 		}
 
-		if (!this.processForm(Form.PRE_GET, form, messages)) {
+		if (!this.processForm(Form.PRE_GET, formData, messages)) {
 			return false;
 		}
 
 		/*
 		 * if there is no Post processing, we can stream the content directly.
 		 */
-		IFormProcessor processor = this.formStructure.getFormProcessor(Form.POST_GET);
+		IFormProcessor processor = this.form.getFormProcessor(Form.POST_GET);
 		if (processor == null && writer != null) {
 			if (this.streamFromStore(key, writer)) {
 				return true;
 			}
 			// else we will work with fresh form
 		} else {
-			this.loadFromStore(key, form);
+			this.loadFromStore(key, formData);
 		}
 
 		if (processor != null) {
-			if (!processor.process(form, messages)) {
+			if (!processor.process(formData, messages)) {
 				return false;
 			}
 		}
 		if (writer != null) {
-			form.serializeAsJson(writer);
+			formData.serializeAsJson(writer);
 		}
 		return true;
 	}
 
 	/**
 	 * @param key
-	 * @param form
+	 * @param formData
 	 * @return true if the data was indeed retrieved and loaded into the form
 	 * @throws IOException
 	 */
-	protected boolean loadFromStore(String key, FormData form) throws IOException {
+	protected boolean loadFromStore(String key, FormData formData) throws IOException {
 		/*
 		 * small time cheating with lambda, to get a value set there..
 		 */
@@ -192,7 +192,7 @@ public abstract class AbstractService implements IService {
 		if (ok) {
 			ObjectNode node = nodes[0];
 			if (node != null) {
-				form.load(node);
+				formData.load(node);
 				return true;
 			}
 		}
@@ -233,23 +233,23 @@ public abstract class AbstractService implements IService {
 	 * checks if the logged in user is the owner of the form
 	 * 
 	 * @param user
-	 * @param form
+	 * @param formData
 	 * @return true if the logged in user can access this for, for this
 	 *         operation.
 	 */
-	protected boolean hasAccess(LoggedInUser user, FormData form) {
-		return form.isOwner(user);
+	protected boolean hasAccess(LoggedInUser user, FormData formData) {
+		return formData.isOwner(user);
 	}
 
 	protected void addMessage(String messageId, List<Message> messages) {
 		messages.add(Message.newError(messageId));
 	}
 
-	protected boolean processForm(int processType, FormData form, List<Message> messages) {
-		IFormProcessor processor = this.formStructure.getFormProcessor(processType);
+	protected boolean processForm(int processType, FormData formData, List<Message> messages) {
+		IFormProcessor processor = this.form.getFormProcessor(processType);
 		if (processor == null) {
 			return true;
 		}
-		return processor.process(form, messages);
+		return processor.process(formData, messages);
 	}
 }

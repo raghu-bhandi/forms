@@ -22,35 +22,43 @@
 
 package org.simplity.fm;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.simplity.fm.datatypes.DataType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * static class that locates a data type instance
  * @author simplity.org
  *
  */
-public class DataTypes {
-	private static final Map<String, DataType> allTypes = new HashMap<>();
+public abstract class DataTypes {
+	protected static final Logger logger = LoggerFactory.getLogger(DataTypes.class);
+	private static final IDataTypes instance = locateTypes();
 	
 	/**
 	 * 
-	 * @param name
-	 * @return data type instance, or null if there is no such data type
+	 * @return an instance of 
 	 */
-	public static DataType getDataType(String name) {
-		DataType dt = allTypes.get(name);
-		if(dt != null) {
-			return dt;
-		}
+	public static IDataTypes getInstance() {
+		return instance;
+	}
+	
+	private static IDataTypes locateTypes() {
+		Config config = Config.getConfig();
+		String cls = config.getGeneratedPackageName() + '.' + config.getDataTypesClassName();
 		try {
-			dt = (DataType)Class.forName(Config.getQualifiedClassName(name)).newInstance();
+			return (IDataTypes)Class.forName(cls).newInstance();
 		}catch(Exception e) {
-			return null;
+			e.printStackTrace();
+			logger.error("Unable to locate generated data types class {}. No data types will be served for this app now.", cls);
+			return new IDataTypes() {
+				
+				@Override
+				public DataType getDataType(String name) {
+					logger.error("Class {} is not located. NO data types in the repository.", cls);
+					return null;
+				}
+			};
 		}
-		allTypes.put(name, dt);
-		return dt;
 	}
 }

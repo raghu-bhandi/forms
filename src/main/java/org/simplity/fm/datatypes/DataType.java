@@ -30,6 +30,7 @@ import org.simplity.fm.DateUtil;
  *
  */
 public abstract class DataType {
+	protected String name;
 	protected String messageId;
 	protected int minLength;
 	protected int maxLength;
@@ -62,10 +63,7 @@ public abstract class DataType {
 			return null;
 		}
 		Object val = this.valueType.parse(value);
-		if (val == null) {
-			return null;
-		}
-		if (this.isOk(val)) {
+		if (val != null && this.isOk(val)) {
 			return val;
 		}
 		return null;
@@ -100,5 +98,12 @@ public abstract class DataType {
 			return DateUtil.formatDateTime((Date) value);
 		}
 		return value.toString();
+	}
+	
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return this.name;
 	}
 }

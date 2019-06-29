@@ -54,7 +54,7 @@ class SpecialInstructions {
 	}
 
 	void emitJavaAttrs(StringBuilder sbf, String customPackageName) {
-		if (this.userId.isEmpty() == false) {
+		if (this.userId != null) {
 			sbf.append(L).append("userIdFieldName = \"").append(this.userId).append("\";");
 		}
 		if (this.doGet) {

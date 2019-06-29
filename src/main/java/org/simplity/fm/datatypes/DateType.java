@@ -36,6 +36,7 @@ public class DateType extends DataType {
 	private final long maxValue;
 
 	/**
+	 * @param name
 	 * @param errorId
 	 * 
 	 * @param minDays
@@ -47,7 +48,7 @@ public class DateType extends DataType {
 	 *            max. 100
 	 *            means 100 days after today is the max
 	 */
-	public DateType( String errorId, long minDays, long maxDays) {
+	public DateType(String name, String errorId, long minDays, long maxDays) {
 		this.valueType = ValueType.DATE;
 		this.minValue = minDays;
 		this.maxValue = maxDays;
@@ -56,7 +57,7 @@ public class DateType extends DataType {
 
 	@Override
 	protected boolean isOk(Object value) {
-		Date date = (Date)value;
+		Date date = (Date) value;
 		int days = DateUtil.daysFromToday(date.getTime());
 		return days >= this.minValue && days <= this.maxValue;
 	}

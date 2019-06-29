@@ -23,21 +23,24 @@
 package org.simplity.fm.gen;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
 import java.io.Writer;
 
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.simplity.fm.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
 public class DataTypeGenerator {
-	private static final String PACKAGE_NAME = "example.project.gen";
-	private static final String XLSX = "spec/dataTypes.xlsx";
-	private static final String FOLDER = "C:/Users/raghu/eclipse-workspace/ef/src/main/java/example/project/gen/";
-	private static final String TYPES_FILE = FOLDER + "DataTypes.java";
-	private static final String LIST_FILE = FOLDER + "ValueLists.java";
+	private static final Logger logger = LoggerFactory.getLogger(DataTypeGenerator.class);
+	private static final String XLSX = "dataTypes.xlsx";
 
 	/**
 	 * 
@@ -47,43 +50,93 @@ public class DataTypeGenerator {
 	public static void main(String[] args) throws Exception {
 		DataTypes types = null;
 		/*
-		 * read the xls into our Java object 
+		 * read the xls into our Java object
 		 */
-		try (XSSFWorkbook book = new XSSFWorkbook(ClassLoader.getSystemResourceAsStream(XLSX))) {
+		Config config = Config.getConfig();
+		String res = config.getXlsRootFolder() + XLSX;
+		File f = new File(res);
+		if (f.exists() == false) {
+			logger.error("xls file {} not found. Aborting..", res);
+		}
+		logger.info("Going to generate data types from file {}", res);
+
+		try (InputStream ins = new FileInputStream(f); Workbook book = new XSSFWorkbook(ins)) {
+			int n = book.getNumberOfSheets();
+			if (n == 0) {
+				logger.error("Work book has no sheets in it. Quitting..");
+				return;
+			}
 			types = DataTypes.fromWorkBook(book);
+
 		} catch (Exception e) {
+			logger.error("Exception while trying to read workbook {}. Error: {}", res, e.getMessage());
 			e.printStackTrace();
 			return;
 		}
-		
+
 		/*
 		 * ensure the directory exists
 		 */
-		File f = new File(FOLDER);
+		String rootFolder = config.getGeneratedSourceRoot();
+		f = new File(rootFolder);
 		if (!f.exists()) {
 			if (!f.mkdirs()) {
-				System.err.println("Uable to create folder " + FOLDER);
+				System.err.println("Unable to create root folder {} for generated source  " + rootFolder);
 				return;
 			}
 		}
 		/*
-		 * generate java class file from our object now. 
+		 * create DataTypes.java in the root folder.
 		 */
 		StringBuilder sbf = new StringBuilder();
+		String rootPack = config.getGeneratedPackageName();
+		types.emitJavaTypes(sbf, rootPack);
+		writeOut(rootFolder + config.getDataTypesClassName() + ".java", sbf);
 
-		types.emitJavaLists(sbf, PACKAGE_NAME);
-		f = new File(LIST_FILE);
-		try (Writer writer = new FileWriter(f)) {
-			writer.write(sbf.toString());
+		/**
+		 * lists are created under list sub-package
+		 */
+		if (types.lists != null && types.lists.size() > 0) {
+			String pack = rootPack + ".list";
+			String folder = rootFolder + "list/";
+			File dir = new File(folder);
+			if (dir.exists() == false) {
+				dir.mkdirs();
+			}
+			for (ValueList list : types.lists.values()) {
+				sbf.setLength(0);
+				list.emitJava(sbf, pack);
+				writeOut(folder + Util.toClassName(list.name) + ".java", sbf);
+			}
+
 		}
-		
-		sbf.setLength(0);
-		types.emitJavaTypes(sbf, PACKAGE_NAME);
-		f = new File(TYPES_FILE);
-		try (Writer writer = new FileWriter(f)) {
+
+		/**
+		 * keyed lists
+		 */
+		if (types.keyedLists != null && types.keyedLists.size() > 0) {
+			String pack = rootPack + ".klist";
+			String folder = rootFolder + "klist/";
+			File dir = new File(folder);
+			if (dir.exists() == false) {
+				dir.mkdirs();
+			}
+			for (KeyedValueList list : types.keyedLists.values()) {
+				sbf.setLength(0);
+				list.emitJava(sbf, pack);
+				writeOut(folder + Util.toClassName(list.name) + ".java", sbf);
+			}
+
+		}
+	}
+
+	private static void writeOut(String fileName, StringBuilder sbf) {
+		try (Writer writer = new FileWriter(new File(fileName))) {
 			writer.write(sbf.toString());
+			logger.info("File {} generated.", fileName);
+		} catch (Exception e) {
+			logger.error("Error while writing file {} \n {}", fileName, e.getMessage());
 		}
 
 	}
-
 }

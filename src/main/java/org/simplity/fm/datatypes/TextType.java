@@ -21,7 +21,6 @@
  */
 package org.simplity.fm.datatypes;
 
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -32,17 +31,16 @@ import java.util.regex.Pattern;
  */
 public class TextType extends DataType {
 	private final String regex;
-	private final Set<String> validValues;
 
 	/**
 	 * 
+	 * @param name 
 	 * @param errorMessageId
 	 * @param minLength
 	 * @param maxLength
 	 * @param regex
-	 * @param valueList
 	 */
-	public TextType(String errorMessageId, int minLength, int maxLength, String regex, Set<String> valueList) {
+	public TextType(String name, String errorMessageId, int minLength, int maxLength, String regex) {
 		this.valueType = ValueType.TEXT;
 		this.minLength = minLength;
 		this.maxLength = maxLength;
@@ -52,15 +50,11 @@ public class TextType extends DataType {
 		} else {
 			this.regex = regex;
 		}
-		this.validValues = valueList;
 	}
 
 	@Override
 	protected boolean isOk(Object val) {
 		String value = val.toString();
-		if (this.validValues != null) {
-			return this.validValues.contains(value);
-		}
 		int len = value.length();
 		if (len < this.minLength || (this.maxLength > 0 && len > this.maxLength)) {
 			return false;

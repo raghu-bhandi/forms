@@ -33,6 +33,7 @@ import org.simplity.fm.datatypes.ValueType;
  */
 class DataType {
 	private static final String C = ", ";
+	static final int NBR_CELLS = 11;
 	/*
 	 * all columns in the fields sheet
 	 */
@@ -76,19 +77,17 @@ class DataType {
 		return dt;
 	}
 
-	void emitJava(StringBuilder sbf, boolean hasList) {
+	void emitJava(StringBuilder sbf) {
 		String cls = this.valueType.getDataTypeClass().getSimpleName();
-		String listName = null;
-		if (hasList) {
-			listName = "ValueLists." + this.name;
-		}
 		/*
 		 * following is the type of line to be output
 		 * public static final {className} {fieldName} = new
 		 * {className}({errorMessageId}.......);
 		 */
 		sbf.append("\n\tpublic static final ").append(cls).append(" ").append(this.name);
-		sbf.append(" = new ").append(cls).append("(").append(Util.escape(this.messageId));
+		sbf.append(" = new ").append(cls).append("(");
+		sbf.append(Util.escape(this.name));
+		sbf.append(C).append(Util.escape(this.messageId));
 		/*
 		 * append parameters list based on the data type
 		 */
@@ -96,14 +95,11 @@ class DataType {
 		case BOOLEAN:
 			break;
 		case DATE:
+		case NUMBER:
 			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append('L');
 			break;
-		case NUMBER:
-			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append("L, ").append(listName);
-			break;
 		case TEXT:
-			sbf.append(C).append(this.minLength).append(C).append(this.maxLength).append(C).append(Util.escape(this.regex))
-					.append(C).append(listName);
+			sbf.append(C).append(this.minLength).append(C).append(this.maxLength).append(C).append(Util.escape(this.regex));
 			break;
 		default:
 			sbf.append(" generating compilation error on valueType=" + this.valueType);

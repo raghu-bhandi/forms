@@ -21,8 +21,6 @@
  */
 package org.simplity.fm.datatypes;
 
-import java.util.Set;
-
 /**
  * validation parameters for a an integral value
  * 
@@ -32,16 +30,15 @@ import java.util.Set;
 public class NumberType extends DataType {
 	private final long minValue;
 	private final long maxValue;
-	private final Set<Long> validValues;
 
 	/**
 	 * 
+	 * @param name 
 	 * @param errorMessageId
 	 * @param minValue
 	 * @param maxValue
-	 * @param valueList
 	 */
-	public NumberType(String errorMessageId, long minValue, long maxValue, Set<Long> valueList) {
+	public NumberType(String name, String errorMessageId, long minValue, long maxValue) {
 		this.valueType = ValueType.NUMBER;
 		this.messageId = errorMessageId;
 		this.minValue = minValue;
@@ -53,15 +50,10 @@ public class NumberType extends DataType {
 		if (this.maxValue >= 0) {
 			this.maxLength = ("" + this.maxValue).length();
 		}
-
-		this.validValues = valueList;
 	}
 
 	@Override
 	protected boolean isOk(Object val) {
-		if (this.validValues != null) {
-			return this.validValues.contains(val);
-		}
 		long value = (Long) val;
 		return value >= this.minValue && value <= this.maxValue;
 	}

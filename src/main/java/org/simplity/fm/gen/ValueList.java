@@ -22,8 +22,13 @@
 
 package org.simplity.fm.gen;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Row;
 
@@ -32,8 +37,8 @@ import org.apache.poi.ss.usermodel.Row;
  *
  */
 class ValueList {
-	private static final int NBR_CELLS = 3;
 	private static final String C = ", ";
+	static final int NBR_CELLS =3;
 	final String name;
 	final Pair[] pairs;
 
@@ -46,14 +51,37 @@ class ValueList {
 		this.pairs = pairs;
 	}
 
-	void emitJava(StringBuilder sbf) {
-		sbf.append("\n\tpublic static final Set<String> ").append(this.name).append(" = new HashSet<>(")
-				.append(this.pairs.length).append(");");
-		sbf.append("\n\tstatic{");
-		for (int i = 0; i < this.pairs.length; i++) {
-			sbf.append("\n\t\t").append(this.name).append(".add(").append(Util.escape(this.values[i])).append(");");
+	void emitJava(StringBuilder sbf, String packageName) {
+		sbf.append("package ").append(packageName).append(';');
+		sbf.append('\n');
+		
+		Util.emitImport(sbf, Arrays.class);
+		Util.emitImport(sbf, Set.class);
+		Util.emitImport(sbf, HashSet.class);
+		Util.emitImport(sbf, org.simplity.fm.validn.ValueList.class);
+		
+		sbf.append("\n\n/**\n * List of valid values for list ").append(this.name);
+		sbf.append("\n * <br /> generated at ").append(DateFormat.getDateTimeInstance().format(new Date()));
+		sbf.append("\n */ ");
+		
+		sbf.append("\npublic class ").append(Util.toClassName(this.name)).append(" extends ValueList {");
+		
+
+		sbf.append("\n\t private static final Set<String> _values = new HashSet<>(Arrays.asList(");
+		for(Pair p : this.pairs) {
+			sbf.append(Util.escape(p.value)).append(C);
 		}
+		sbf.setLength(sbf.length() - C.length());
+		sbf.append("));");
+		sbf.append("\n\t private static final String _name = \"").append(this.name).append("\";");
+
+		sbf.append("\n\n/**\n *").append(this.name).append("\n */");
+
+		sbf.append("\n\tpublic ").append(Util.toClassName(this.name)).append("() {");
+		sbf.append("\n\t\tthis.name = _name;");
+		sbf.append("\n\t\tthis.values = _values;");
 		sbf.append("\n\t}");
+		sbf.append("\n}\n");
 	}
 
 	protected void emitTs(StringBuilder sbf) {
@@ -63,8 +91,9 @@ class ValueList {
 			} else {
 				sbf.append("\n\t\t\t,");
 			}
-			sbf.append("['").append(this.labels[i].replace("'", "''")).append("', '");
-			sbf.append(this.values[i].replace("'", "''")).append("']");
+			Pair pair = this.pairs[i];
+			sbf.append("['").append(pair.label.replace("'", "''")).append("', '");
+			sbf.append(pair.value.replace("'", "''")).append("']");
 		}
 	}
 

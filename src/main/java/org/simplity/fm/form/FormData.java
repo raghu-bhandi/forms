@@ -210,6 +210,7 @@ public class FormData implements IFormData {
 		}
 
 		Field[] fields = this.form.getFields();
+
 		for (int idx : indexes) {
 			Field f = fields[idx];
 			validateAndSet(f, values.get(f.getFieldName()), this.fieldValues, idx, false, errors);

@@ -32,7 +32,8 @@ import java.util.Set;
  * @author simplity.org
  */
 public abstract class KeyedValueList {
-	protected final Map<String, Set<String>> values = new HashMap<>();
+	protected String name;
+	protected Map<String, Set<String>> values = new HashMap<>();
 
 	/**
 	 * is this key value pair valid?
@@ -47,5 +48,14 @@ public abstract class KeyedValueList {
 			return false;
 		}
 		return vals.contains(value);
+	}
+
+	/**
+	 * 
+	 * @return unique name of this list. A naiming ocnvention must be followe
+	 *         dto ensure that names do not clash
+	 */
+	public String getName() {
+		return this.name;
 	}
 }

@@ -52,12 +52,12 @@ public class GetService extends AbstractService {
 	@Override
 	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception{
 		List<Message> messages = new ArrayList<>();
-		FormData form = this.newForm(user, keyFields, messages);
-		if(form == null) {
+		FormData formData = this.newForm(user, keyFields, messages);
+		if(formData == null) {
 			return this.failed(messages);
 		}
 
-		boolean ok = this.retrieveForm(user, form, messages, writer);
+		boolean ok = this.retrieveForm(user, formData, messages, writer);
 		if(ok) {
 			return this.succeeded();
 		}

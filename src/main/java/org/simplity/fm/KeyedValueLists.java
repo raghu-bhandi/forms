@@ -29,6 +29,7 @@ import org.simplity.fm.validn.KeyedValueList;
 
 /**
  * locator for generated keyedValueList
+ * 
  * @author simplity.org
  *
  */
@@ -46,7 +47,9 @@ public final class KeyedValueLists {
 			return list;
 		}
 		try {
-			list = (KeyedValueList)Class.forName(Config.getQualifiedClassName(listName)).newInstance();
+			String cls = Config.getConfig().getGeneratedPackageName() + ".klist."
+					+ listName.substring(0, 1).toUpperCase() + listName.substring(1);
+			list = (KeyedValueList) Class.forName(cls).newInstance();
 			allLists.put(listName, list);
 			return list;
 		} catch (Exception e) {

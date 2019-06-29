@@ -36,7 +36,7 @@ public enum ValueType {
 	 */
 	TEXT(TextType.class, 0) {
 		@Override
-		Object parse(String value) {
+		public Object parse(String value) {
 			return value;
 		}
 	},
@@ -45,7 +45,7 @@ public enum ValueType {
 	 */
 	NUMBER(NumberType.class, 1) {
 		@Override
-		Object parse(String value) {
+		public Object parse(String value) {
 			try {
 				return Long.parseLong(value);
 			} catch (Exception e) {
@@ -58,7 +58,7 @@ public enum ValueType {
 	 */
 	BOOLEAN(BooleanType.class, 2) {
 		@Override
-		Object parse(String value) {
+		public Object parse(String value) {
 			if ("1".equals(value)) {
 				return true;
 			}
@@ -80,7 +80,7 @@ public enum ValueType {
 	 */
 	DATE(DateType.class, 3) {
 		@Override
-		Object parse(String value) {
+		public Object parse(String value) {
 			return DateUtil.parseDateWithOptionalTime(value);
 		}
 	};
@@ -109,7 +109,7 @@ public enum ValueType {
 	 * @return parsed value of this type. null if value is null or the value can
 	 *         not be parsed to the desired type
 	 */
-	abstract Object parse(String value);
+	public abstract Object parse(String value);
 
 	/**
 	 * @return  0-based index that can be used to represent valueType as int..

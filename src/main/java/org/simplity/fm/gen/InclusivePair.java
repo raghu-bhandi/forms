@@ -38,12 +38,12 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class InclusivePair {
 	private static final String C = ", ";
-	private static final int NBR_CELLS = 13;
+	private static final int NBR_CELLS = 4;
 
 	int index1;
 	int index2;
-	String fieldName;
 	String value1;
+	String fieldName;
 	String errorId;
 
 	static InclusivePair[] fromSheet(Sheet sheet, Map<String, Field> fields) {
@@ -74,25 +74,29 @@ class InclusivePair {
 		InclusivePair p = new InclusivePair();
 		String s1 = Util.textValueOf(row.getCell(0));
 		String s2 = Util.textValueOf(row.getCell(1));
-		p.value1 = Util.textValueOf(row.getCell(2));
-		p.errorId = Util.textValueOf(row.getCell(3));
 		if (s1 == null || s2 == null) {
 			Form.logger.error("Row {} has missing column value/s. Skipped", row.getRowNum());
 			return null;
 		}
+
 		Field f1 = fields.get(s1);
-		Field f2 = fields.get(s2);
 		if (f1 == null) {
 			Form.logger.error("{} is not a field name in this form. row {} skipped", s1, row.getRowNum());
 			return null;
 		}
+		p.index1 = f1.index;
+
+		Field f2 = fields.get(s2);
 		if (f2 == null) {
 			Form.logger.error("{} is not a field name in this form. row {} skipped", s2, row.getRowNum());
 			return null;
 		}
-		p.fieldName = s1;
-		p.index1 = f1.index;
 		p.index2 = f2.index;
+
+		p.value1 = Util.textValueOf(row.getCell(2));
+		p.errorId = Util.textValueOf(row.getCell(3));
+
+		p.fieldName = s1;
 		return p;
 	}
 

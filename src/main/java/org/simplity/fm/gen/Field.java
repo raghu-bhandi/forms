@@ -77,8 +77,10 @@ class Field {
 		
 		int n = list.size();
 		if ( n == 0) {
+			Form.logger.warn("No fields for this form!!");
 			return null;
 		}
+		Form.logger.info("{} fields added..");
 		Field[] arr = new Field[n];
 		for(int i = 0; i < arr.length; i++) {
 			Field field = list.get(i);
@@ -111,17 +113,24 @@ class Field {
 		return f;
 	}
 
-	void emitJavaCode(StringBuilder sbf) {
-		sbf.append("\n\t\t\tnew Field(\"").append(this.name);
-		sbf.append("\", DataTypes.").append(this.dataType);
+	void emitJavaCode(StringBuilder sbf, String dataTypesName) {
+		sbf.append("\n\t\t\tnew Field(\"").append(this.name).append('"');
+		sbf.append(C).append(this.index);
+		sbf.append(C).append(dataTypesName).append('.').append(this.dataType);
 		sbf.append(C).append(Util.escape(this.defaultValue));
 		sbf.append(C).append(Util.escape(this.errorId));
 		sbf.append(C).append(this.isRequired);
 		sbf.append(C).append(this.isEditable);
 		sbf.append(C).append(this.isDerived);
 		sbf.append(C).append(this.isKey);
+		/*
+		 * list is handled by inter-field in case key is specified
+		 */
+		if(this.listKey == null) {
 		sbf.append(C).append(Util.escape(this.listName));
-		sbf.append(C).append(Util.escape(this.listKey));
+		}else {
+			sbf.append(C).append("null");
+		}
 		sbf.append(')');
 	}
 

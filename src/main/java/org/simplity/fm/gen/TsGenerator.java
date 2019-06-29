@@ -77,7 +77,7 @@ public class TsGenerator {
 			return;
 		}
 		Map<String, DataType> types = dataTypes.getTypes();
-		Map<String, ValueList> valueLists = dataTypes.getLists();
+		Map<String, ValueList> valueLists = dataTypes.lists;
 		/*
 		 * generate java class file from our object now.
 		 */

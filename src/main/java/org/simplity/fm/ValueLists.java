@@ -45,7 +45,9 @@ public final class ValueLists {
 			return list;
 		}
 		try {
-			list = (ValueList)Class.forName(Config.getQualifiedClassName(listName)).newInstance();
+			String cls = Config.getConfig().getGeneratedPackageName() + ".list."
+					+ listName.substring(0, 1).toUpperCase() + listName.substring(1);
+			list = (ValueList)Class.forName(cls).newInstance();
 			allLists.put(listName, list);
 			return list;
 		} catch (Exception e) {

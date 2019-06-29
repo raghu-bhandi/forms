@@ -31,6 +31,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.simplity.fm.validn.FromToValidation;
 import org.simplity.fm.validn.IValidation;
+import org.simplity.fm.Config;
 import org.simplity.fm.validn.DependentListValidation;
 import org.simplity.fm.validn.ExclusiveValidation;
 import org.simplity.fm.validn.InclusiveValidation;
@@ -56,7 +57,7 @@ class Form {
 			"from-To inter-field validations", "either-or type of inter-field validaitons",
 			"if-a-then-b type of inter-field validaitons", "custom validations" };
 	private static final String COMA = ", ";
-	private static final String EQ = ", ";
+	private static final String EQ = " = ";
 
 	private String name;
 	private SpecialInstructions si;
@@ -148,8 +149,12 @@ class Form {
 		return names;
 	}
 
-	void emitJavaClass(StringBuilder sbf, String customPackageName, String generatedPackageName, String fileName) {
-		sbf.append("package ").append(generatedPackageName).append(';');
+	void emitJavaClass(StringBuilder sbf, String fileName) {
+		Config config = Config.getConfig();
+		String customPackage = config.getCustomCodePackage();
+		String generatedPackage = config.getGeneratedPackageName();
+		String typesName = config.getDataTypesClassName();
+		sbf.append("package ").append(generatedPackage).append(".form;");
 		sbf.append('\n');
 
 		Util.emitImport(sbf, org.simplity.fm.form.Field.class);
@@ -167,7 +172,8 @@ class Form {
 			Util.emitImport(sbf, InclusiveValidation.class);
 		}
 		Util.emitImport(sbf, DependentListValidation.class);
-
+		sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
+		
 		String cls = Util.toClassName(this.name);
 		sbf.append("\n\n/**\n * class that represents structure of ");
 		sbf.append(this.name);
@@ -176,21 +182,22 @@ class Form {
 		sbf.append("\npublic class ").append(cls).append(" extends Form {");
 
 		this.emitJavaConstants(sbf);
+		
 		sbf.append("\n\n\t/**\n\t *\n\t */");
 		sbf.append("\n\tpublic ").append(cls).append("() {");
 		sbf.append("\n\t\tthis.uniqueName = \"").append(this.name).append("\";");
 
-		this.si.emitJavaAttrs(sbf, customPackageName);
+		this.si.emitJavaAttrs(sbf, customPackage);
 
 		if (this.fields != null) {
-			this.emitJavaFields(sbf);
+			this.emitJavaFields(sbf, typesName);
 		}
 
 		if (this.childForms != null) {
 			this.emitJavaChildren(sbf);
 		}
 
-		this.emitJavaValidations(sbf, customPackageName);
+		this.emitJavaValidations(sbf, customPackage);
 
 		sbf.append("\n\n\t\tthis.initialize();\n\t}\n}\n");
 	}
@@ -211,7 +218,7 @@ class Form {
 		}
 	}
 
-	private void emitJavaFields(StringBuilder sbf) {
+	private void emitJavaFields(StringBuilder sbf, String dataTypesName) {
 		if (this.fields == null) {
 			sbf.append("\n\t\tthis.fields = null;");
 			return;
@@ -224,7 +231,7 @@ class Form {
 			} else {
 				sbf.append(COMA);
 			}
-			field.emitJavaCode(sbf);
+			field.emitJavaCode(sbf, dataTypesName);
 		}
 		sbf.append("\n\t\t};\n\t\tthis.fields = flds;");
 	}
@@ -244,11 +251,12 @@ class Form {
 			}
 			child.emitJavaCode(sbf);
 		}
-		sbf.append("\n\t\t};\n\t\tthis.childForms = chlds;");
+		sbf.append("};");
+		sbf.append("\n\t\tthis.childForms = chlds;");
 	}
 
 	private void emitJavaValidations(StringBuilder sbf, String customPackageName) {
-		sbf.append("\n\n\t\tIFormValidation[] vlds = {");
+		sbf.append("\n\n\t\tIValidation[] vlds = {");
 		int n = sbf.length();
 		String sufix = ",\n\t\t\t";
 		if (this.fromToPairs != null) {
@@ -292,7 +300,7 @@ class Form {
 			}
 		}
 		if (this.hasCustom) {
-			sbf.append("new ").append(customPackageName).append(Util.toClassName(this.name)).append("Validation();");
+			sbf.append("new ").append(customPackageName).append('.').append(Util.toClassName(this.name)).append("Validation()");
 		} else if (sbf.length() > n) {
 			/*
 			 * remove last sufix
@@ -300,7 +308,8 @@ class Form {
 			sbf.setLength(sbf.length() - sufix.length());
 		}
 
-		sbf.append("\n\t\t};\n\t\tthis.validations = vlds;");
+		sbf.append("};");
+		sbf.append("\n\t\tthis.validations = vlds;");
 	}
 
 	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,

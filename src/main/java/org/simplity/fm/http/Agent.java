@@ -28,8 +28,6 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,6 +36,8 @@ import org.simplity.fm.Message;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.service.ServiceResult;
 import org.simplity.fm.service.Services;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -56,7 +56,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * 
  */
 public class Agent {
-	private static final Logger logger = Logger.getLogger(Agent.class.getName());
+	private static final Logger logger = LoggerFactory.getLogger(Agent.class);
 	private static Agent singleInstance = new Agent();
 
 	/**
@@ -116,10 +116,9 @@ public class Agent {
 	 */
 	public void serve(HttpServletRequest req, HttpServletResponse resp, boolean inputDataIsInPayload)
 			throws IOException {
-
 		LoggedInUser user = this.getUser(req);
 		if (user == null) {
-			logger.log(Level.INFO, "No User. Asking to sent auth");
+			logger.info("No User. Responding with auth required atatus");
 			resp.setStatus(STATUS_AUTH_REQUIRED);
 			return;
 		}
@@ -154,7 +153,7 @@ public class Agent {
 				}
 				json = (ObjectNode) node;
 			} catch (Exception e) {
-				logger.log(Level.INFO, "Invalid data recd from client " + e.getMessage());
+				logger.info("Invalid data recd from client {}", e.getMessage());
 				resp.setStatus(STATUS_INVALID_DATA);
 				return;
 			}
@@ -171,19 +170,18 @@ public class Agent {
 		try (Writer writer = resp.getWriter()) {
 			ServiceResult result = null;
 			if (fields != null) {
-				logger.log(Level.INFO,
-						"Calling Service " + service.getClass().getName() + " with " + fields.size() + " fields");
+				logger.info("Calling Service {} with {} fields ", service.getClass().getName(), fields.size());
 				result = service.serve(user, fields, writer);
 			} else {
-				logger.log(Level.INFO, "Calling Service " + service.getClass().getName() + "with json");
+				logger.info("Calling Service {} with json", service.getClass().getName());
 				result = service.serve(user, json, writer);
 			}
 			if (result.allOk) {
-				logger.log(Level.INFO, "All Ok");
+				logger.info("Service returned with All Ok");
 				this.setHeaders(resp);
 			} else {
 				for (Message msg : result.messages)
-					logger.log(Level.INFO, "Message :" + msg);
+					logger.error("Message :" + msg);
 				this.respondWithError(resp, result.messages, writer);
 			}
 		} catch (Throwable e) {
@@ -265,19 +263,20 @@ public class Agent {
 			}
 			values.put(pair[0].trim(), val);
 		}
+		logger.info("{} parameters extracted from query string", values.size());
 		return values;
 	}
 
 	private IService getService(HttpServletRequest req) {
 		String serviceName = req.getHeader(SERVICE_NAME);
 		if (serviceName == null) {
-			logger.log(Level.INFO, "header " + SERVICE_NAME + " not recd");
+			logger.info("header {} not received", SERVICE_NAME);
 
 			return null;
 		}
 		IService service = Services.getService(serviceName);
 		if (service == null) {
-			logger.log(Level.INFO, serviceName + " is not a service");
+			logger.info("{} is not a service", serviceName);
 		}
 		return service;
 	}

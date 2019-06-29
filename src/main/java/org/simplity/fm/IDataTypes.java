@@ -20,24 +20,20 @@
  * SOFTWARE.
  */
 
-package example.project.custom;
+package org.simplity.fm;
 
-import java.util.List;
-
-import org.simplity.fm.Message;
-import org.simplity.fm.form.IFormData;
-import org.simplity.fm.service.IFormProcessor;
+import org.simplity.fm.datatypes.DataType;
 
 /**
  * @author simplity.org
  *
  */
-public class Junk5 implements IFormProcessor {
-
-	@Override
-	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+public interface IDataTypes {
+	/**
+	 * 
+	 * @param name
+	 * @return data type instance, or null if there is no such data type
+	 */
+	public abstract DataType getDataType(String name);
 
 }

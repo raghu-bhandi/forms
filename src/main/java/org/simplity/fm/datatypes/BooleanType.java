@@ -30,9 +30,10 @@ package org.simplity.fm.datatypes;
 public class BooleanType extends DataType {
 
 	/**
+	 * @param name 
 	 * @param errorId
 	 */
-	public BooleanType(String errorId) {
+	public BooleanType(String name, String errorId) {
 		this.messageId = errorId;
 		this.valueType = ValueType.BOOLEAN;
 	}

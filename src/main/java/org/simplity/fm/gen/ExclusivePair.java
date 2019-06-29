@@ -38,7 +38,7 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class ExclusivePair {
 	private static final String C = ", ";
-	private static final int NBR_CELLS = 13;
+	private static final int NBR_CELLS = 4;
 
 	int index1;
 	int index2;
@@ -59,9 +59,12 @@ class ExclusivePair {
 			}
 		});
 		
-		if (list.size() == 0) {
+		int n = list.size();
+		if (n == 0) {
+			Form.logger.info("No either-or inter-field validaiton defined");
 			return null;
 		}
+		Form.logger.info("{}  either-or inter-field validaiton defined", n);
 		return list.toArray(new ExclusivePair[0]);
 	}
 
@@ -74,25 +77,27 @@ class ExclusivePair {
 		ExclusivePair p = new ExclusivePair();
 		String s1  = Util.textValueOf(row.getCell(0));
 		String s2 = Util.textValueOf(row.getCell(1));
-		p.isRequired = Util.boolValueOf(row.getCell(2));
-		p.errorId = Util.textValueOf(row.getCell(3));
 		if(s1 == null || s2 == null) {
 			Form.logger.error("Row {} has missing column value/s. Skipped", row.getRowNum());
 			return null;
 		}
 		Field f1 = fields.get(s1);
-		Field f2 = fields.get(s2);
 		if(f1 == null) {
 			Form.logger.error("{} is not a field name in this form. row {} skipped", s1, row.getRowNum());
 			return null;
 		}
+		p.index1 = f1.index;
+
+		Field f2 = fields.get(s2);
 		if(f2 == null) {
 			Form.logger.error("{} is not a field name in this form. row {} skipped", s2, row.getRowNum());
 			return null;
 		}
-		p.fieldName = s1;
-		p.index1 = f1.index;
 		p.index2 = f2.index;
+
+		p.isRequired = Util.boolValueOf(row.getCell(2));
+		p.fieldName = s1;
+		p.errorId = Util.textValueOf(row.getCell(3));
 		return p;
 	}
 

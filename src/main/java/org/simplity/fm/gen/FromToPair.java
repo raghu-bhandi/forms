@@ -38,12 +38,12 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class FromToPair {
 	private static final String C = ", ";
-	private static final int NBR_CELLS = 13;
+	private static final int NBR_CELLS = 4;
 
 	int index1;
 	int index2;
-	String fieldName;
 	boolean equalOk;
+	String fieldName;
 	String errorId;
 
 	static FromToPair[] fromSheet(Sheet sheet, Map<String, Field> fields) {
@@ -74,25 +74,27 @@ class FromToPair {
 		FromToPair p = new FromToPair();
 		String s1  = Util.textValueOf(row.getCell(0));
 		String s2 = Util.textValueOf(row.getCell(1));
-		p.equalOk = Util.boolValueOf(row.getCell(2));
-		p.errorId = Util.textValueOf(row.getCell(3));
 		if(s1 == null || s2 == null) {
 			Form.logger.error("Row {} has missing column value/s. Skipped", row.getRowNum());
 			return null;
 		}
 		Field f1 = fields.get(s1);
-		Field f2 = fields.get(s2);
 		if(f1 == null) {
 			Form.logger.error("{} is not a field name in this form. row {} skipped", s1, row.getRowNum());
 			return null;
 		}
+		p.index1 = f1.index;
+
+		Field f2 = fields.get(s2);
 		if(f2 == null) {
 			Form.logger.error("{} is not a field name in this form. row {} skipped", s2, row.getRowNum());
 			return null;
 		}
-		p.fieldName = s1;
-		p.index1 = f1.index;
 		p.index2 = f2.index;
+
+		p.equalOk = Util.boolValueOf(row.getCell(2));
+		p.fieldName = s1;
+		p.errorId = Util.textValueOf(row.getCell(3));
 		return p;
 	}
 

@@ -57,24 +57,24 @@ public class SaveService extends AbstractService {
 	@Override
 	public ServiceResult serve(LoggedInUser user, ObjectNode json, Writer writer) throws Exception {
 		List<Message> messages = new ArrayList<>();
-		FormData form = this.newForm(user, json, messages);
-		if (form == null) {
+		FormData formData = this.newForm(user, json, messages);
+		if (formData == null) {
 			return this.failed(messages);
 		}
 
-		if(this.doSave(form, user, json, true, messages)) {
+		if(this.doSave(formData, user, json, true, messages)) {
 			return this.succeeded();
 		}
 		return this.failed(messages);
 	}
 	
-	protected boolean doSave(FormData form, LoggedInUser user, ObjectNode json, boolean allFieldsAreOptional, List<Message> messages) throws Exception {
+	protected boolean doSave(FormData formData, LoggedInUser user, ObjectNode json, boolean allFieldsAreOptional, List<Message> messages) throws Exception {
 
 		/*
 		 * TODO: if this is partial-save, then we should load existing data from
 		 * store before, extracting data from user pay load
 		 */
-		boolean ok = this.retrieveForm(user, form, messages, null);
+		boolean ok = this.retrieveForm(user, formData, messages, null);
 		if (!ok) {
 			// access issues..
 			return false;
@@ -83,24 +83,24 @@ public class SaveService extends AbstractService {
 		/*
 		 * now load data coming from client. It could be just a section
 		 */
-		form.validateAndLoad(json, allFieldsAreOptional, messages);
+		formData.validateAndLoad(json, allFieldsAreOptional, messages);
 		if (messages.size() > 0) {
 			return false;
 		}
 
-		if(!this.processForm(Form.PRE_SAVE, form, messages)) {
+		if(!this.processForm(Form.PRE_SAVE, formData, messages)) {
 			return false;
 		}
 
 		DataStore store = DataStore.getStore();
-		store.store(form.getDocumentId(), new IoConsumer<Writer>() {
+		store.store(formData.getDocumentId(), new IoConsumer<Writer>() {
 
 			@Override
 			public void accept(Writer w) throws IOException {
-				form.serializeAsJson(w);
+				formData.serializeAsJson(w);
 			}
 		});
 
-		return this.processForm(Form.POST_SAVE, form, messages);
+		return this.processForm(Form.POST_SAVE, formData, messages);
 	}
 }

@@ -27,17 +27,20 @@ import java.util.List;
 import org.simplity.fm.Message;
 import org.simplity.fm.form.IFormData;
 import org.simplity.fm.service.IFormProcessor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
-public class Junk6 implements IFormProcessor {
+public class MyPostGet implements IFormProcessor {
+	private static final Logger logger = LoggerFactory.getLogger(MyPostGet.class);
 
 	@Override
 	public boolean process(IFormData form, List<Message> messages) {
-		// TODO Auto-generated method stub
-		return false;
+		logger.info("FOrm reached at Post-GET for processing. We are syaing OK");
+		return true;
 	}
 
 }
