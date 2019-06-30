@@ -68,6 +68,7 @@ class ChildForm {
 		});
 		int n = list.size();
 		if ( n == 0) {
+			Form.logger.info("No child forms parsed");
 			return null;
 		}
 		ChildForm[] arr = new ChildForm[n];
@@ -76,6 +77,7 @@ class ChildForm {
 			child.index = i;
 			arr[i] = child;
 		}
+		Form.logger.info("{} child forms parsed and added.", n);
 		return arr;
 	}
 	
@@ -125,7 +127,7 @@ class ChildForm {
 	}
 
 	void emitTs(StringBuilder sbf) {
-		sbf.append("\n\t\tthis.").append(this.name).append(" = new ChildForm(").append(Util.escapeTs(this.name));
+		sbf.append("\n\t").append(this.name).append(" = new ChildForm(").append(Util.escapeTs(this.name));
 		sbf.append(C).append(this.index);
 		sbf.append(C).append(Util.escapeTs(this.label));
 		sbf.append(C).append(Util.toClassName(this.formName)).append(".getInstance()");

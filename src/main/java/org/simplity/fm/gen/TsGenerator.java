@@ -26,18 +26,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.Writer;
-import java.util.Map;
 
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.simplity.fm.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
 public class TsGenerator {
-	private static final String XLSX = "spec/dataTypes.xlsx";
-	private static final String OUT_FOLDER = "C:/Users/raghu/eclipse-workspace/ef/src/main/java/example/project/gen/";
-	private static final String IN_FOLDER = "C:/Users/raghu/eclipse-workspace/ef/src/main/resources/spec/struct/";
+	private static final Logger logger = LoggerFactory.getLogger(TsGenerator.class); 
 	private static final String EXT_IN = ".xlsx";
 	private static final String EXT_OUT = ".ts";
 
@@ -47,37 +48,33 @@ public class TsGenerator {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		DataTypes dataTypes = null;
-		/*
-		 * read the xls into our Java object
-		 */
-		try (XSSFWorkbook book = new XSSFWorkbook(ClassLoader.getSystemResourceAsStream(XLSX))) {
-			dataTypes = DataTypes.fromWorkBook(book);
-		} catch (Exception e) {
-			e.printStackTrace();
+		DataTypes dataTypes = DataTypes.loadDataTypes();
+		if(dataTypes == null) {
 			return;
 		}
 
 		/*
 		 * ensure the output directory exists
 		 */
-		File f = new File(OUT_FOLDER);
+		Config config = Config.getConfig();
+		String outFolder = config.getGeneratedSourceRoot() + "ts/";
+		File f = new File(outFolder);
 		if (!f.exists()) {
 			if (!f.mkdirs()) {
-				System.err.println("Uable to create folder " + OUT_FOLDER);
+				logger.error("Uable to create folder {}. Quitting..", outFolder);
 				return;
 			}
 		}
 		/*
 		 * get ready to read files from input
 		 */
-		f = new File(IN_FOLDER);
+		String inputFolder = config.getXlsRootFolder() + "form/";
+		f = new File(inputFolder);
 		if (f.exists() == false) {
-			System.err.println("Folder " + IN_FOLDER + " does not exist. form work books are not converted to java");
+			logger.error("Forms folder {} does not exist. Quitting..", inputFolder);
 			return;
 		}
-		Map<String, DataType> types = dataTypes.getTypes();
-		Map<String, ValueList> valueLists = dataTypes.lists;
+
 		/*
 		 * generate java class file from our object now.
 		 */
@@ -85,25 +82,31 @@ public class TsGenerator {
 		for (File xls : f.listFiles()) {
 			String fn = xls.getName();
 			if (fn.endsWith(EXT_IN) == false) {
-				System.out.println("Skipping non-xlsx file " + fn);
+				logger.info("Skipping non-xlsx file {}", fn);
 				continue;
 			}
 
 			fn = fn.substring(0, fn.length() - EXT_IN.length());
-			System.out.println("Going to generate form " + fn);
+			logger.info("Going to generate form {}", fn);
 			Form form = null;
-			try (XSSFWorkbook book = new XSSFWorkbook(new FileInputStream(xls))) {
+			try (Workbook book = new XSSFWorkbook(new FileInputStream(xls))) {
 				form = Form.fromBook(book, fn);
 			} catch (Exception e) {
 				e.printStackTrace();
+				logger.error("{} NOT loaded. Error : {}", fn, e.getMessage());
 				continue;
 			}
+			
 			sbf.setLength(0);
-			File outFile = new File(OUT_FOLDER + fn + EXT_OUT);
+			File outFile = new File(outFolder + fn + EXT_OUT);
 			String fileName = xls.getAbsolutePath();
-			form.emitTs(sbf,  types, valueLists, fileName);
+			form.emitTs(sbf,  dataTypes.getTypes(), dataTypes.lists,  dataTypes.keyedLists, fileName);
 			try (Writer writer = new FileWriter(outFile)) {
 				writer.write(sbf.toString());
+			}catch(Exception e) {
+				e.printStackTrace();
+				logger.error("{} NOT written. Error : {}", outFile, e.getMessage());
+				continue;
 			}
 		}
 	}

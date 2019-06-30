@@ -107,28 +107,29 @@ class KeyedValueList {
 		vals.append("))");
 	}
 	
-	protected void emitTs(StringBuilder sbf) {
+	protected void emitTs(StringBuilder sbf, String indent) {
 		boolean firstOne = true;
 		for(Map.Entry<String, Pair[]> entry : this.lists.entrySet()) {
 			if(firstOne) {
-				sbf.append("\n\t\t\t");
 				firstOne  =false;
 			}else {
-				sbf.append("\n\t\t\t,");
+				sbf.append(C);
 			}
+			sbf.append(indent);
 			sbf.append(Util.escape(entry.getKey())).append(" : [");
+			String newIndent = indent + '\t';
 			boolean f = true;
 			for(Pair p : entry.getValue()) {
 				if(f) {
-					sbf.append("\n\t\t\t\t");
 					f = false;
 				}else {
-					sbf.append("\n\t\t\t\t,");
+					sbf.append(C);
 				}
+				sbf.append(newIndent);
 				sbf.append("[").append(Util.escapeTs(p.label));
 				sbf.append(C).append(Util.escapeTs(p.value)).append("]");
 			}
-			sbf.append("\n\t\t\t\t]");
+			sbf.append(indent).append(']');
 		}
 	}
 

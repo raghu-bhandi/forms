@@ -22,6 +22,9 @@
 
 package org.simplity.fm.gen;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,6 +36,7 @@ import java.util.function.Consumer;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.simplity.fm.Config;
 import org.simplity.fm.datatypes.ValueType;
 import org.slf4j.Logger;
@@ -44,6 +48,7 @@ import org.slf4j.LoggerFactory;
  */
 class DataTypes {
 	static final Logger logger = LoggerFactory.getLogger(DataTypes.class);
+	private static final String XLSX = "dataTypes.xlsx";
 	private static final String[] SHEET_NAMES = { "dataTypes", "valueLists", "keyedValueLists" };
 	private static final String C = ", ";
 
@@ -51,7 +56,33 @@ class DataTypes {
 	Map<String, ValueList> lists;
 	Map<String, KeyedValueList> keyedLists;
 
-	static DataTypes fromWorkBook(Workbook book) {
+	public static DataTypes loadDataTypes() {
+		/*
+		 * read the xls into our Java object
+		 */
+		Config config = Config.getConfig();
+		String res = config.getXlsRootFolder() + XLSX;
+		File f = new File(res);
+		if (f.exists() == false) {
+			logger.error("xls file {} not found. Aborting..", res);
+		}
+
+		try (InputStream ins = new FileInputStream(f); Workbook book = new XSSFWorkbook(ins)) {
+			int n = book.getNumberOfSheets();
+			if (n == 0) {
+				logger.error("Work book has no sheets in it. Quitting..");
+				return null;
+			}
+			return fromWorkBook(book);
+
+		} catch (Exception e) {
+			logger.error("Exception while trying to read workbook {}. Error: {}", res, e.getMessage());
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	private static DataTypes fromWorkBook(Workbook book) {
 		Sheet[] sheets = Util.readSheets(book, SHEET_NAMES);
 		DataTypes dt = new DataTypes();
 		dt.dataTypes = loadTypes(sheets[0]);
@@ -61,7 +92,8 @@ class DataTypes {
 	}
 
 	private static DataType[] loadTypes(Sheet sheet) {
-		logger.info("Started parsing for data types from sheet {} with {} rows ", sheet.getSheetName(), sheet.getPhysicalNumberOfRows());
+		logger.info("Started parsing for data types from sheet {} with {} rows ", sheet.getSheetName(),
+				sheet.getPhysicalNumberOfRows());
 		List<DataType> typeList = new ArrayList<>();
 		Util.consumeRows(sheet, DataType.NBR_CELLS, new Consumer<Row>() {
 
@@ -138,19 +170,19 @@ class DataTypes {
 	void emitJavaTypes(StringBuilder sbf, String packageName) {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
-		
+
 		Util.emitImport(sbf, HashMap.class);
 		Util.emitImport(sbf, Map.class);
 		sbf.append("\n");
-		
+
 		Util.emitImport(sbf, org.simplity.fm.IDataTypes.class);
 		Util.emitImport(sbf, org.simplity.fm.datatypes.DataType.class);
 		for (ValueType vt : ValueType.values()) {
 			Util.emitImport(sbf, vt.getDataTypeClass());
 		}
-		
+
 		String cls = Config.getConfig().getDataTypesClassName();
-		
+
 		sbf.append(
 				"\n\n/**\n * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>");
 		sbf.append("\n * <br /> generated at ").append(DateFormat.getDateTimeInstance().format(new Date()));
@@ -169,7 +201,7 @@ class DataTypes {
 		sbf.append("};");
 
 		sbf.append("\n\t private Map<String, DataType> typesMap;");
-		
+
 		sbf.append("\n\t/**\n\t * default constructor\n\t */");
 
 		sbf.append("\n\tpublic ").append(cls).append("() {");

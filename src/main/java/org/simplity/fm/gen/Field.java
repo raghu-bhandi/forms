@@ -80,7 +80,7 @@ class Field {
 			Form.logger.warn("No fields for this form!!");
 			return null;
 		}
-		Form.logger.info("{} fields added..");
+		Form.logger.info("{} fields added..", n);
 		Field[] arr = new Field[n];
 		for(int i = 0; i < arr.length; i++) {
 			Field field = list.get(i);
@@ -134,32 +134,69 @@ class Field {
 		sbf.append(')');
 	}
 
-	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists) {
-
-		String vl = null;
-		ValueList list = valueLists.get(this.dataType);
-		if (list != null) {
-			sbf.append("\n\tvl = [");
-			list.emitTs(sbf);
-			sbf.append("\n\t\t\t];");
-			vl = "vl";
-		}
-
-		sbf.append("\n\t\t").append(this.name).append(" =  new Field('").append(this.name);
+	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists, Map<String, KeyedValueList> keyedLists) {
+		sbf.append("\n\t").append(this.name).append(" = new Field('").append(this.name);
 		sbf.append("', ").append(this.index);
-		sbf.append(C).append(Util.escape(this.label));
-		sbf.append(C).append("\n\t\t\t\t").append(Util.escape(this.placeHolder));
-		sbf.append(C).append(Util.escape(this.defaultValue));
-		sbf.append(C).append("\n\t\t\t\t").append(this.isRequired);
+		sbf.append(C).append(Util.escapeTs(this.label));
+		sbf.append(C).append(Util.escapeTs(this.placeHolder));
+		sbf.append(C).append(Util.escapeTs(this.defaultValue));
+		sbf.append(C).append(this.isRequired);
 		sbf.append(C).append(this.isEditable);
 		sbf.append(C).append(this.isDerived);
 		sbf.append(C).append(this.isKey);
-		sbf.append("\n\t\t\t\t");
+		sbf.append(",\n\t\t\t\t");
 		/*
-		 * rest of the params emitted by data type
+		 * data types params are inserted here
 		 */
 		dataTypes.get(this.dataType).emitTs(sbf, this.errorId);
-		sbf.append(C).append(vl);
+
+		/*
+		 * drop-down list
+		 */
+		sbf.append(C).append(Util.escapeTs(this.listKey));
+		sbf.append(C);
+		if(this.listName == null) {
+			sbf.append("null");
+		}else if(this.listKey == null) {
+			this.emitListTs(sbf, valueLists);
+		}else {
+			this.emitKeyedListTs(sbf, keyedLists);
+		}
+		
 		sbf.append(");");
+	}
+	
+	private void emitListTs(StringBuilder sbf, Map<String, ValueList> valueLists) {
+		if(this.listName == null) {
+			sbf.append("null");
+			return;
+		}
+		
+		ValueList list = valueLists.get(this.listName);
+		if (list == null) {
+			Form.logger.info("List name {} is not found. probably it is a run time list. Client script with no list.", this.listName);
+			sbf.append("null");
+			return;
+		}
+		sbf.append("[");
+		list.emitTs(sbf, "\n\t\t\t\t");
+		sbf.append("\n\t\t\t]");
+	}
+	
+	private void emitKeyedListTs(StringBuilder sbf, Map<String, KeyedValueList> valueLists) {
+		if(this.listName == null) {
+			sbf.append("null");
+			return;
+		}
+		
+		KeyedValueList list = valueLists.get(this.listName);
+		if (list == null) {
+			Form.logger.info("List name {} is not found. probably it is a run time list. Client script with no list.", this.listName);
+			sbf.append("null");
+			return;
+		}
+		sbf.append("{");
+		list.emitTs(sbf, "\n\t\t\t\t");
+		sbf.append("\n\t\t\t}");
 	}
 }

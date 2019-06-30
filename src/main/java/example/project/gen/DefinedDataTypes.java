@@ -12,7 +12,7 @@ import org.simplity.fm.datatypes.DateType;
 
 /**
  * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>
- * <br /> generated at 29 Jun, 2019 9:32:31 PM
+ * <br /> generated at 30 Jun, 2019 1:18:05 PM
  */ 
 public class DefinedDataTypes implements IDataTypes {
 	public static final TextType customerId = new TextType("customerId", "invalidCustId", 10, 10, "[A-Z]{3}-[\\d]{2}-[A-Z]{3}");
@@ -23,8 +23,8 @@ public class DefinedDataTypes implements IDataTypes {
 	public static final DateType pastDate = new DateType("pastDate", "invalidPastDate", -73000L, 0L);
 	public static final TextType textId = new TextType("textId", "invalidTextId", 4, 15, "[\\w]*");
 	public static final NumberType orderQty = new NumberType("orderQty", "InvalidOrderQty", 1L, 2000L);
-	public static final NumberType color = new NumberType("color", "invalidColor", 1L, 100L);
-	public static final NumberType severity = new NumberType("severity", "invalidSeverity", 2L, 100L);
+	public static final NumberType color = new NumberType("color", "invalidColor", 0L, 100L);
+	public static final NumberType severity = new NumberType("severity", "invalidSeverity", 0L, 100L);
 
 	public static final DataType[] allTypes = {customerId, fy, trueFalse, futureDate, qty, pastDate, textId, orderQty, color, severity};
 	 private Map<String, DataType> typesMap;

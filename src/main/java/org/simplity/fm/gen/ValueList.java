@@ -84,16 +84,15 @@ class ValueList {
 		sbf.append("\n}\n");
 	}
 
-	protected void emitTs(StringBuilder sbf) {
+	protected void emitTs(StringBuilder sbf, String indent) {
 		for (int i = 0; i < this.pairs.length; i++) {
-			if (i == 0) {
-				sbf.append("\n\t\t\t");
-			} else {
-				sbf.append("\n\t\t\t,");
+			if (i != 0) {
+				sbf.append(',');
 			}
+			sbf.append(indent);
 			Pair pair = this.pairs[i];
-			sbf.append("['").append(pair.label.replace("'", "''")).append("', '");
-			sbf.append(pair.value.replace("'", "''")).append("']");
+			sbf.append('[').append(Util.escapeTs(pair.label));
+			sbf.append(C).append(Util.escapeTs(pair.value)).append(']');
 		}
 	}
 

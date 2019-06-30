@@ -116,9 +116,9 @@ class DataType {
 		if(eid == null || eid.isEmpty()) {
 			eid = this.messageId;
 		}
-		sbf.append(C).append(this.valueType.getIdx());
-		sbf.append(C).append(Util.escape(this.regex));
-		sbf.append(C).append(Util.escape(eid));
+		sbf.append(this.valueType.getIdx());
+		sbf.append(C).append(Util.escapeTs(this.regex));
+		sbf.append(C).append(Util.escapeTs(eid));
 		sbf.append(C).append(this.minLength);
 		sbf.append(C).append(this.maxLength);
 		sbf.append(C).append(this.minValue);

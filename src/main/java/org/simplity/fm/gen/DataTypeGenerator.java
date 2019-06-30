@@ -23,13 +23,9 @@
 package org.simplity.fm.gen;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.io.Writer;
 
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.simplity.fm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,45 +36,23 @@ import org.slf4j.LoggerFactory;
  */
 public class DataTypeGenerator {
 	private static final Logger logger = LoggerFactory.getLogger(DataTypeGenerator.class);
-	private static final String XLSX = "dataTypes.xlsx";
-
 	/**
 	 * 
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		DataTypes types = null;
-		/*
-		 * read the xls into our Java object
-		 */
-		Config config = Config.getConfig();
-		String res = config.getXlsRootFolder() + XLSX;
-		File f = new File(res);
-		if (f.exists() == false) {
-			logger.error("xls file {} not found. Aborting..", res);
-		}
-		logger.info("Going to generate data types from file {}", res);
-
-		try (InputStream ins = new FileInputStream(f); Workbook book = new XSSFWorkbook(ins)) {
-			int n = book.getNumberOfSheets();
-			if (n == 0) {
-				logger.error("Work book has no sheets in it. Quitting..");
-				return;
-			}
-			types = DataTypes.fromWorkBook(book);
-
-		} catch (Exception e) {
-			logger.error("Exception while trying to read workbook {}. Error: {}", res, e.getMessage());
-			e.printStackTrace();
+		DataTypes types = DataTypes.loadDataTypes();
+		if(types == null) {
 			return;
 		}
 
 		/*
 		 * ensure the directory exists
 		 */
+		Config config = Config.getConfig();
 		String rootFolder = config.getGeneratedSourceRoot();
-		f = new File(rootFolder);
+		File f = new File(rootFolder);
 		if (!f.exists()) {
 			if (!f.mkdirs()) {
 				System.err.println("Unable to create root folder {} for generated source  " + rootFolder);

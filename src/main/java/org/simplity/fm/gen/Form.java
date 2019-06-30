@@ -157,23 +157,35 @@ class Form {
 		sbf.append("package ").append(generatedPackage).append(".form;");
 		sbf.append('\n');
 
+		/*
+		 * imports
+		 */
 		Util.emitImport(sbf, org.simplity.fm.form.Field.class);
 		Util.emitImport(sbf, org.simplity.fm.form.Form.class);
 		Util.emitImport(sbf, IValidation.class);
 		Util.emitImport(sbf, org.simplity.fm.form.ChildForm.class);
-		
-		if(this.fromToPairs != null) {
+
+		/*
+		 * validation imports on need basis
+		 */
+		if (this.fromToPairs != null) {
 			Util.emitImport(sbf, FromToValidation.class);
 		}
-		if(this.exclusivePairs != null) {
+		if (this.exclusivePairs != null) {
 			Util.emitImport(sbf, ExclusiveValidation.class);
 		}
-		if(this.inclusivePairs != null) {
+		if (this.inclusivePairs != null) {
 			Util.emitImport(sbf, InclusiveValidation.class);
 		}
+		/*
+		 * importing anyways (avoiding a loop thru all fields to see if any one has)
+		 */
 		Util.emitImport(sbf, DependentListValidation.class);
 		sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
-		
+
+		/*
+		 * class definition
+		 */
 		String cls = Util.toClassName(this.name);
 		sbf.append("\n\n/**\n * class that represents structure of ");
 		sbf.append(this.name);
@@ -181,8 +193,14 @@ class Form {
 		sbf.append("\n */ ");
 		sbf.append("\npublic class ").append(cls).append(" extends Form {");
 
+		/*
+		 * all fields and child forms indexes are available as constants
+		 */
 		this.emitJavaConstants(sbf);
-		
+
+		/*
+		 * constructor
+		 */
 		sbf.append("\n\n\t/**\n\t *\n\t */");
 		sbf.append("\n\tpublic ").append(cls).append("() {");
 		sbf.append("\n\t\tthis.uniqueName = \"").append(this.name).append("\";");
@@ -283,9 +301,9 @@ class Form {
 		/*
 		 * dependent lits
 		 */
-		if(this.fields != null) {
-			for(Field field :this.fields) {
-				if(field.listName == null || field.listKey == null) {
+		if (this.fields != null) {
+			for (Field field : this.fields) {
+				if (field.listName == null || field.listKey == null) {
 					continue;
 				}
 				sbf.append("new DependentListValidation(").append(field.index);
@@ -296,11 +314,12 @@ class Form {
 				sbf.append(COMA).append(Util.escape(field.errorId));
 				sbf.append(")");
 				sbf.append(sufix);
-				
+
 			}
 		}
 		if (this.hasCustom) {
-			sbf.append("new ").append(customPackageName).append('.').append(Util.toClassName(this.name)).append("Validation()");
+			sbf.append("new ").append(customPackageName).append('.').append(Util.toClassName(this.name))
+					.append("Validation()");
 		} else if (sbf.length() > n) {
 			/*
 			 * remove last sufix
@@ -313,13 +332,17 @@ class Form {
 	}
 
 	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,
-			String fileName) {
-		sbf.append("/**\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp()).append("\n */");
-		sbf.append("\nimport { Form } from '../form/form';");
-		sbf.append("\nimport { Field } from '../form/field';");
+			Map<String, KeyedValueList> keyedLists, String fileName) {
+		
+		sbf.append("/*\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp()).append("\n */");
+		
+		sbf.append("\nimport { Form , Field } from '../form/form';");
 
+		/*
+		 * import for child forms being referred
+		 */
 		if (this.childForms != null) {
-			sbf.append("\nimport { ChildForm } from '../form/childForm';");
+			sbf.append("\nimport { ChildForm } from '../form/form';");
 			for (ChildForm child : this.childForms) {
 				String fn = child.getFormName();
 				sbf.append("\nimport { ").append(Util.toClassName(fn)).append(" } from './").append(fn).append("';");
@@ -327,46 +350,69 @@ class Form {
 		}
 
 		String cls = Util.toClassName(this.name);
-		sbf.append("\nexport class ").append(cls).append(" extends Form {");
+		sbf.append("\n\nexport class ").append(cls).append(" extends Form {");
 		sbf.append("\n\tprivate static _instance = new ").append(cls).append("();");
 
+		/*
+		 * fields as members
+		 */
 		if (this.fields != null && this.fields.length > 0) {
-			for(Field field : this.fields) {
-				field.emitTs(sbf, dataTypes, valueLists);
+			for (Field field : this.fields) {
+				field.emitTs(sbf, dataTypes, valueLists, keyedLists);
 			}
 		}
 
+		/*
+		 * child forms as members
+		 */
 		if (this.childForms != null && this.childForms.length != 0) {
 			sbf.append("\n");
-			for (ChildForm table : this.childForms) {
-				table.emitTs(sbf);
+			for (ChildForm child : this.childForms) {
+				child.emitTs(sbf);
 			}
 		}
-		
+
+		/*
+		 * getInstance method
+		 */
 		sbf.append("\n\n\tpublic static getInstance(): ").append(cls).append(" {");
 		sbf.append("\n\t\treturn ").append(cls).append("._instance;\n\t}");
-		
+
+		/*
+		 * constructor
+		 */
 		sbf.append("\n\n\tconstructor() {");
 		sbf.append("\n\t\tsuper();");
 		
+		/*
+		 * put fields into an array.
+		 */
 		if (this.fields != null && this.fields.length > 0) {
 			sbf.append("\n\t\tthis.fields = [");
 			for (Field field : this.fields) {
 				sbf.append("\n\t\t\tthis.").append(field.name).append(',');
 			}
 			sbf.setLength(sbf.length() - 1);
-			sbf.append("\n\t\t\t];");
+			sbf.append("\n\t\t];");
 		}
-
+		
+		/*
+		 * put child forms into an array
+		 */
 		if (this.childForms != null && this.childForms.length != 0) {
 			sbf.append("\n\n\t\tthis.childForms = [");
 			for (ChildForm child : this.childForms) {
 				sbf.append("\n\t\t\tthis.").append(child.name).append(',');
 			}
 			sbf.setLength(sbf.length() - 1);
-			sbf.append("\n\t\t\t];");
+			sbf.append("\n\t\t];");
 		}
-		sbf.append("\n\tpublic getName(): string {");
+		sbf.append("\n\t}");
+		
+		/*
+		 * end of constructor
+		 */
+		sbf.append("\n\n\tpublic getName(): string {");
 		sbf.append("\n\t\t return '").append(this.name).append("';");
 		sbf.append("\n\t}");
 

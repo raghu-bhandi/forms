@@ -1,0 +1,57 @@
+/*
+ * generated from C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx at 30 Jun, 2019 2:08:08 PM
+ */
+import { Form , Field } from '../form/form';
+import { ChildForm } from '../form/form';
+import { Form2 } from './form2';
+
+export class Form1 extends Form {
+	private static _instance = new Form1();
+	customerId = new Field('customerId', 0, 'Customer Id', 'customer id', null, true, true, false, true,
+				0, '[A-Z]{3}-[\\d]{2}-[A-Z]{3}', 'invalidCustId', 10, 10, 0, 0, null, null, null, null);
+	financialYear = new Field('financialYear', 1, 'Financial Year', 'financial year', null, true, true, false, true,
+				1, null, 'invalidFy', 4, 4, 1989, 2025, null, null, null, null);
+	boolField = new Field('boolField', 2, 'Boolean Field', 'boolean field', null, false, true, false, false,
+				2, null, 'invalidTrueFalse', 0, 0, 0, 0, 'True', 'False', null, null);
+	fromDate = new Field('fromDate', 3, 'From Date', 'from field', null, false, true, false, false,
+				3, null, 'invalidFutureDate', 0, 0, 1, 73000, null, null, null, null);
+	toDate = new Field('toDate', 4, 'To Date', 'to field', null, false, true, false, false,
+				3, null, 'invalidFutureDate', 0, 0, 1, 73000, null, null, null, null);
+	intField1 = new Field('intField1', 5, 'Int Field 1', 'int field 1', '33', true, true, false, false,
+				1, null, 'invalidQty', 1, 9, 1, 987654321012345678, null, null, null, null);
+	intField2 = new Field('intField2', 6, 'Int Field 2', 'int field 2', '45', false, true, true, false,
+				1, null, 'invalidQty', 1, 9, 1, 987654321012345678, null, null, null, null);
+	derivedField = new Field('derivedField', 7, 'Total', null, null, false, false, true, false,
+				1, null, 'invalidQty', 1, 9, 1, 987654321012345678, null, null, null, null);
+	currentFy = new Field('currentFy', 8, 'Current Financial Year', null, null, false, false, false, false,
+				1, null, 'invalidFy', 4, 4, 1989, 2025, null, null, null, null);
+
+	orderLines = new ChildForm('orderLines', 0, 'Order Lines', Form2.getInstance(), 1, 200, 'wrongLines');
+
+	public static getInstance(): Form1 {
+		return Form1._instance;
+	}
+
+	constructor() {
+		super();
+		this.fields = [
+			this.customerId,
+			this.financialYear,
+			this.boolField,
+			this.fromDate,
+			this.toDate,
+			this.intField1,
+			this.intField2,
+			this.derivedField,
+			this.currentFy
+		];
+
+		this.childForms = [
+			this.orderLines
+		];
+	}
+
+	public getName(): string {
+		 return 'form1';
+	}
+}
