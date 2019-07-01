@@ -25,6 +25,7 @@ package org.simplity.fm;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.simplity.fm.rdb.RdbDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +48,9 @@ public class Config {
 	private static final String VAL3 = "c:/fm/xls/";
 	private static final String NAME4 = "customCodePackage";
 	private static final String VAL4 = "example.project.custom";
+	private static final String DATA_SOURCE = "dataSourceJndiName";
+	private static final String CON_STRING = "dbConnectoinString";
+	private static final String DRIVER_NAME = "DbDriverClassName";
 
 	private static final Config instance = load();
 
@@ -79,12 +83,54 @@ public class Config {
 		config.generatedSourceRoot = getProperty(p, NAME2, VAL2, true);
 		config.xlsRootFolder = getProperty(p, NAME3, VAL3, true);
 		config.customCodePackage = getProperty(p, NAME4, VAL4, false);
+		
+		setupDb(p);
 		return config;
+	}
+
+	private static void setupDb(Properties p) {
+		String ds = p.getProperty(DATA_SOURCE);
+		if (ds != null && ds.isEmpty() == false) {
+			try {
+				RdbDriver.SetDataSource(ds);
+				logger.info("JDBC driver successfully set");
+			} catch (Exception e) {
+				e.printStackTrace();
+				logger.error("JDBC could not be set up with the data source value specified");
+			}
+			return;
+		}
+
+		logger.info("{} is not set for JDBC connection. We will try {}", DATA_SOURCE, CON_STRING);
+		String con = p.getProperty(CON_STRING);
+		if (con == null || con.isEmpty()) {
+			logger.warn("RDBMS is not set up for this project.");
+			return;
+		}
+
+		String driver = p.getProperty(DRIVER_NAME);
+		if (driver == null || driver.isEmpty()) {
+			logger.error("{} specified for db conenction, but {} is not set. JDBC driver cannot be initialized");
+			return;
+		}
+
+		try {
+			RdbDriver.SetConnectionString(con, driver);
+			logger.info("JDBC driver successfully set");
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.error("JDBC could not be set up with the connection string and driver calss name");
+		}
+
 	}
 
 	private static String getProperty(Properties p, String name, String def, boolean isFolder) {
 		String val = p.getProperty(name);
 		if (val == null) {
+			if (def == null) {
+				logger.error("no value for property {} defined.");
+				return null;
+			}
 			logger.error("no value for property {} defined. A Defualt of {} assumed");
 			return def;
 		}
