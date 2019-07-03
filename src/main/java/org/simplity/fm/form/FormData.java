@@ -24,6 +24,7 @@ package org.simplity.fm.form;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.validn.IValidation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -48,6 +51,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  *
  */
 public class FormData implements IFormData {
+	private static final Logger logger = LoggerFactory.getLogger(FormData.class);
 	private static final char KEY_JOINER = '_';
 	/**
 	 * data structure describes the template for which this object provides
@@ -99,6 +103,11 @@ public class FormData implements IFormData {
 	}
 
 	@Override
+	public String getVersion() {
+		return this.form.version;
+	}
+
+	@Override
 	public String getDocumentId() {
 		/*
 		 * concatenate key fields to get document id
@@ -107,10 +116,13 @@ public class FormData implements IFormData {
 		if (indexes == null || indexes.length == 0) {
 			return null;
 		}
+
 		String key = this.getFormId();
 		for (int idx : indexes) {
 			Object obj = this.fieldValues[idx];
 			if (obj == null) {
+				logger.warn("Key field {} has no value. Null is returned as documentId",
+						this.form.fields[idx].getFieldName());
 				return null;
 			}
 			key += KEY_JOINER + obj.toString();
@@ -149,12 +161,12 @@ public class FormData implements IFormData {
 		}
 		Field field = this.form.fields[idx];
 		String uid = user.getUserId();
-		if(uid != null) {
+		if (uid != null) {
 			try {
 				this.fieldValues[idx] = field.parse(user.getUserId());
 				return true;
 			} catch (InvalidValueException e) {
-			//;
+				// ;
 			}
 		}
 		return false;
@@ -187,14 +199,12 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean deserialize(String data, List<Message> errors) {
-		throw new Error(
-				"internal serialization method not yet implemented for form. Use json format instead");
+		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
 	}
 
 	@Override
 	public String serialize() {
-		throw new Error(
-				"internal serialization method not yet implemented for form. Use json format instead");
+		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
 	}
 
 	@Override
@@ -234,18 +244,17 @@ public class FormData implements IFormData {
 	@Override
 	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, List<Message> errors) {
 		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, errors);
-		if(!allFieldsAreOptional) {
-		this.validateForm(errors);
+		if (!allFieldsAreOptional) {
+			this.validateForm(errors);
 		}
 
-		ChildForm[] tables = this.form.getChildForms();
-		if (tables == null) {
+		ChildForm[] children = this.form.getChildForms();
+		if (children == null) {
 			return;
 		}
 
-
-		for (int i = 0; i < tables.length; i++) {
-			ChildForm  field = tables[i];
+		for (int i = 0; i < children.length; i++) {
+			ChildForm field = children[i];
 			String fieldName = field.fieldName;
 			JsonNode child = json.get(fieldName);
 			Form struct = field.form;
@@ -291,7 +300,8 @@ public class FormData implements IFormData {
 		}
 	}
 
-	private static void setFeilds(ObjectNode json, Form struct, Object[] row, boolean allFieldsAreOptional, List<Message> errors) {
+	private static void setFeilds(ObjectNode json, Form struct, Object[] row, boolean allFieldsAreOptional,
+			List<Message> errors) {
 		Field[] fields = struct.getFields();
 		for (int i = 0; i < fields.length; i++) {
 			Field field = fields[i];
@@ -300,9 +310,10 @@ public class FormData implements IFormData {
 		}
 	}
 
-	private static void validateAndSet(Field field, String value, Object[] row, int idx, boolean allFieldsAreOptional, List<Message> errors) {
-		if(value == null) {
-			if(allFieldsAreOptional) {
+	private static void validateAndSet(Field field, String value, Object[] row, int idx, boolean allFieldsAreOptional,
+			List<Message> errors) {
+		if (value == null) {
+			if (allFieldsAreOptional) {
 				row[idx] = null;
 				return;
 			}
@@ -379,11 +390,12 @@ public class FormData implements IFormData {
 	}
 
 	private Object getObject(int idx) {
-		if(idx < 0 || idx >= this.fieldValues.length) {
+		if (idx < 0 || idx >= this.fieldValues.length) {
 			return null;
 		}
 		return this.fieldValues[idx];
 	}
+
 	@Override
 	public String getValue(int fieldIndex) {
 		Object obj = this.getObject(fieldIndex);
@@ -393,13 +405,12 @@ public class FormData implements IFormData {
 		return obj.toString();
 	}
 
-
 	@Override
 	public boolean setValue(int idx, String value) {
-		if(idx < 0 || idx >= this.fieldValues.length) {
+		if (idx < 0 || idx >= this.fieldValues.length) {
 			return false;
 		}
-		Field field =this.form.fields[idx];
+		Field field = this.form.fields[idx];
 		if (field.getValueType() == ValueType.TEXT) {
 			this.fieldValues[idx] = value;
 			return true;
@@ -453,8 +464,8 @@ public class FormData implements IFormData {
 		if (obj == null) {
 			return null;
 		}
-		if(obj instanceof String) {
-			return (String)obj;
+		if (obj instanceof String) {
+			return (String) obj;
 		}
 		return this.form.fields[idx].getDataType().toTextValue(obj);
 	}
@@ -485,7 +496,7 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean setStringValue(int idx, String value) {
-		if (idx <0 || idx >= this.fieldValues.length) {
+		if (idx < 0 || idx >= this.fieldValues.length) {
 			return false;
 		}
 		ValueType vt = this.form.getFields()[idx].getValueType();
@@ -498,7 +509,7 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean setDateValue(int idx, Date value) {
-		if (idx <0 || idx >= this.fieldValues.length) {
+		if (idx < 0 || idx >= this.fieldValues.length) {
 			return false;
 		}
 		ValueType vt = this.form.getFields()[idx].getValueType();
@@ -511,7 +522,7 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean setBoolValue(int idx, boolean value) {
-		if (idx <0 || idx >= this.fieldValues.length) {
+		if (idx < 0 || idx >= this.fieldValues.length) {
 			return false;
 		}
 		ValueType vt = this.form.getFields()[idx].getValueType();
@@ -524,7 +535,7 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean setLongValue(int idx, long value) {
-		if (idx <0 || idx >= this.fieldValues.length) {
+		if (idx < 0 || idx >= this.fieldValues.length) {
 			return false;
 		}
 		ValueType vt = this.form.getFields()[idx].getValueType();
@@ -538,9 +549,28 @@ public class FormData implements IFormData {
 	@Override
 	public int getFieldIndex(String fieldName) {
 		Field field = this.form.getField(fieldName);
-		if(field != null) {
+		if (field != null) {
 			return field.getIndex();
 		}
 		return -1;
 	}
+
+	@Override
+	public boolean insertToDb() throws SQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean updateTo() throws SQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean deleteFromDb() throws SQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

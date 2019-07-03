@@ -42,7 +42,7 @@ public class DataTypeGenerator {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		DataTypes types = DataTypes.loadDataTypes();
+		ProjectInfo types = ProjectInfo.loadDataTypes();
 		if(types == null) {
 			return;
 		}
@@ -102,15 +102,5 @@ public class DataTypeGenerator {
 			}
 
 		}
-	}
-
-	private static void writeOut(String fileName, StringBuilder sbf) {
-		try (Writer writer = new FileWriter(new File(fileName))) {
-			writer.write(sbf.toString());
-			logger.info("File {} generated.", fileName);
-		} catch (Exception e) {
-			logger.error("Error while writing file {} \n {}", fileName, e.getMessage());
-		}
-
 	}
 }

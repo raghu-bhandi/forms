@@ -22,6 +22,8 @@
 
 package org.simplity.fm.rdb;
 
+import java.sql.SQLException;
+
 /**
  * interface for a class that wants to do db operations under a transaction
  * processing, so that any exception before the successful completion of all
@@ -42,7 +44,8 @@ public interface IDbTransactor {
 	 * @return true if all OK. false in case you detect some condition because
 	 *         of which the transaction is to be cancelled. ignored if
 	 *         auto-commit is used
+	 * @throws SQLException 
 	 */
-	public boolean transact(RdbDriver.TransHandler handler);
+	public boolean transact(RdbDriver.TransHandler handler) throws SQLException;
 
 }

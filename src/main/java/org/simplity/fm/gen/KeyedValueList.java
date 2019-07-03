@@ -167,7 +167,7 @@ class KeyedValueList {
 				 * this is the very first row being read.
 				 */
 				if (newName == null) {
-					DataTypes.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
+					ProjectInfo.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
 					return null;
 				}
 				this.newList(newName, newKey);
@@ -190,12 +190,12 @@ class KeyedValueList {
 			this.lists.clear();
 			this.keyName =newKey;
 			this.name = newName;
-			DataTypes.logger.info("New keyed value list initiated for for {} ", this.name);
+			ProjectInfo.logger.info("New keyed value list initiated for for {} ", this.name);
 		}
 
 		private void addList(String newKey) {
 			if (this.keyName == null || this.pairs.size() == 0) {
-				DataTypes.logger.error("empty line in lists??, valueList not created.");
+				ProjectInfo.logger.error("empty line in lists??, valueList not created.");
 			}else {
 				this.lists.put(this.keyName, this.pairs.toArray(new Pair[0]));
 				this.pairs.clear();
@@ -205,7 +205,7 @@ class KeyedValueList {
 
 		private KeyedValueList build() {
 			if (this.name == null) {
-				DataTypes.logger.error("empty line in lists??, valueList not created.");
+				ProjectInfo.logger.error("empty line in lists??, valueList not created.");
 				return null;
 			}
 			this.addList(null);

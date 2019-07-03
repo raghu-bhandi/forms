@@ -127,7 +127,7 @@ class ValueList {
 				 * this is the very first row being read.
 				 */
 				if (newName == null) {
-					DataTypes.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
+					ProjectInfo.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
 					return null;
 				}
 				this.newList(newName);
@@ -146,12 +146,12 @@ class ValueList {
 		private void newList(String newName) {
 			this.pairs.clear();
 			this.name = newName;
-			DataTypes.logger.info("New valueList initiated for {} ", this.name);
+			ProjectInfo.logger.info("New valueList initiated for {} ", this.name);
 		}
 
 		private ValueList build() {
 			if (this.name == null) {
-				DataTypes.logger.error("empty line in lists??, Your list may be all mixed-up!!.");
+				ProjectInfo.logger.error("empty line in lists??, Your list may be all mixed-up!!.");
 				return null;
 			}
 			return new ValueList(this.name, this.pairs.toArray(new Pair[0]));

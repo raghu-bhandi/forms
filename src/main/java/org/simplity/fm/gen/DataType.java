@@ -54,14 +54,14 @@ class DataType {
 		DataType dt = new DataType();
 		dt.name = Util.textValueOf(row.getCell(0));
 		if(dt.name == null) {
-			DataTypes.logger.error("Field name is empty. row {} skipped", row.getRowNum());
+			ProjectInfo.logger.error("Field name is empty. row {} skipped", row.getRowNum());
 			return null;
 		}
 		String s = Util.textValueOf(row.getCell(1)).toUpperCase();
 		try {
 			dt.valueType = ValueType.valueOf(s);
 		} catch (Exception e) {
-			DataTypes.logger.error("{} is not a valid data type. row {} skipped", s, row.getRowNum());
+			ProjectInfo.logger.error("{} is not a valid data type. row {} skipped", s, row.getRowNum());
 			return null;
 		}
 

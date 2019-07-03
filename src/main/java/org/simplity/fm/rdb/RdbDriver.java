@@ -22,6 +22,8 @@
 
 package org.simplity.fm.rdb;
 
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -198,7 +200,13 @@ public class RdbDriver {
 	 */
 	static int doWrite(IDbWriter writer, Connection con) throws SQLException {
 		boolean swallowIt = writer.toTraetSqlExceptionAsNoRowsAffected();
-		try (PreparedStatement ps = con.prepareStatement(writer.getPreparedStatement())) {
+		String pps = writer.getPreparedStatement();
+		if(pps == null) {
+			logger.warn("writer {} returned null as prepared statement, indicatiing taht it does not want to write.. Opertion skipped.", writer.getClass().getName() );
+			return 0;
+		}
+		
+		try (PreparedStatement ps = con.prepareStatement(pps)) {
 			con.setAutoCommit(true);
 			writer.setParams(ps);
 			return ps.executeUpdate();
@@ -213,7 +221,13 @@ public class RdbDriver {
 	}
 
 	static int doRead(IDbReader reader, Connection con) throws SQLException {
-		try (PreparedStatement ps = con.prepareStatement(reader.getPreparedStatement())) {
+		String pps = reader.getPreparedStatement();
+		if(pps == null) {
+			logger.warn("Reader {} returned null as prepared statement, indicatiing taht it does not want to write.. Opertion skipped.", reader.getClass().getName() );
+			return 0;
+		}
+		
+		try (PreparedStatement ps = con.prepareStatement(pps)) {
 			reader.setParamsToPs(ps);
 			try (ResultSet rs = ps.executeQuery()) {
 				int n = 0;
@@ -258,5 +272,22 @@ public class RdbDriver {
 			return doWrite(writer, this.con);
 		}
 
+		/**
+		 * 
+		 * @return blob object
+		 * @throws SQLException
+		 */
+		public Clob createClob() throws SQLException {
+			return this.con.createClob();
+		}
+
+		/**
+		 * 
+		 * @return blob object
+		 * @throws SQLException
+		 */
+		public Blob createBlob() throws SQLException {
+			return this.con.createBlob();
+		}
 	}
 }

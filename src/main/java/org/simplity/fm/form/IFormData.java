@@ -24,6 +24,7 @@ package org.simplity.fm.form;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +67,12 @@ public interface IFormData {
 	 * @return non-null unique id
 	 */
 	public String getFormId();
+
+	/**
+	 * 
+	 * @return version of the form based on which this form data is created
+	 */
+	public String getVersion();
 
 	/**
 	 *
@@ -267,4 +274,28 @@ public interface IFormData {
 	 *         and the value is not set
 	 */
 	public boolean setLongValue(int fieldIndex, long value);
+
+	/**
+	 * insert/create this form data into the db.
+	 * @return true if it is created. false in case it failed because of an an existing form with the same id/key
+	 * @throws SQLException 
+	 */
+	public boolean insertToDb() throws SQLException;
+	/**
+	 * update this form data back into the db. 
+	 * @return true if it is indeed updated. false in case there was no row to update
+	 * @throws SQLException 
+	 */
+	public boolean updateTo() throws SQLException;
+	/**
+	 * remove this form data from the db
+	 * @return true if it is indeed deleted happened. false otherwise
+	 * @throws SQLException 
+	 */
+	public boolean deleteFromDb() throws SQLException;
+	/**
+	 * remove this form data from the db
+	 * @return true if it is indeed deleted happened. false otherwise
+	 * @throws SQLException 
+	 */
 }

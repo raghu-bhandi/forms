@@ -9,12 +9,13 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 29 Jun, 2019 9:34:20 PM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
+ * <br /> generated at 3 Jul, 2019 7:40:02 PM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
  */ 
 public class Form2 extends Form {
-	public static final int productId = 0;
-	public static final int quantity = 1;
-	public static final int color = 2;
+	public static final int customerIdd = 0;
+	public static final int productId = 1;
+	public static final int quantity = 2;
+	public static final int color = 3;
 
 	/**
 	 *
@@ -23,9 +24,10 @@ public class Form2 extends Form {
 		this.uniqueName = "form2";
 
 		Field[] flds = {
-			new Field("productId", 0, DefinedDataTypes.textId, null, null, true, true, false, true, null), 
-			new Field("quantity", 1, DefinedDataTypes.orderQty, null, null, true, true, false, false, null), 
-			new Field("color", 2, DefinedDataTypes.color, null, null, true, true, false, false, "colors")
+			new Field("customerIdd", 0, DefinedDataTypes.customerId, null, null, true, true, false, true, null), 
+			new Field("productId", 1, DefinedDataTypes.textId, null, null, true, true, false, true, null), 
+			new Field("quantity", 2, DefinedDataTypes.orderQty, null, null, true, true, false, false, null), 
+			new Field("color", 3, DefinedDataTypes.color, null, null, true, true, false, false, "colors")
 		};
 		this.fields = flds;
 

@@ -23,8 +23,6 @@
 package org.simplity.fm.gen;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -36,7 +34,6 @@ import java.util.function.Consumer;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.simplity.fm.Config;
 import org.simplity.fm.datatypes.ValueType;
 import org.slf4j.Logger;
@@ -46,48 +43,24 @@ import org.slf4j.LoggerFactory;
  * @author simplity.org
  *
  */
-class DataTypes {
-	static final Logger logger = LoggerFactory.getLogger(DataTypes.class);
-	private static final String XLSX = "dataTypes.xlsx";
-	private static final String[] SHEET_NAMES = { "dataTypes", "valueLists", "keyedValueLists" };
+class ProjectInfo {
+	static final Logger logger = LoggerFactory.getLogger(ProjectInfo.class);
+	private static final String[] SHEET_NAMES = { "dataTypes", "valueLists", "keyedValueLists", "commonFields" };
 	private static final String C = ", ";
 
 	DataType[] dataTypes;
 	Map<String, ValueList> lists;
 	Map<String, KeyedValueList> keyedLists;
+	Field[] commonFields;
 
-	public static DataTypes loadDataTypes() {
-		/*
-		 * read the xls into our Java object
-		 */
-		Config config = Config.getConfig();
-		String res = config.getXlsRootFolder() + XLSX;
-		File f = new File(res);
-		if (f.exists() == false) {
-			logger.error("xls file {} not found. Aborting..", res);
-		}
 
-		try (InputStream ins = new FileInputStream(f); Workbook book = new XSSFWorkbook(ins)) {
-			int n = book.getNumberOfSheets();
-			if (n == 0) {
-				logger.error("Work book has no sheets in it. Quitting..");
-				return null;
-			}
-			return fromWorkBook(book);
-
-		} catch (Exception e) {
-			logger.error("Exception while trying to read workbook {}. Error: {}", res, e.getMessage());
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static DataTypes fromWorkBook(Workbook book) {
+	static ProjectInfo fromWorkbook(Workbook book) {
 		Sheet[] sheets = Util.readSheets(book, SHEET_NAMES);
-		DataTypes dt = new DataTypes();
+		ProjectInfo dt = new ProjectInfo();
 		dt.dataTypes = loadTypes(sheets[0]);
 		dt.lists = loadLists(sheets[1]);
 		dt.keyedLists = loadKeyedLists(sheets[2]);
+		dt.commonFields= loadCommonFields(sheets[3]);
 		return dt;
 	}
 
@@ -167,6 +140,41 @@ class DataTypes {
 		return map;
 	}
 
+	private static Field[] loadCommonFields(Sheet sheet) {
+		List<Field> fields = new ArrayList<Field>();
+		logger.info("Started parsing common fields");
+		Util.consumeRows(sheet, Field.NBR_CELLS, new Consumer<Row>() {
+
+			@Override
+			public void accept(Row row) {
+				Field field = Field.fromRow(row);
+				if (field != null) {
+					fields.add(field);
+				}
+			}
+		});
+		int n =fields.size();
+		if(n == 0) {
+			logger.warn("No common fields parsed..");
+			return null;
+		}
+		logger.info("{} common fields parsed. These fields canbe included in any form with a directive.", n);
+		return fields.toArray(new Field[0]);
+	}
+
+	void emitJava(String rootFolder, String packageName, String dataTypesFileName) {
+		/*
+		 * create DataTypes.java in the root folder.
+		 */
+		StringBuilder sbf = new StringBuilder();
+		this.emitJavaTypes(sbf, packageName);
+		Util.writeOut(rootFolder + dataTypesFileName + ".java", sbf);
+
+		emitJavaLists(packageName + ".list",  rootFolder + "list/");
+		emitJavaKlists(packageName + ".klist",  rootFolder + "klist/");
+
+	}
+	
 	void emitJavaTypes(StringBuilder sbf, String packageName) {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
@@ -218,6 +226,46 @@ class DataTypes {
 		sbf.append("\n}\n");
 	}
 
+	void emitJavaLists(String pack, String folder) {
+		/**
+		 * lists are created under list sub-package
+		 */
+		if (this.lists == null || this.lists.size() == 0) {
+			logger.warn("No lists created for this project");
+			return;
+		}
+		File dir = new File(folder);
+		if (dir.exists() == false) {
+			dir.mkdirs();
+		}
+		StringBuilder sbf = new StringBuilder();
+		for (ValueList list : this.lists.values()) {
+			sbf.setLength(0);
+			list.emitJava(sbf, pack);
+			Util.writeOut(folder + Util.toClassName(list.name) + ".java", sbf);
+		}
+	}
+	
+	void emitJavaKlists(String pack, String folder) {
+		/**
+		 * keyed lists
+		 */
+		if (this.keyedLists == null || this.keyedLists.size() == 0) {
+			logger.warn("No keyed lists created for this project");
+			return;
+		}
+		File dir = new File(folder);
+		if (dir.exists() == false) {
+			dir.mkdirs();
+		}
+		StringBuilder sbf = new StringBuilder();
+		for (KeyedValueList list : this.keyedLists.values()) {
+			sbf.setLength(0);
+			list.emitJava(sbf, pack);
+			Util.writeOut(folder + Util.toClassName(list.name) + ".java", sbf);
+		}
+	}
+	
 	Map<String, DataType> getTypes() {
 		Map<String, DataType> types = new HashMap<>(this.dataTypes.length);
 		for (DataType d : this.dataTypes) {

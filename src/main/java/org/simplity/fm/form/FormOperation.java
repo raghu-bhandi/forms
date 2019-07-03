@@ -39,5 +39,9 @@ public enum FormOperation {
 	/**
 	 * submit the form for further processing
 	 */
-	SUBMIT
+	SUBMIT,
+	/**
+	 * fetch means we have to get it from DB, not from draft/saved version
+	 */
+	FETCH
 }

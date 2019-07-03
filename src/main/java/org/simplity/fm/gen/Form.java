@@ -69,7 +69,7 @@ class Form {
 	private InclusivePair[] inclusivePairs;
 	private boolean hasCustom;
 
-	static Form fromBook(Workbook book, String formName) {
+	static Form fromBook(Workbook book, String formName, Field[] commonFields) {
 		logger.info("Started parsing work book " + formName);
 		Form form = new Form();
 		form.name = formName;
@@ -91,7 +91,7 @@ class Form {
 
 		sheet = sheets[1];
 		if (sheet != null) {
-			form.fields = Field.fromSheet(sheet);
+			form.fields = Field.fromSheet(sheet, commonFields);
 		}
 
 		Set<String> names = form.getNameSet();

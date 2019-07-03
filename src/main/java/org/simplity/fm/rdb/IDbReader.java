@@ -24,6 +24,7 @@ package org.simplity.fm.rdb;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * interface for a class that wants to read one or more rows from a db.
@@ -36,7 +37,8 @@ public interface IDbReader {
 	/**
 	 * 
 	 * @return the prepared statement that can be used to read rows that this
-	 *         class is interested in reading.
+	 *         class is interested in reading. null if the read operation to be
+	 *         aborted by design
 	 */
 	public String getPreparedStatement();
 
@@ -46,8 +48,9 @@ public interface IDbReader {
 	 * 
 	 * @param ps
 	 *            prepared statement to which params are to be set
+	 * @throws SQLException
 	 */
-	public void setParamsToPs(PreparedStatement ps);
+	public void setParamsToPs(PreparedStatement ps) throws SQLException;
 
 	/**
 	 * 
@@ -56,6 +59,7 @@ public interface IDbReader {
 	 *            row in the result set, unless a call returns false to stop
 	 *            this loop
 	 * @return true if you want to continue to read rest of the rows (if exists)
+	 * @throws SQLException
 	 */
-	public boolean readARow(ResultSet rs);
+	public boolean readARow(ResultSet rs) throws SQLException;
 }

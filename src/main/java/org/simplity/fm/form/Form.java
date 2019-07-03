@@ -82,6 +82,10 @@ public class Form {
 	 */
 	protected String uniqueName;
 	/**
+	 * forms maybe revised periodically, and we may have to keep tarck of them
+	 */
+	protected String version;
+	/**
 	 * Fields in this form.
 	 */
 	protected Field[] fields;
@@ -128,6 +132,7 @@ public class Form {
 	 */
 
 	protected IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
+	
 	/**
 	 * index to the values array for the key fields. this is derived based on
 	 * fields. This based on the field meta data attribute isKeyField
@@ -236,7 +241,7 @@ public class Form {
 	 * @return non-null unique id
 	 */
 	public String getFormId() {
-		return this.uniqueName;
+		return this.uniqueName + '_' + this.version;
 	}
 
 	/**

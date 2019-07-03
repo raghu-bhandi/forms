@@ -31,6 +31,8 @@ import java.util.function.Consumer;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * represents a Field row in fields sheet of a forms work book
@@ -39,8 +41,9 @@ import org.apache.poi.ss.usermodel.Sheet;
  *
  */
 class Field {
+	protected static final Logger logger = LoggerFactory.getLogger(Field.class);
 	private static final String C = ", ";
-	private static final int NBR_CELLS = 13;
+	static final int NBR_CELLS = 13;
 
 	String name;
 	String label;
@@ -56,9 +59,16 @@ class Field {
 	String listKey;
 	int index;
 
-	static Field[] fromSheet(Sheet sheet) {
+	static Field[] fromSheet(Sheet sheet, Field[] commonFields) {
 		List<Field> list = new ArrayList<>();
 		Set<String> fieldNames = new HashSet<>();
+		if(commonFields != null) {
+			for(Field field :commonFields) {
+				list.add(field);
+				fieldNames.add(field.name);
+			}
+			logger.info("{} common fields added to the form", commonFields.length);
+		}
 		Util.consumeRows(sheet, NBR_CELLS, new Consumer<Row>() {
 			
 			@Override
@@ -70,17 +80,17 @@ class Field {
 				if (fieldNames.add(field.name)) {
 					list.add(field);
 				} else {
-					Form.logger.error("Field name {} is duplicate at row {}. skipped", field.name, row.getRowNum());
+					logger.error("Field name {} is duplicate at row {}. skipped", field.name, row.getRowNum());
 				}
 			}
 		});
 		
 		int n = list.size();
 		if ( n == 0) {
-			Form.logger.warn("No fields for this form!!");
+			logger.warn("No fields for this form!!");
 			return null;
 		}
-		Form.logger.info("{} fields added..", n);
+		logger.info("{} fields added..", n);
 		Field[] arr = new Field[n];
 		for(int i = 0; i < arr.length; i++) {
 			Field field = list.get(i);
@@ -94,7 +104,7 @@ class Field {
 		Field f = new Field();
 		f.name = Util.textValueOf(row.getCell(0));
 		if (f.name == null) {
-			Form.logger.error("Name is null in row {}. Row is skipped", row.getRowNum());
+			logger.error("Name is null in row {}. Row is skipped", row.getRowNum());
 			return null;
 		}
 		f.label = Util.textValueOf(row.getCell(1));
@@ -174,7 +184,7 @@ class Field {
 		
 		ValueList list = valueLists.get(this.listName);
 		if (list == null) {
-			Form.logger.info("List name {} is not found. probably it is a run time list. Client script with no list.", this.listName);
+			logger.info("List name {} is not found. probably it is a run time list. Client script with no list.", this.listName);
 			sbf.append("null");
 			return;
 		}

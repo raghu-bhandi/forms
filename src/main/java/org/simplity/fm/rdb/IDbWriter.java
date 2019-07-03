@@ -23,6 +23,7 @@
 package org.simplity.fm.rdb;
 
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 /**
  * interface for a class that wants to write/update/delete fromthe dta base
@@ -35,7 +36,8 @@ public interface IDbWriter {
 	/**
 	 * 
 	 * @return the prepared statement that can be used to insert/update/delete
-	 *         rows
+	 *         rows. null to indicate that the write operation be aborted by
+	 *         design
 	 */
 	public String getPreparedStatement();
 
@@ -44,14 +46,9 @@ public interface IDbWriter {
 	 * 
 	 * @param ps
 	 *            prepared statement to which params are to be set
+	 * @throws SQLException
 	 */
-	public void setParams(PreparedStatement ps);
-
-	/**
-	 * @param affectedRows
-	 *            number of affected rows by the operation
-	 */
-	public void setResult(int affectedRows);
+	public void setParams(PreparedStatement ps) throws SQLException;
 
 	/**
 	 * 

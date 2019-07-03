@@ -12,7 +12,7 @@ import org.simplity.fm.datatypes.DateType;
 
 /**
  * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>
- * <br /> generated at 30 Jun, 2019 1:18:05 PM
+ * <br /> generated at 3 Jul, 2019 7:40:01 PM
  */ 
 public class DefinedDataTypes implements IDataTypes {
 	public static final TextType customerId = new TextType("customerId", "invalidCustId", 10, 10, "[A-Z]{3}-[\\d]{2}-[A-Z]{3}");

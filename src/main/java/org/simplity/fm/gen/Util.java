@@ -22,6 +22,9 @@
 
 package org.simplity.fm.gen;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.Writer;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.function.Consumer;
@@ -216,6 +219,16 @@ class Util {
 			sheets[i] = sheet;
 		}
 		return sheets;
+	}
+	
+	static void writeOut(String fileName, StringBuilder sbf) {
+		try (Writer writer = new FileWriter(new File(fileName))) {
+			writer.write(sbf.toString());
+			logger.info("File {} generated.", fileName);
+		} catch (Exception e) {
+			logger.error("Error while writing file {} \n {}", fileName, e.getMessage());
+		}
+
 	}
 
 }
