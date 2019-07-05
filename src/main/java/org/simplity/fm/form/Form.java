@@ -109,22 +109,22 @@ public class Form {
 	/**
 	 * is a auto-service to get this form ok?
 	 */
-	protected boolean getOk;
+	protected boolean createGetService;
 
 	/**
 	 * is a auto-service to save this form ok?
 	 */
-	protected boolean saveOk;
+	protected boolean createSaveService;
 
 	/**
 	 * is a auto-service to submit this form ok?
 	 */
-	protected boolean submitOk;
+	protected boolean createSubmitService;
 
 	/**
 	 * is a auto-service to submit this form ok?
 	 */
-	protected boolean partialOk;
+	protected boolean partialSaveAllowed;
 
 	/*
 	 * following fields are derived from others. Defined for improving
@@ -314,15 +314,15 @@ public class Form {
 	 */
 	public IService getService(String operation) {
 		if (SERVICE_TYPE_GET.equals(operation)) {
-			if (this.getOk) {
+			if (this.createGetService) {
 				return new GetService(this);
 			}
 		} else if (SERVICE_TYPE_SAVE.equals(operation)) {
-			if (this.saveOk) {
+			if (this.createSaveService) {
 				return new SaveService(this);
 			}
 		} else if (SERVICE_TYPE_SUBMIT.equals(operation)) {
-			if (this.submitOk) {
+			if (this.createSubmitService) {
 				return new SubmitService(this);
 			}
 		}

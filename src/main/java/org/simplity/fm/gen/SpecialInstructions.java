@@ -22,7 +22,14 @@
 
 package org.simplity.fm.gen;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
+
+import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * represents specials instructions sheet in a forms work book
@@ -31,49 +38,53 @@ import org.apache.poi.ss.usermodel.Sheet;
  *
  */
 class SpecialInstructions {
+	protected static final Logger logger = LoggerFactory.getLogger(SpecialInstructions.class);
 	private static final String L = "\n\t\t\tthis.";
 
-	private String userId;
-	private String[] procesors = new String[6];
-	private boolean doGet;
-	private boolean doSave;
-	private boolean doSubmit;
-	private boolean doPartial;
+	private static final String[] ATTS = { "userIdFIeldName", "createGetService", "createSaveService",
+			"createSubmitService", "partialSaveAllowed" };
+	private static final String[] PROCS = { "preGetProcessor", "postGetProcessor", "preSaveProcessor",
+			"postSaveProcessor", "preSubmitProcessor", "postSubmitProcessor" };
+
+	final Map<String, Object> settings = new HashMap<>();
+	boolean addCommonFields = false;
 
 	static SpecialInstructions fromSheet(Sheet sheet) {
 		SpecialInstructions s = new SpecialInstructions();
-		s.userId = Util.textValueOf(sheet.getRow(1).getCell(1));
-		s.doGet = Util.boolValueOf(sheet.getRow(2).getCell(1));
-		s.doSave = Util.boolValueOf(sheet.getRow(3).getCell(1));
-		s.doSubmit = Util.boolValueOf(sheet.getRow(4).getCell(1));
-		s.doPartial = Util.boolValueOf(sheet.getRow(5).getCell(1));
-		for (int i = 0; i < s.procesors.length; i++) {
-			s.procesors[i] = Util.textValueOf(sheet.getRow(i + 6).getCell(1));
+		Consumer<Row> consumer = new Consumer<Row>() {
+
+			@Override
+			public void accept(Row row) {
+				String key = Util.textValueOf(row.getCell(0));
+				Object val = Util.objectValueOfCell(row.getCell(1));
+				logger.info("{}={}", key, val);
+				if (key != null || val != null) {
+					s.settings.put(key, val);
+				}
+			}
+		};
+		Util.consumeRows(sheet, 2, consumer);
+		Object obj = s.settings.get("addCommonFields");
+		if (obj != null) {
+			if (obj instanceof Boolean) {
+				s.addCommonFields = (Boolean) obj;
+			}
 		}
 		return s;
 	}
 
 	void emitJavaAttrs(StringBuilder sbf, String customPackageName) {
-		if (this.userId != null) {
-			sbf.append(L).append("userIdFieldName = \"").append(this.userId).append("\";");
+		for (String att : ATTS) {
+			Object obj = this.settings.get(att);
+			if (obj != null) {
+				sbf.append(L).append(att).append(" = ").append(Util.escapeObject(obj)).append(";");
+			}
 		}
-		if (this.doGet) {
-			sbf.append(L).append("getOk = true;");
-		}
-		if (this.doSave) {
-			sbf.append(L).append("saveOk = true;");
-		}
-		if (this.doSubmit) {
-			sbf.append(L).append("submitOk = true;");
-		}
-		if (this.doPartial) {
-			sbf.append(L).append("partialOk = true;");
-		}
-		for (int i = 0; i < this.procesors.length; i++) {
-			String s = this.procesors[i];
-			if (s != null && s.isEmpty() == false) {
+		for (int i = 0; i < PROCS.length; i++) {
+			Object obj = this.settings.get(PROCS[i]);
+			if (obj != null) {
 				sbf.append(L).append("formProcessors[").append(i).append("] = new ");
-				sbf.append(customPackageName).append('.').append(s).append("();");
+				sbf.append(customPackageName).append('.').append(obj).append("();");
 			}
 		}
 	}

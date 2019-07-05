@@ -91,7 +91,11 @@ class Form {
 
 		sheet = sheets[1];
 		if (sheet != null) {
-			form.fields = Field.fromSheet(sheet, commonFields);
+			if (form.si.addCommonFields) {
+				form.fields = Field.fromSheet(sheet, commonFields);
+			} else {
+				form.fields = Field.fromSheet(sheet, null);
+			}
 		}
 
 		Set<String> names = form.getNameSet();
@@ -178,7 +182,8 @@ class Form {
 			Util.emitImport(sbf, InclusiveValidation.class);
 		}
 		/*
-		 * importing anyways (avoiding a loop thru all fields to see if any one has)
+		 * importing anyways (avoiding a loop thru all fields to see if any one
+		 * has)
 		 */
 		Util.emitImport(sbf, DependentListValidation.class);
 		sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
@@ -333,9 +338,9 @@ class Form {
 
 	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,
 			Map<String, KeyedValueList> keyedLists, String fileName) {
-		
+
 		sbf.append("/*\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp()).append("\n */");
-		
+
 		sbf.append("\nimport { Form , Field } from '../form/form';");
 
 		/*
@@ -383,7 +388,7 @@ class Form {
 		 */
 		sbf.append("\n\n\tconstructor() {");
 		sbf.append("\n\t\tsuper();");
-		
+
 		/*
 		 * put fields into an array.
 		 */
@@ -395,7 +400,7 @@ class Form {
 			sbf.setLength(sbf.length() - 1);
 			sbf.append("\n\t\t];");
 		}
-		
+
 		/*
 		 * put child forms into an array
 		 */
@@ -408,7 +413,7 @@ class Form {
 			sbf.append("\n\t\t];");
 		}
 		sbf.append("\n\t}");
-		
+
 		/*
 		 * end of constructor
 		 */

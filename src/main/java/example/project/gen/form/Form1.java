@@ -9,7 +9,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 3 Jul, 2019 7:40:02 PM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
+ * <br /> generated at 3 Jul, 2019 9:01:49 PM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
  */ 
 public class Form1 extends Form {
 	public static final int customerIdd = 0;
@@ -29,11 +29,10 @@ public class Form1 extends Form {
 	 */
 	public Form1() {
 		this.uniqueName = "form1";
-			this.userIdFieldName = "customerId";
-			this.getOk = true;
-			this.saveOk = true;
-			this.submitOk = true;
-			this.partialOk = true;
+			this.createGetService = true;
+			this.createSaveService = true;
+			this.createSubmitService = true;
+			this.partialSaveAllowed = true;
 			this.formProcessors[0] = new example.project.custom.MyPreGet();
 			this.formProcessors[1] = new example.project.custom.MyPostGet();
 
