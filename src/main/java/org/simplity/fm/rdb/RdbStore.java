@@ -124,7 +124,7 @@ public class RdbStore extends DataStore {
 			}
 
 			@Override
-			public boolean toTraetSqlExceptionAsNoRowsAffected() {
+			public boolean toTreatSqlExceptionAsNoRowsAffected() {
 				return true;
 			}
 
@@ -144,7 +144,7 @@ public class RdbStore extends DataStore {
 			}
 
 			@Override
-			public boolean toTraetSqlExceptionAsNoRowsAffected() {
+			public boolean toTreatSqlExceptionAsNoRowsAffected() {
 				return false;
 			}
 
@@ -166,7 +166,7 @@ public class RdbStore extends DataStore {
 			}
 
 			@Override
-			public void setParamsToPs(PreparedStatement ps) throws SQLException {
+			public void setParams(PreparedStatement ps) throws SQLException {
 				ps.setString(1, id);
 			}
 
@@ -196,7 +196,7 @@ public class RdbStore extends DataStore {
 			}
 
 			@Override
-			public boolean toTraetSqlExceptionAsNoRowsAffected() {
+			public boolean toTreatSqlExceptionAsNoRowsAffected() {
 				return false;
 			}
 

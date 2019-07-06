@@ -50,7 +50,7 @@ public interface IDbReader {
 	 *            prepared statement to which params are to be set
 	 * @throws SQLException
 	 */
-	public void setParamsToPs(PreparedStatement ps) throws SQLException;
+	public void setParams(PreparedStatement ps) throws SQLException;
 
 	/**
 	 * 

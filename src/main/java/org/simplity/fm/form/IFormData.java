@@ -25,7 +25,8 @@ package org.simplity.fm.form;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -177,31 +178,33 @@ public interface IFormData {
 	public int getFieldIndex(String fieldName);
 
 	/**
-	 * 
-	 * @param fieldIndex
-	 * @return null if there is no such field, or the field has null value.
-	 *         String/Long/Date/Boolean depending on the type. Use more specific
-	 *         getXXX if you know the type
+	 * @param idx
+	 * @return object at the index. null if the index is out of range, or the
+	 *         value at the index is null
 	 */
-	public Object getValue(int fieldIndex);
+	public Object getObject(int idx);
 
 	/**
 	 * 
 	 * @param fieldIndex
 	 * @return value of the field as text. null if no such field, or the field
-	 *         has null value.
-	 *         "0"/"1" if boolean, milliseconds in case of date
+	 *         has null value. toString() of object if it is non-string
 	 */
 	public String getStringValue(int fieldIndex);
 
 	/**
 	 * 
 	 * @param fieldIndex
-	 * @return value of the field as a number. 0 if it is not field, or he field
-	 *         has null, or the field has non-numeric text
-	 *         0/1 for boolean and milliseconds for date
+	 * @return value of the field if it long. 0 index is invalid or the value is not integral.
 	 */
 	public long getLongValue(int fieldIndex);
+
+	/**
+	 * 
+	 * @param fieldIndex
+	 * @return value of the field if it decimal. 0 index is invalid or the value is not double/decimal.
+	 */
+	public double getDecimalValue(int fieldIndex);
 
 	/**
 	 * 
@@ -209,32 +212,39 @@ public interface IFormData {
 	 * @return value of the field as Date. null if the field is not a date
 	 *         field, or it has null value
 	 */
-	public Date getDateValue(int fieldIndex);
+	public LocalDate getDateValue(int fieldIndex);
+
+	/**
+	 * Note that this is NOT LocalDateTime. It is instant. We do not deal with localDateTime as of now.
+	 * @param fieldIndex
+	 * @return value of the field as instant of time. null if the field is not an instant.
+	 *         field, or it has null value
+	 */
+	public Instant getTimestamp(int fieldIndex);
 
 	/**
 	 * 
 	 * @param fieldIndex
 	 * @return value of the field as boolean. false if no such field, or the
-	 *         field is null,or the field has empty string, 0 or false value
-	 *         true otherwise
+	 *         field is null,or the field is not boolean.
 	 */
 	public boolean getBoolValue(int fieldIndex);
 
 	/**
-	 * parse the value to proper type and set it
 	 * 
 	 * @param fieldIndex
-	 *            name of the field
+	 *            index of the field. refer to getFieldIndex to get the index by name
 	 * @param value
-	 *            ignored if null. parsed and set if valid
-	 * @return true if value was indeed set. false if field is not defined.
+	 *            value of the right type.
+	 * @return true if value was indeed set. false if the field is not defined, or
+	 *         the type of object was not right for the field
 	 */
-	public boolean setValue(int fieldIndex, String value);
+	public boolean setObject(int fieldIndex, Object value);
 
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            name of the field
+	 *            index of the field. refer to getFieldIndex to get the index by name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of String type. false otherwise, and
@@ -245,18 +255,29 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            name of the field
+	 *            index of the field. refer to getFieldIndex to get the index by name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of Date type. false otherwise, and
 	 *         the value is not set
 	 */
-	public boolean setDateValue(int fieldIndex, Date value);
+	public boolean setDateValue(int fieldIndex, LocalDate value);
 
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            name of the field
+	 *            index of the field. refer to getFieldIndex to get the index by name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of Instant type. false otherwise, and
+	 *         the value is not set
+	 */
+	public boolean setTimestamp(int fieldIndex, Instant value);
+
+	/**
+	 * 
+	 * @param fieldIndex
+	 *            index of the field. refer to getFieldIndex to get the index by name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of boolean type. false otherwise,
@@ -267,7 +288,7 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            name of the field
+	 *            index of the field. refer to getFieldIndex to get the index by name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of integer type. false otherwise,
@@ -276,26 +297,48 @@ public interface IFormData {
 	public boolean setLongValue(int fieldIndex, long value);
 
 	/**
+	 * 
+	 * @param fieldIndex
+	 *            index of the field. refer to getFieldIndex to get the index by name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of double type. false otherwise,
+	 *         and the value is not set
+	 */
+	public boolean setDecimlValue(int fieldIndex, double value);
+
+	/**
+	 * fetch data for this form from a db
+	 * 
+	 * @return true if it is read.false if no dta found for this form (key not
+	 *         found...)
+	 * @throws SQLException
+	 */
+	public boolean fetchFromDb() throws SQLException;
+
+	/**
 	 * insert/create this form data into the db.
-	 * @return true if it is created. false in case it failed because of an an existing form with the same id/key
-	 * @throws SQLException 
+	 * 
+	 * @return true if it is created. false in case it failed because of an an
+	 *         existing form with the same id/key
+	 * @throws SQLException
 	 */
 	public boolean insertToDb() throws SQLException;
+
 	/**
-	 * update this form data back into the db. 
-	 * @return true if it is indeed updated. false in case there was no row to update
-	 * @throws SQLException 
+	 * update this form data back into the db.
+	 * 
+	 * @return true if it is indeed updated. false in case there was no row to
+	 *         update
+	 * @throws SQLException
 	 */
-	public boolean updateTo() throws SQLException;
+	public boolean updateInDb() throws SQLException;
+
 	/**
 	 * remove this form data from the db
+	 * 
 	 * @return true if it is indeed deleted happened. false otherwise
-	 * @throws SQLException 
+	 * @throws SQLException
 	 */
 	public boolean deleteFromDb() throws SQLException;
-	/**
-	 * remove this form data from the db
-	 * @return true if it is indeed deleted happened. false otherwise
-	 * @throws SQLException 
-	 */
 }

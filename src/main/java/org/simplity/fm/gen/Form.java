@@ -22,6 +22,7 @@
 
 package org.simplity.fm.gen;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -56,18 +57,19 @@ class Form {
 	private static final String[] SHEET_DESC = { "service or processing ", "fields", "child Forms (tables, sub-forms)",
 			"from-To inter-field validations", "either-or type of inter-field validaitons",
 			"if-a-then-b type of inter-field validaitons", "custom validations" };
-	private static final String COMA = ", ";
+	private static final String C = ", ";
 	private static final String EQ = " = ";
+	private static final String P = "\n\tprivate static final String ";
 
-	private String name;
-	private SpecialInstructions si;
-	private Field[] fields;
-	private Map<String, Field> fieldMap;
-	private ChildForm[] childForms;
-	private FromToPair[] fromToPairs;
-	private ExclusivePair[] exclusivePairs;
-	private InclusivePair[] inclusivePairs;
-	private boolean hasCustom;
+	String name;
+	SpecialInstructions si;
+	Field[] fields;
+	Map<String, Field> fieldMap;
+	ChildForm[] childForms;
+	FromToPair[] fromToPairs;
+	ExclusivePair[] exclusivePairs;
+	InclusivePair[] inclusivePairs;
+	boolean hasCustomValidations;
 
 	static Form fromBook(Workbook book, String formName, Field[] commonFields) {
 		logger.info("Started parsing work book " + formName);
@@ -123,7 +125,7 @@ class Form {
 		sheet = sheets[6];
 		if (sheet != null) {
 			if (Util.hasContent(sheet.getRow(1), 2)) {
-				form.hasCustom = true;
+				form.hasCustomValidations = true;
 				logger.info("custom validiton added. Ensure that you write the desired java class for this.");
 			} else {
 				logger.info("No custom validaitons added.");
@@ -194,9 +196,17 @@ class Form {
 		String cls = Util.toClassName(this.name);
 		sbf.append("\n\n/**\n * class that represents structure of ");
 		sbf.append(this.name);
-		sbf.append("\n * <br /> generated at ").append(Util.timeStamp()).append(" from file ").append(fileName);
+		sbf.append("\n * <br /> generated at ").append(LocalDateTime.now()).append(" from file ").append(fileName);
 		sbf.append("\n */ ");
 		sbf.append("\npublic class ").append(cls).append(" extends Form {");
+
+		/*
+		 * static constants for SQLS if that is enabled for this form;
+		 */
+		String dbMethods = null;
+		if (this.si.dbKeyFields != null) {
+			dbMethods = this.emitJavaDb(sbf, this.si.settings.get("dbTableName").toString(), this.si.dbKeyFields);
+		}
 
 		/*
 		 * all fields and child forms indexes are available as constants
@@ -222,7 +232,51 @@ class Form {
 
 		this.emitJavaValidations(sbf, customPackage);
 
-		sbf.append("\n\n\t\tthis.initialize();\n\t}\n}\n");
+		sbf.append("\n\n\t\tthis.initialize();");
+		sbf.append("\n\t}");
+
+		if (dbMethods != null) {
+			sbf.append(dbMethods);
+		}
+		sbf.append("\n}\n");
+	}
+
+	private String emitJavaDb(StringBuilder sbf, String tableName, String[] names) {
+		Field[] keys = new Field[names.length];
+		for (int i = 0; i < names.length; i++) {
+			Field field = this.fieldMap.get(names[i]);
+			if (field == null) {
+				logger.error(
+						"{} is specified as a key field iin sepcial instrucitons, but it is not defined as a field in fields sheet. Db related code wnot generated",
+						names[i]);
+				return null;
+			}
+			keys[i] = field;
+		}
+		StringBuilder mbf = new StringBuilder();
+		sbf.append(P).append("WHERE = \"");
+		this.emitWhere(sbf, keys);
+		sbf.append("\";");
+
+		sbf.append(P).append("FETCH = \"");
+		this.emitFetch(sbf, tableName);
+		sbf.append("\" + WHERE;");
+		this.emitMethod(mbf, "Fetch");
+
+		sbf.append(P).append("INSERT = \"");
+		this.emitInsert(sbf, tableName);
+		sbf.append("\" + WHERE;");
+		this.emitMethod(mbf, "Insert");
+
+		sbf.append(P).append("UPDATE = \"");
+		this.emitUpdate(sbf, tableName, keys);
+		sbf.append("\" + WHERE;");
+		this.emitMethod(mbf, "Update");
+
+		sbf.append(P).append("DELETE = \"DELETE FROM ").append(tableName).append("\" + WHERE;");
+		this.emitMethod(mbf, "Delete");
+
+		return mbf.toString();
 	}
 
 	private void emitJavaConstants(StringBuilder sbf) {
@@ -252,7 +306,7 @@ class Form {
 			if (isFirst) {
 				isFirst = false;
 			} else {
-				sbf.append(COMA);
+				sbf.append(C);
 			}
 			field.emitJavaCode(sbf, dataTypesName);
 		}
@@ -270,7 +324,7 @@ class Form {
 			if (isFirst) {
 				isFirst = false;
 			} else {
-				sbf.append(COMA);
+				sbf.append(C);
 			}
 			child.emitJavaCode(sbf);
 		}
@@ -313,16 +367,15 @@ class Form {
 				}
 				sbf.append("new DependentListValidation(").append(field.index);
 				Field f = this.fieldMap.get(field.listKey);
-				sbf.append(COMA).append(f.index);
-				sbf.append(COMA).append(Util.escape(field.listName));
-				sbf.append(COMA).append(Util.escape(field.name));
-				sbf.append(COMA).append(Util.escape(field.errorId));
+				sbf.append(C).append(f.index);
+				sbf.append(C).append(Util.escape(field.listName));
+				sbf.append(C).append(Util.escape(field.name));
+				sbf.append(C).append(Util.escape(field.errorId));
 				sbf.append(")");
 				sbf.append(sufix);
-
 			}
 		}
-		if (this.hasCustom) {
+		if (this.hasCustomValidations) {
 			sbf.append("new ").append(customPackageName).append('.').append(Util.toClassName(this.name))
 					.append("Validation()");
 		} else if (sbf.length() > n) {
@@ -339,7 +392,8 @@ class Form {
 	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,
 			Map<String, KeyedValueList> keyedLists, String fileName) {
 
-		sbf.append("/*\n * generated from ").append(fileName).append(" at ").append(Util.timeStamp()).append("\n */");
+		sbf.append("/*\n * generated from ").append(fileName).append(" at ").append(LocalDateTime.now())
+				.append("\n */");
 
 		sbf.append("\nimport { Form , Field } from '../form/form';");
 
@@ -422,5 +476,87 @@ class Form {
 		sbf.append("\n\t}");
 
 		sbf.append("\n}\n");
+	}
+
+	private void emitInsert(StringBuilder sbf, String tableName) {
+		sbf.append("INSERT INTO ").append(tableName).append('(');
+		StringBuilder vbf = new StringBuilder();
+		boolean firstOne = true;
+		for (Field field : this.fields) {
+			if (field.dbColumnName == null) {
+				continue;
+			}
+			if (firstOne) {
+				firstOne = false;
+			} else {
+				sbf.append(C);
+				vbf.append(C);
+			}
+			sbf.append(field.dbColumnName);
+			vbf.append('?');
+		}
+		sbf.append(") values (").append(vbf).append(')');
+	}
+
+	private void emitUpdate(StringBuilder sbf, String tableName, Field[] keys) {
+		sbf.append("UPDATE ").append(tableName).append(" SET ");
+		boolean firstOne = true;
+		for (Field field : this.fields) {
+			if (field.dbColumnName == null || this.isKey(field.name, keys)) {
+				continue;
+			}
+			if (firstOne) {
+				firstOne = false;
+			} else {
+				sbf.append(C);
+			}
+			sbf.append(field.dbColumnName).append("=?");
+		}
+	}
+
+	private boolean isKey(String nam, Field[] keys) {
+		for (Field field : keys) {
+			if (nam.equals(field.name)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private void emitFetch(StringBuilder sbf, String tableName) {
+		sbf.append("SELECT ");
+		boolean firstOne = true;
+		for (Field field : this.fields) {
+			if (field.dbColumnName == null) {
+				continue;
+			}
+			if (firstOne) {
+				firstOne = false;
+			} else {
+				sbf.append(C);
+			}
+			sbf.append(field.dbColumnName);
+		}
+		sbf.append(" FROM ").append(tableName);
+	}
+
+	private void emitWhere(StringBuilder sbf, Field[] keys) {
+		sbf.append(" WHERE ");
+		boolean firstOne = true;
+		for (Field field : keys) {
+			if (firstOne) {
+				firstOne = false;
+			} else {
+				sbf.append(" AND ");
+			}
+			sbf.append(field.dbColumnName).append("=?");
+		}
+	}
+
+	private void emitMethod(StringBuilder sbf, String method) {
+		sbf.append("\n\n\t@Override");
+		sbf.append("\n\tprotected String get").append(method).append("Sql() {");
+		sbf.append("\n\t\treturn ").append(method.toUpperCase()).append(';');
+		sbf.append("\n\t}");
 	}
 }

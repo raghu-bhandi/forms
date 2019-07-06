@@ -23,9 +23,8 @@
 package org.simplity.fm.gen;
 
 import java.io.File;
-import java.text.DateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,17 +93,18 @@ class ProjectInfo {
 		int n = sheet.getLastRowNum() + 1;
 		logger.info("Started parsing for values lists. ");
 		ValueList.Builder builder = ValueList.getBuilder();
-		for (int i = 1; i < n; i++) {
-			Row row = sheet.getRow(i);
-			if (Util.hasContent(row, ValueList.NBR_CELLS) == false) {
-				row = null;
+		Util.consumeRows(sheet, ValueList.NBR_CELLS, new Consumer<Row>() {
+			
+			@Override
+			public void accept(Row row) {
+				ValueList list = builder.addRow(row);
+				if (list != null) {
+					map.put(list.name, list);
+					logger.info("Valueist {} parsed and added to the list", list.name);
+				}
 			}
-			ValueList list = builder.addRow(row);
-			if (list != null) {
-				map.put(list.name, list);
-				logger.info("Valueist {} parsed and added to the list", list.name);
-			}
-		}
+		});
+		
 		n = map.size();
 		if (n == 0) {
 			logger.info("No value lists added.");
@@ -120,17 +120,17 @@ class ProjectInfo {
 		int n = sheet.getLastRowNum() + 1;
 		logger.info("Started parsing keyed lists ");
 		KeyedValueList.Builder builder = KeyedValueList.getBuilder();
-		for (int i = 1; i < n; i++) {
-			Row row = sheet.getRow(i);
-			if (Util.hasContent(row, KeyedValueList.NBR_CELLS) == false) {
-				row = null;
+		Util.consumeRows(sheet, KeyedValueList.NBR_CELLS, new Consumer<Row>() {
+			
+			@Override
+			public void accept(Row row) {
+				KeyedValueList list = builder.addRow(row);
+				if (list != null) {
+					map.put(list.name, list);
+					logger.info("Keyed Valueist {} parsed and added to the list", list.name);
+				}
 			}
-			KeyedValueList list = builder.addRow(row);
-			if (list != null) {
-				map.put(list.name, list);
-				logger.info("Keyed Valueist {} parsed and added to the list", list.name);
-			}
-		}
+		});
 		n = map.size();
 		if (n == 0) {
 			logger.info("No keyed value lists added.");
@@ -193,7 +193,7 @@ class ProjectInfo {
 
 		sbf.append(
 				"\n\n/**\n * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>");
-		sbf.append("\n * <br /> generated at ").append(DateFormat.getDateTimeInstance().format(new Date()));
+		sbf.append("\n * <br /> generated at ").append(LocalDateTime.now());
 		sbf.append("\n */ ");
 		sbf.append("\npublic class ").append(cls).append(" implements IDataTypes {");
 

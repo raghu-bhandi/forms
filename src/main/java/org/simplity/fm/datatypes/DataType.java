@@ -21,10 +21,6 @@
  */
 package org.simplity.fm.datatypes;
 
-import java.util.Date;
-
-import org.simplity.fm.DateUtil;
-
 /**
  * @author simplity.org
  *
@@ -71,35 +67,7 @@ public abstract class DataType {
 
 	protected abstract boolean isOk(Object value);
 
-	/**
-	 * get text value of this object
-	 * 
-	 * @param value
-	 * @return null if object is null. else a string representation of value.
-	 *         Date is represented standard UTC format
-	 */
-	public String toTextValue(Object value) {
-		if (value == null) {
-			return null;
-		}
-		if (value instanceof String) {
-			return (String) value;
-		}
-		if (value instanceof Number) {
-			return value.toString();
-		}
-		if (value instanceof Boolean) {
-			if ((Boolean) value) {
-				return "true";
-			}
-			return "false";
-		}
-		if (value instanceof Date) {
-			return DateUtil.formatDateTime((Date) value);
-		}
-		return value.toString();
-	}
-	
+
 	/**
 	 * @return the name
 	 */

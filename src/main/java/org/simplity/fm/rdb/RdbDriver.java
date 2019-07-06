@@ -199,7 +199,7 @@ public class RdbDriver {
 	 * @throws SQLException
 	 */
 	static int doWrite(IDbWriter writer, Connection con) throws SQLException {
-		boolean swallowIt = writer.toTraetSqlExceptionAsNoRowsAffected();
+		boolean swallowIt = writer.toTreatSqlExceptionAsNoRowsAffected();
 		String pps = writer.getPreparedStatement();
 		if(pps == null) {
 			logger.warn("writer {} returned null as prepared statement, indicatiing taht it does not want to write.. Opertion skipped.", writer.getClass().getName() );
@@ -228,7 +228,7 @@ public class RdbDriver {
 		}
 		
 		try (PreparedStatement ps = con.prepareStatement(pps)) {
-			reader.setParamsToPs(ps);
+			reader.setParams(ps);
 			try (ResultSet rs = ps.executeQuery()) {
 				int n = 0;
 				while (rs.next()) {

@@ -22,10 +22,9 @@
 
 package org.simplity.fm.gen;
 
-import java.text.DateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,7 +62,7 @@ class KeyedValueList {
 		Util.emitImport(sbf, org.simplity.fm.validn.KeyedValueList.class);
 		
 		sbf.append("\n\n/**\n * List of valid values for list ").append(this.name);
-		sbf.append("\n * <br /> generated at ").append(DateFormat.getDateTimeInstance().format(new Date()));
+		sbf.append("\n * <br /> generated at ").append(LocalDateTime.now());
 		sbf.append("\n */ ");
 		
 		sbf.append("\npublic class ").append(Util.toClassName(this.name)).append(" extends KeyedValueList {");

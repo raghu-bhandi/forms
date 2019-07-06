@@ -92,10 +92,12 @@ class DataType {
 		 * append parameters list based on the data type
 		 */
 		switch (this.valueType) {
+		case TIMESTAMP:
 		case BOOLEAN:
 			break;
 		case DATE:
-		case NUMBER:
+		case INTEGER:
+		case DECIMAL:
 			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append('L');
 			break;
 		case TEXT:

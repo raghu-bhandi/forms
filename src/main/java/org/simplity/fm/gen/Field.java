@@ -43,7 +43,7 @@ import org.slf4j.LoggerFactory;
 class Field {
 	protected static final Logger logger = LoggerFactory.getLogger(Field.class);
 	private static final String C = ", ";
-	static final int NBR_CELLS = 13;
+	static final int NBR_CELLS = 14;
 
 	String name;
 	String label;
@@ -57,6 +57,8 @@ class Field {
 	boolean isDerived;
 	String listName;
 	String listKey;
+	String dbColumnName;
+	boolean isDbKey = false;
 	int index;
 
 	static Field[] fromSheet(Sheet sheet, Field[] commonFields) {
@@ -119,6 +121,7 @@ class Field {
 		f.isKey = Util.boolValueOf(row.getCell(10));
 		f.listName = Util.textValueOf(row.getCell(11));
 		f.listKey = Util.textValueOf(row.getCell(12));
+		f.dbColumnName = Util.textValueOf(row.getCell(13));
 		
 		return f;
 	}
@@ -166,10 +169,12 @@ class Field {
 		sbf.append(C).append(Util.escapeTs(this.listKey));
 		sbf.append(C);
 		if(this.listName == null) {
-			sbf.append("null");
+			sbf.append("null, null");
 		}else if(this.listKey == null) {
 			this.emitListTs(sbf, valueLists);
+			sbf.append(",null");
 		}else {
+			sbf.append(",null");
 			this.emitKeyedListTs(sbf, keyedLists);
 		}
 		

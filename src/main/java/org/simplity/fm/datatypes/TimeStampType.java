@@ -19,42 +19,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-
-package org.simplity.fm.rdb;
-
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+package org.simplity.fm.datatypes;
 
 /**
- * interface for a class that wants to write/update/delete fromthe dta base
+ * 
+ * time stamp is very unlikely to be parsed from a client as input. Validating a
+ * time-stamp is probably not required. We just ensure that it is in the right
+ * format
  * 
  * @author simplity.org
  *
  */
-public interface IDbWriter {
+public class TimeStampType extends DataType {
 
 	/**
+	 * @param name
+	 * @param errorId
 	 * 
-	 * @return the prepared statement that can be used to insert/update/delete
-	 *         rows. null to indicate that the write operation be aborted by
-	 *         design
 	 */
-	public String getPreparedStatement();
+	public TimeStampType(String name, String errorId) {
+		this.valueType = ValueType.TIMESTAMP;
+	}
 
-	/**
-	 * method that is invoked by the db driver to populate the actual prepared.
-	 * 
-	 * @param ps
-	 *            prepared statement to which params are to be set
-	 * @throws SQLException
-	 */
-	public void setParams(PreparedStatement ps) throws SQLException;
-
-	/**
-	 * 
-	 * @return if true, sql exception on execution is assumed to be for now rows
-	 *         for the desired operation. In such a case, 0 is returned after
-	 *         such an exception instead of throwing an exception.
-	 */
-	public boolean toTreatSqlExceptionAsNoRowsAffected();
+	@Override
+	protected boolean isOk(Object value) {
+		return true;
+	}
 }

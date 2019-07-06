@@ -25,15 +25,18 @@ package org.simplity.fm.form;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
-import org.simplity.fm.DateUtil;
 import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.http.LoggedInUser;
+import org.simplity.fm.rdb.IDbReader;
+import org.simplity.fm.rdb.IDbWriter;
+import org.simplity.fm.rdb.RdbDriver;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
@@ -190,6 +193,218 @@ public class FormData implements IFormData {
 			return false;
 		}
 		return uid.equals(uidIn);
+	}
+
+	private boolean idxOk(int idx) {
+		return idx >= 0 && idx < this.fieldValues.length;
+	}
+
+	@Override
+	public ValueType getValueType(String fieldName) {
+		Field field = this.form.getField(fieldName);
+		if (field == null) {
+			return null;
+		}
+		return field.getValueType();
+	}
+
+	@Override
+	public int getFieldIndex(String fieldName) {
+		Field field = this.form.getField(fieldName);
+		if (field != null) {
+			return field.getIndex();
+		}
+		return -1;
+	}
+
+	@Override
+	public Object getObject(int idx) {
+		if (this.idxOk(idx)) {
+			return this.fieldValues[idx];
+		}
+		return null;
+	}
+
+	@Override
+	public boolean setObject(int idx, Object value) {
+		if (this.idxOk(idx)) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public long getLongValue(int idx) {
+		Object obj = this.getObject(idx);
+		if (obj != null && obj instanceof Number) {
+			return ((Number) obj).longValue();
+		}
+		return 0;
+	}
+
+	@Override
+	public boolean setLongValue(int idx, long value) {
+		if (!this.idxOk(idx)) {
+			return false;
+		}
+		ValueType vt = this.form.getFields()[idx].getValueType();
+		if (vt == ValueType.INTEGER) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		if (vt == ValueType.DECIMAL) {
+			double d = value;
+			this.fieldValues[idx] = d;
+			return true;
+		}
+		if (vt == ValueType.TEXT) {
+			
+			this.fieldValues[idx] = ""+value;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public String getStringValue(int idx) {
+		Object obj = this.getObject(idx);
+		if (obj == null) {
+			return null;
+		}
+		return obj.toString();
+	}
+
+	@Override
+	public boolean setStringValue(int idx, String value) {
+		if (!this.idxOk(idx)) {
+			return false;
+		}
+		ValueType vt = this.form.getFields()[idx].getValueType();
+		if (vt == ValueType.TEXT) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		Object obj = vt.parse(value);
+		if(obj != null) {
+			this.fieldValues[idx] = obj;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public LocalDate getDateValue(int idx) {
+		Object obj = this.getObject(idx);
+		if (obj != null && obj instanceof LocalDate) {
+			return (LocalDate) obj;
+		}
+		return null;
+	}
+
+	@Override
+	public boolean setDateValue(int idx, LocalDate value) {
+		if (!this.idxOk(idx)) {
+			return false;
+		}
+		ValueType vt = this.form.getFields()[idx].getValueType();
+		if (vt == ValueType.DATE) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		if (vt == ValueType.TEXT) {
+			this.fieldValues[idx] = value.toString();
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean getBoolValue(int idx) {
+		Object obj = this.getObject(idx);
+		if (obj == null) {
+			return false;
+		}
+		if (obj instanceof Boolean) {
+			return (Boolean) obj;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean setBoolValue(int idx, boolean value) {
+		if (!this.idxOk(idx)) {
+			return false;
+		}
+		ValueType vt = this.form.getFields()[idx].getValueType();
+		if (vt == ValueType.BOOLEAN) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		if (vt == ValueType.TEXT) {
+			this.fieldValues[idx] = ""+value;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public double getDecimalValue(int idx) {
+		Object obj = this.getObject(idx);
+		if (obj == null) {
+			return 0;
+		}
+		if (obj instanceof Number) {
+			return ((Number) obj).doubleValue();
+		}
+		return 0;
+	}
+
+	@Override
+	public boolean setDecimlValue(int idx, double value) {
+		if (!this.idxOk(idx)) {
+			return false;
+		}
+		ValueType vt = this.form.getFields()[idx].getValueType();
+		if (vt == ValueType.DECIMAL) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		if (vt == ValueType.INTEGER) {
+			this.fieldValues[idx] = ((Number)value).longValue();
+			return true;
+		}
+		if (vt == ValueType.TEXT) {
+			this.fieldValues[idx] = ""+value;
+			return true;
+		}
+		return false;
+	}
+
+	@Override
+	public Instant getTimestamp(int idx) {
+		Object obj = this.getObject(idx);
+		if (obj != null && obj instanceof Instant) {
+			return (Instant) obj;
+		}
+		return null;
+	}
+
+	@Override
+	public boolean setTimestamp(int idx, Instant value) {
+		if (!this.idxOk(idx)) {
+			return false;
+		}
+		ValueType vt = this.form.getFields()[idx].getValueType();
+		if (vt == ValueType.TIMESTAMP) {
+			this.fieldValues[idx] = value;
+			return true;
+		}
+		if (vt == ValueType.TEXT) {
+			this.fieldValues[idx] = value.toString();
+			return true;
+		}
+		return false;
 	}
 
 	@Override
@@ -381,51 +596,8 @@ public class FormData implements IFormData {
 				continue;
 			}
 			gen.writeFieldName(fields[j].getFieldName());
-			if (value instanceof Date) {
-				gen.writeString(DateUtil.formatDateTime((Date) value));
-			} else {
-				gen.writeObject(value);
-			}
+			gen.writeObject(value);
 		}
-	}
-
-	private Object getObject(int idx) {
-		if (idx < 0 || idx >= this.fieldValues.length) {
-			return null;
-		}
-		return this.fieldValues[idx];
-	}
-
-	@Override
-	public String getValue(int fieldIndex) {
-		Object obj = this.getObject(fieldIndex);
-		if (obj == null) {
-			return null;
-		}
-		return obj.toString();
-	}
-
-	@Override
-	public boolean setValue(int idx, String value) {
-		if (idx < 0 || idx >= this.fieldValues.length) {
-			return false;
-		}
-		Field field = this.form.fields[idx];
-		if (field.getValueType() == ValueType.TEXT) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-
-		long val = 0;
-		if (value != null) {
-			try {
-				val = Long.parseLong(value);
-			} catch (Exception e) {
-				return false;
-			}
-		}
-		this.fieldValues[idx] = val;
-		return true;
 	}
 
 	private static String getChildAsText(JsonNode json, String fieldName) {
@@ -441,136 +613,43 @@ public class FormData implements IFormData {
 	}
 
 	@Override
-	public ValueType getValueType(String fieldName) {
-		Field field = this.form.getField(fieldName);
-		if (field == null) {
-			return null;
-		}
-		return field.getValueType();
-	}
-
-	@Override
-	public long getLongValue(int idx) {
-		Object obj = this.getObject(idx);
-		if (obj != null && obj instanceof Number) {
-			return ((Number) obj).longValue();
-		}
-		return 0;
-	}
-
-	@Override
-	public String getStringValue(int idx) {
-		Object obj = this.getObject(idx);
-		if (obj == null) {
-			return null;
-		}
-		if (obj instanceof String) {
-			return (String) obj;
-		}
-		return this.form.fields[idx].getDataType().toTextValue(obj);
-	}
-
-	@Override
-	public Date getDateValue(int idx) {
-		Object obj = this.getObject(idx);
-		if (obj != null && obj instanceof Date) {
-			return (Date) obj;
-		}
-		return null;
-	}
-
-	@Override
-	public boolean getBoolValue(int idx) {
-		Object obj = this.getObject(idx);
-		if (obj == null) {
-			return false;
-		}
-		if (obj instanceof Boolean) {
-			return (Boolean) obj;
-		}
-		if (obj instanceof Number) {
-			return ((Number) obj).intValue() != 0;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setStringValue(int idx, String value) {
-		if (idx < 0 || idx >= this.fieldValues.length) {
-			return false;
-		}
-		ValueType vt = this.form.getFields()[idx].getValueType();
-		if (vt == ValueType.TEXT) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setDateValue(int idx, Date value) {
-		if (idx < 0 || idx >= this.fieldValues.length) {
-			return false;
-		}
-		ValueType vt = this.form.getFields()[idx].getValueType();
-		if (vt == ValueType.DATE) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setBoolValue(int idx, boolean value) {
-		if (idx < 0 || idx >= this.fieldValues.length) {
-			return false;
-		}
-		ValueType vt = this.form.getFields()[idx].getValueType();
-		if (vt == ValueType.BOOLEAN) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean setLongValue(int idx, long value) {
-		if (idx < 0 || idx >= this.fieldValues.length) {
-			return false;
-		}
-		ValueType vt = this.form.getFields()[idx].getValueType();
-		if (vt == ValueType.NUMBER) {
-			this.fieldValues[idx] = value;
-			return true;
-		}
-		return false;
-	}
-
-	@Override
-	public int getFieldIndex(String fieldName) {
-		Field field = this.form.getField(fieldName);
-		if (field != null) {
-			return field.getIndex();
-		}
-		return -1;
-	}
-
-	@Override
 	public boolean insertToDb() throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+		IDbWriter writer = this.form.getDbInserter(this.fieldValues);
+		if (writer == null) {
+			logger.error("Form {} is not designed for insert/add operation..");
+			return false;
+		}
+		return RdbDriver.getDriver().write(writer) > 0;
 	}
 
 	@Override
-	public boolean updateTo() throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean updateInDb() throws SQLException {
+		IDbWriter writer = this.form.getDbUpdater(this.fieldValues);
+		if (writer == null) {
+			logger.error("Form {} is not designed for update operation..");
+			return false;
+		}
+		return RdbDriver.getDriver().write(writer) > 0;
 	}
 
 	@Override
 	public boolean deleteFromDb() throws SQLException {
-		// TODO Auto-generated method stub
-		return false;
+		IDbWriter writer = this.form.getDbDeleter(this.fieldValues);
+		if (writer == null) {
+			logger.error("Form {} is not designed for delete operation..");
+			return false;
+		}
+		return RdbDriver.getDriver().write(writer) > 0;
+	}
+
+	@Override
+	public boolean fetchFromDb() throws SQLException {
+		IDbReader reader = this.form.getDbReader(this.fieldValues);
+		if (reader == null) {
+			logger.error("Form {} is not designed for db read. Operation not done.");
+			return false;
+		}
+		return RdbDriver.getDriver().read(reader) > 0;
 	}
 
 }

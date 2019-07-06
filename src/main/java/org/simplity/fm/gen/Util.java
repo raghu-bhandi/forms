@@ -25,8 +25,6 @@ package org.simplity.fm.gen;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
-import java.text.DateFormat;
-import java.util.Date;
 import java.util.function.Consumer;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -206,13 +204,6 @@ class Util {
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * @return time stamp
-	 */
-	public static Object timeStamp() {
-		return DateFormat.getDateTimeInstance().format(new Date());
 	}
 
 	public static void consumeRows(Sheet sheet, int nbrCells, Consumer<Row> consumer) {

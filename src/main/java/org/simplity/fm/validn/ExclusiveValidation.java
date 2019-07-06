@@ -60,8 +60,8 @@ public class ExclusiveValidation implements IValidation {
 
 	@Override
 	public boolean isValid(FormData formData, List<Message> messages) {
-		Object val1 = formData.getValue(this.index1);
-		Object val2 = formData.getValue(this.index2);
+		Object val1 = formData.getObject(this.index1);
+		Object val2 = formData.getObject(this.index2);
 		
 		if(val1 == null) {
 			if(val2 == null && this.oneOfThemRequired) {

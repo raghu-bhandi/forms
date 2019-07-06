@@ -4,14 +4,20 @@ import org.simplity.fm.form.Field;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.form.ChildForm;
+import org.simplity.fm.validn.FromToValidation;
 import org.simplity.fm.validn.DependentListValidation;
 import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 3 Jul, 2019 9:01:49 PM from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
+ * <br /> generated at 2019-07-06T14:00:59.158 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
  */ 
 public class Form1 extends Form {
+	private static final String WHERE = " WHERE customer_id=? AND financial_year=?";
+	private static final String FETCH = "SELECT customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2 FROM test_table" + WHERE;
+	private static final String INSERT = "INSERT INTO test_table(customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2) values (?, ?, ?, ?, ?, ?, ?)" + WHERE;
+	private static final String UPDATE = "UPDATE test_table SET bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?" + WHERE;
+	private static final String DELETE = "DELETE FROM test_table" + WHERE;
 	public static final int customerIdd = 0;
 	public static final int customerId = 1;
 	public static final int financialYear = 2;
@@ -54,9 +60,30 @@ public class Form1 extends Form {
 			new ChildForm("orderLines", "form2", true, 1, 200, "wrongLines")};
 		this.childForms = chlds;
 
-		IValidation[] vlds = {new example.project.custom.Form1Validation()};
+		IValidation[] vlds = {new FromToValidation(4, 5, false, "fromDate", "invalidDateRange"),
+			new example.project.custom.Form1Validation()};
 		this.validations = vlds;
 
 		this.initialize();
+	}
+
+	@Override
+	protected String getFetchSql() {
+		return FETCH;
+	}
+
+	@Override
+	protected String getInsertSql() {
+		return INSERT;
+	}
+
+	@Override
+	protected String getUpdateSql() {
+		return UPDATE;
+	}
+
+	@Override
+	protected String getDeleteSql() {
+		return DELETE;
 	}
 }

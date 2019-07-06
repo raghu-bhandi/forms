@@ -59,7 +59,7 @@ public class InclusiveValidation implements IValidation {
 
 	@Override
 	public boolean isValid(FormData formData, List<Message> messages) {
-		Object main = formData.getValue(this.mainIndex);
+		Object main = formData.getObject(this.mainIndex);
 		/*
 		 * rule applicable only if main is non-null
 		 */
@@ -73,7 +73,7 @@ public class InclusiveValidation implements IValidation {
 			return true;
 		}
 		
-		if(formData.getValue(this.depndentIndex) != null) {
+		if(formData.getObject(this.depndentIndex) != null) {
 			return true;
 		}
 		messages.add(Message.newFieldError(this.fieldName, this.messageId, null));

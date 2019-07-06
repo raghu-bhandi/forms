@@ -21,10 +21,15 @@
  */
 package org.simplity.fm.form;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.simplity.fm.rdb.IDbReader;
+import org.simplity.fm.rdb.IDbWriter;
 import org.simplity.fm.service.GetService;
 import org.simplity.fm.service.IFormProcessor;
 import org.simplity.fm.service.IService;
@@ -91,7 +96,7 @@ public class Form {
 	protected Field[] fields;
 
 	/**
-	 * field name that has the user id. Used for access control 
+	 * field name that has the user id. Used for access control
 	 */
 	protected String userIdFieldName;
 
@@ -132,26 +137,47 @@ public class Form {
 	 */
 
 	protected IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
-	
+
+	/**
+	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
+	 */
+	protected String readSql;
+	/**
+	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
+	 */
+	protected String updateSql;
+	/**
+	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
+	 */
+	protected String insertSql;
+	/**
+	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
+	 */
+	protected String deleteSql;
 	/**
 	 * index to the values array for the key fields. this is derived based on
 	 * fields. This based on the field meta data attribute isKeyField
 	 */
-	private int[] keyIndexes;
+	protected int[] keyIndexes;
 	/**
 	 * fields are also stored as Maps for ease of access
 	 */
-	private Map<String, Field> fieldMap;
+	protected Map<String, Field> fieldMap;
 	/**
 	 * indexes of tabular fields are also stored in map for ease of access
 	 */
-	private Map<String, ChildForm> childMap;
+	protected Map<String, ChildForm> childMap;
 
 	/**
 	 * index to the field that represents the userId. User access may be
 	 * implemented based on this field
 	 */
-	private int userIdFieldIdx = -1;
+	protected int userIdFieldIdx = -1;
+	
+	/**
+	 * index to the fields that are fetched from the database
+	 */
+	protected int[] fetchIndexes;
 
 	/**
 	 * for extended classes to set the attributes later
@@ -187,15 +213,15 @@ public class Form {
 			}
 		}
 
-		if(this.childForms != null) {
+		if (this.childForms != null) {
 			int n = this.childForms.length;
 			this.childMap = new HashMap<>(n, 1);
-			for (ChildForm child :  this.childForms) {
+			for (ChildForm child : this.childForms) {
 				this.childMap.put(child.fieldName, child);
 			}
 		}
-		
-		if(this.userIdFieldName != null) {
+
+		if (this.userIdFieldName != null) {
 			this.userIdFieldIdx = this.getField(this.userIdFieldName).getIndex();
 		}
 	}
@@ -327,5 +353,137 @@ public class Form {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * 
+	 * @param data from  formData
+	 * @return prepared statement that can be used to read data from an RDBMS
+	 *         using the primary key of this form. null if this form is not
+	 *         designed for such an operation;
+	 */
+	IDbReader getDbReader(Object[] data) {
+		if(this.getFetchSql()== null) {
+			return null;
+		}
+		Field[] flds = Form.this.fields;
+		return new IDbReader() {
+			
+			@Override
+			public String getPreparedStatement() {
+				return Form.this.readSql;
+			}
+			@Override
+			public void setParams(PreparedStatement ps) throws SQLException {
+				int position = 1;
+				for(int idx : Form.this.keyIndexes) {
+					flds[idx].getValueType().setPsParam(ps, position, data[idx]);
+					position++;
+				}
+			}
+			
+			@Override
+			public boolean readARow(ResultSet rs) throws SQLException {
+				int position = 1;
+				for(int idx : Form.this.fetchIndexes) {
+					data[idx] = flds[idx].getValueType().getFromRs(rs, position);
+					position++;
+				}
+				return false;
+			}
+			
+		};
+	}
+
+	/**
+	 * concrete class extends this if this operation is valid for this form
+	 * @return
+	 */
+	protected String getFetchSql() {
+		return null;
+	}
+
+	/**
+	 * concrete class extends this if this operation is valid for this form
+	 * @return
+	 */
+	protected String getInsertSql() {
+		return null;
+	}
+
+	/**
+	 * concrete class extends this if this operation is valid for this form
+	 * @return
+	 */
+	protected String getUpdateSql() {
+		return null;
+	}
+
+	/**
+	 * concrete class extends this if this operation is valid for this form
+	 * @return
+	 */
+	protected String getDeleteSql() {
+		return null;
+	}
+
+	/**
+	 * 
+	 * @param data from formData
+	 * @return prepared statement that can be used to update thus form onto
+	 *         an RDBMS using the primary key of this form. null if this form is
+	 *         not designed for such an operation;
+	 */
+	IDbWriter getDbUpdater(Object[] data) {
+		return this.getWriter(this.getUpdateSql(), data);
+	}
+
+	/**
+	 * @param data from formData
+	 * 
+	 * @return prepared statement that can be used to insert data into an RDBMS
+	 *         null if this form is not designed for such an operation;
+	 */
+	IDbWriter getDbInserter(Object[] data) {
+		return this.getWriter(this.getInsertSql(), data);
+	}
+
+	/**
+	 * @param data from formData
+	 * 
+	 * @return prepared statement that can be used to delete this from an RDBMS
+	 *         using the primary key of this form. null if this form is not
+	 *         designed for such an operation;
+	 */
+	IDbWriter getDbDeleter(Object[] data) {
+		return this.getWriter(this.getDeleteSql(), data);
+	}
+	
+	private IDbWriter getWriter(String sql, Object[] data) {
+		if(sql == null) {
+			return null;
+		}
+		Field[] flds = Form.this.fields;
+		return new IDbWriter() {
+			
+			@Override
+			public String getPreparedStatement() {
+				return sql;
+			}
+			
+			@Override
+			public void setParams(PreparedStatement ps) throws SQLException {
+				int position = 1;
+				for(int idx : Form.this.keyIndexes) {
+					flds[idx].getValueType().setPsParam(ps, position, data[idx]);
+					position++;
+				}
+			}
+
+			@Override
+			public boolean toTreatSqlExceptionAsNoRowsAffected() {
+				return false;
+			}
+		};
 	}
 }

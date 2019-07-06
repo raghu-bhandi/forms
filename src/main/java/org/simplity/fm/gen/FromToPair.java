@@ -105,7 +105,7 @@ class FromToPair {
 		sbf.append(C).append(this.equalOk);
 		sbf.append(C).append(Util.escape(this.fieldName));
 		sbf.append(C).append(Util.escape(this.errorId));
-		sbf.append(");");
+		sbf.append(")");
 	}
 }
 

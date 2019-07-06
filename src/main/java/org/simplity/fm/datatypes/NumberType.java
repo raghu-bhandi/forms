@@ -30,6 +30,7 @@ package org.simplity.fm.datatypes;
 public class NumberType extends DataType {
 	private final long minValue;
 	private final long maxValue;
+	private final int nbrFractions;
 
 	/**
 	 * 
@@ -39,10 +40,10 @@ public class NumberType extends DataType {
 	 * @param maxValue
 	 */
 	public NumberType(String name, String errorMessageId, long minValue, long maxValue) {
-		this.valueType = ValueType.NUMBER;
 		this.messageId = errorMessageId;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
+		this.nbrFractions = 0;
 
 		if (this.minValue >= 0) {
 			this.minLength = ("" + this.minValue).length();
@@ -53,8 +54,19 @@ public class NumberType extends DataType {
 	}
 
 	@Override
+	public ValueType getValueType() {
+		if(this.nbrFractions > 0) {
+			return ValueType.DECIMAL;
+		}
+		return ValueType.INTEGER;
+	}
+	
+	@Override
 	protected boolean isOk(Object val) {
-		long value = (Long) val;
+		/*
+		 * we do not expect limits at fraction level!!
+		 */
+		long value = ((Number) val).longValue();
 		return value >= this.minValue && value <= this.maxValue;
 	}
 }

@@ -22,7 +22,13 @@
 
 package org.simplity.fm.datatypes;
 
-import org.simplity.fm.DateUtil;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
 
 /**
  * text, number etc..
@@ -39,11 +45,26 @@ public enum ValueType {
 		public Object parse(String value) {
 			return value;
 		}
+
+		@Override
+		public void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException {
+			ps.setString(position, (String) value);
+		}
+
+		@Override
+		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+			return rs.getString(position);
+		}
+
+		@Override
+		public boolean isOfRightType(Object value) {
+			return value instanceof String;
+		}
 	},
 	/**
 	 * whole number
 	 */
-	NUMBER(NumberType.class, 1) {
+	INTEGER(NumberType.class, 1) {
 		@Override
 		public Object parse(String value) {
 			try {
@@ -52,11 +73,54 @@ public enum ValueType {
 				return null;
 			}
 		}
+
+		@Override
+		public void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException {
+			ps.setLong(position, (long) value);
+		}
+
+		@Override
+		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+			return rs.getLong(position);
+		}
+
+		@Override
+		public boolean isOfRightType(Object value) {
+			return value instanceof Long;
+		}
 	},
 	/**
-	 * 0 is false and 1 is true
+	 * whole number
 	 */
-	BOOLEAN(BooleanType.class, 2) {
+	DECIMAL(NumberType.class, 2) {
+		@Override
+		public Object parse(String value) {
+			try {
+				return Double.parseDouble(value);
+			} catch (Exception e) {
+				return null;
+			}
+		}
+
+		@Override
+		public void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException {
+			ps.setDouble(position, (Double) value);
+		}
+
+		@Override
+		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+			return rs.getDouble(position);
+		}
+
+		@Override
+		public boolean isOfRightType(Object value) {
+			return value instanceof Double;
+		}
+	},
+	/**
+	 * boolean
+	 */
+	BOOLEAN(BooleanType.class, 3) {
 		@Override
 		public Object parse(String value) {
 			if ("1".equals(value)) {
@@ -74,14 +138,81 @@ public enum ValueType {
 			}
 			return null;
 		}
+
+		@Override
+		public void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException {
+			ps.setBoolean(position, (boolean) value);
+		}
+
+		@Override
+		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+			return rs.getBoolean(position);
+		}
+
+		@Override
+		public boolean isOfRightType(Object value) {
+			return value instanceof Boolean;
+		}
 	},
 	/**
-	 * date, represented in milliseconds from epoch
+	 * Date as in calendar. No time, no time-zone. like a date-of-birth. Most
+	 * commonly used value-type amongst the three types
 	 */
-	DATE(DateType.class, 3) {
+	DATE(DateType.class, 4) {
 		@Override
 		public Object parse(String value) {
-			return DateUtil.parseDateWithOptionalTime(value);
+			try {
+				return LocalDate.parse(value);
+			} catch (Exception e) {
+				//
+			}
+			return null;
+		}
+
+		@Override
+		public void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException {
+			ps.setDate(position, Date.valueOf((LocalDate) value));
+		}
+
+		@Override
+		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+			return rs.getDate(position).toLocalDate();
+		}
+
+		@Override
+		public boolean isOfRightType(Object value) {
+			return value instanceof LocalDate;
+		}
+	},
+
+	/**
+	 * an instant of time. will show up as different date/time .based on the
+	 * locale. Likely candidate to represent most "date-time" fields
+	 */
+	TIMESTAMP(DateType.class, 5) {
+		@Override
+		public Object parse(String value) {
+			try {
+				return Instant.parse(value);
+			} catch (Exception e) {
+				//
+			}
+			return null;
+		}
+
+		@Override
+		public void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException {
+			ps.setTimestamp(position, Timestamp.from((Instant) value));
+		}
+
+		@Override
+		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+			return rs.getTimestamp(position).toInstant();
+		}
+
+		@Override
+		public boolean isOfRightType(Object value) {
+			return value instanceof Instant;
 		}
 	};
 
@@ -112,9 +243,34 @@ public enum ValueType {
 	public abstract Object parse(String value);
 
 	/**
-	 * @return  0-based index that can be used to represent valueType as int..
+	 * @return 0-based index that can be used to represent valueType as int..
 	 */
 	public int getIdx() {
 		return this.idx;
 	}
+
+	/**
+	 * @param ps
+	 * @param position
+	 * @param value
+	 * @throws SQLException
+	 */
+	public abstract void setPsParam(PreparedStatement ps, int position, Object value) throws SQLException;
+
+	/**
+	 * 
+	 * @param rs
+	 * @param position
+	 * @return object returned in the result set
+	 * @throws SQLException
+	 */
+	public abstract Object getFromRs(ResultSet rs, int position) throws SQLException;
+	
+	/**
+	 * id this value an instance of the right type? e.g is it LocalDate for DATE?
+	 * @param value
+	 * @return true if this is of right type. false otherwise
+	 */
+	public abstract boolean isOfRightType(Object value);
+
 }

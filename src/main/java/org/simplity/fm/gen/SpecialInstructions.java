@@ -48,9 +48,10 @@ class SpecialInstructions {
 
 	final Map<String, Object> settings = new HashMap<>();
 	boolean addCommonFields = false;
+	String[] dbKeyFields;
 
 	static SpecialInstructions fromSheet(Sheet sheet) {
-		SpecialInstructions s = new SpecialInstructions();
+		SpecialInstructions si = new SpecialInstructions();
 		Consumer<Row> consumer = new Consumer<Row>() {
 
 			@Override
@@ -59,18 +60,36 @@ class SpecialInstructions {
 				Object val = Util.objectValueOfCell(row.getCell(1));
 				logger.info("{}={}", key, val);
 				if (key != null || val != null) {
-					s.settings.put(key, val);
+					si.settings.put(key, val);
 				}
 			}
 		};
 		Util.consumeRows(sheet, 2, consumer);
-		Object obj = s.settings.get("addCommonFields");
+		Object obj = si.settings.get("addCommonFields");
 		if (obj != null) {
 			if (obj instanceof Boolean) {
-				s.addCommonFields = (Boolean) obj;
+				si.addCommonFields = (Boolean) obj;
 			}
 		}
-		return s;
+		obj = si.settings.get("dbKeyFields");
+		if (obj != null) {
+			if (si.settings.containsKey("dbTableName") == false) {
+				logger.error("dbTableName must be specified when dbKeyFields specified");
+			} else if (obj instanceof String) {
+				String[] names = obj.toString().split(",");
+				si.dbKeyFields = new String[names.length];
+				for (int i = 0; i < names.length; i++) {
+					si.dbKeyFields[i] = names[i].trim();
+				}
+				logger.info("Db Key fields{} extracted", obj);
+			} else {
+				logger.error(
+						"dbKeyFieldNames should be one field name, or a comma separated list of names. value of {} is not accepted, and db related code not geenrated",
+						obj);
+			}
+		}
+
+		return si;
 	}
 
 	void emitJavaAttrs(StringBuilder sbf, String customPackageName) {
@@ -80,6 +99,9 @@ class SpecialInstructions {
 				sbf.append(L).append(att).append(" = ").append(Util.escapeObject(obj)).append(";");
 			}
 		}
+		/*
+		 * 
+		 */
 		for (int i = 0; i < PROCS.length; i++) {
 			Object obj = this.settings.get(PROCS[i]);
 			if (obj != null) {

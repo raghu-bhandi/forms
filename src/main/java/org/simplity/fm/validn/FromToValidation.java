@@ -22,7 +22,8 @@
 
 package org.simplity.fm.validn;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 
 import org.simplity.fm.Message;
@@ -59,8 +60,8 @@ public class FromToValidation implements IValidation {
 
 	@Override
 	public boolean isValid(FormData formData, List<Message> messages) {
-		Object fm = formData.getValue(this.fromIndex);
-		Object to = formData.getValue(this.toIndex);
+		Object fm = formData.getObject(this.fromIndex);
+		Object to = formData.getObject(this.toIndex);
 		if(fm == null || to == null) {
 			return true;
 		}
@@ -68,8 +69,10 @@ public class FromToValidation implements IValidation {
 		boolean ok = false;
 		if(fm instanceof Long) {
 			ok = this.longOk((long) fm, (long)to);
-		}else if(fm instanceof Date) {
-			ok = this.dateOk((Date)fm, (Date)to);
+		}else if(fm instanceof LocalDate) {
+			ok = this.dateOk((LocalDate)fm, (LocalDate)to);
+		}else if(fm instanceof Instant) {
+			ok = this.timestampOk((Instant)fm, (Instant)to);
 		}else {
 			ok = this.textOk(fm.toString(), to.toString());
 		}
@@ -81,6 +84,18 @@ public class FromToValidation implements IValidation {
 		return false;
 	}
 
+	/**
+	 * @param fm
+	 * @param to
+	 * @return
+	 */
+	private boolean timestampOk(Instant fm, Instant to) {
+		if (this.equalOk) {
+			return !fm.isAfter(to);
+		}
+		return to.isAfter(fm);
+	}
+
 	private boolean longOk(long fm, long to) {
 		if (this.equalOk) {
 			return to >= fm;
@@ -88,11 +103,11 @@ public class FromToValidation implements IValidation {
 		return to > fm;
 	}
 
-	private boolean dateOk(Date fm, Date to) {
+	private boolean dateOk(LocalDate fm, LocalDate to) {
 		if (this.equalOk) {
-			return !fm.after(to);
+			return !fm.isAfter(to);
 		}
-		return to.after(fm);
+		return to.isAfter(fm);
 	}
 
 	private boolean textOk(String fm, String to) {

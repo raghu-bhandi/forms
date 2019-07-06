@@ -21,9 +21,7 @@
  */
 package org.simplity.fm.datatypes;
 
-import java.util.Date;
-
-import org.simplity.fm.DateUtil;
+import java.time.LocalDate;
 
 /**
  * validation parameters for a an integral value
@@ -57,8 +55,14 @@ public class DateType extends DataType {
 
 	@Override
 	protected boolean isOk(Object value) {
-		Date date = (Date) value;
-		int days = DateUtil.daysFromToday(date.getTime());
-		return days >= this.minValue && days <= this.maxValue;
+		LocalDate thisDate = (LocalDate)value;
+		LocalDate today = LocalDate.now();
+		if(today.plusDays(this.minValue).isAfter(thisDate)) {
+			return false;
+		}
+		if(today.plusDays(this.maxValue).isBefore(thisDate)) {
+			return false;
+		}
+		return true;
 	}
 }
