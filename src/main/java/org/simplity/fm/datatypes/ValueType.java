@@ -40,9 +40,9 @@ public enum ValueType {
 	/**
 	 * text
 	 */
-	TEXT(TextType.class, 0) {
+	TEXT {
 		@Override
-		public Object parse(String value) {
+		public String parse(String value) {
 			return value;
 		}
 
@@ -52,23 +52,21 @@ public enum ValueType {
 		}
 
 		@Override
-		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+		public String getFromRs(ResultSet rs, int position) throws SQLException {
 			return rs.getString(position);
-		}
-
-		@Override
-		public boolean isOfRightType(Object value) {
-			return value instanceof String;
 		}
 	},
 	/**
 	 * whole number
 	 */
-	INTEGER(NumberType.class, 1) {
+	INTEGER {
 		@Override
-		public Object parse(String value) {
+		public Long parse(String value) {
+			/*
+			 * we are okay with decimals but we take the long value of that
+			 */
 			try {
-				return Long.parseLong(value);
+				return ((Number) Double.parseDouble(value)).longValue();
 			} catch (Exception e) {
 				return null;
 			}
@@ -80,21 +78,16 @@ public enum ValueType {
 		}
 
 		@Override
-		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+		public Long getFromRs(ResultSet rs, int position) throws SQLException {
 			return rs.getLong(position);
-		}
-
-		@Override
-		public boolean isOfRightType(Object value) {
-			return value instanceof Long;
 		}
 	},
 	/**
 	 * whole number
 	 */
-	DECIMAL(NumberType.class, 2) {
+	DECIMAL {
 		@Override
-		public Object parse(String value) {
+		public Double parse(String value) {
 			try {
 				return Double.parseDouble(value);
 			} catch (Exception e) {
@@ -108,21 +101,16 @@ public enum ValueType {
 		}
 
 		@Override
-		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+		public Double getFromRs(ResultSet rs, int position) throws SQLException {
 			return rs.getDouble(position);
-		}
-
-		@Override
-		public boolean isOfRightType(Object value) {
-			return value instanceof Double;
 		}
 	},
 	/**
 	 * boolean
 	 */
-	BOOLEAN(BooleanType.class, 3) {
+	BOOLEAN {
 		@Override
-		public Object parse(String value) {
+		public Boolean parse(String value) {
 			if ("1".equals(value)) {
 				return true;
 			}
@@ -145,22 +133,17 @@ public enum ValueType {
 		}
 
 		@Override
-		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+		public Boolean getFromRs(ResultSet rs, int position) throws SQLException {
 			return rs.getBoolean(position);
-		}
-
-		@Override
-		public boolean isOfRightType(Object value) {
-			return value instanceof Boolean;
 		}
 	},
 	/**
 	 * Date as in calendar. No time, no time-zone. like a date-of-birth. Most
 	 * commonly used value-type amongst the three types
 	 */
-	DATE(DateType.class, 4) {
+	DATE {
 		@Override
-		public Object parse(String value) {
+		public LocalDate parse(String value) {
 			try {
 				return LocalDate.parse(value);
 			} catch (Exception e) {
@@ -175,13 +158,8 @@ public enum ValueType {
 		}
 
 		@Override
-		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+		public LocalDate getFromRs(ResultSet rs, int position) throws SQLException {
 			return rs.getDate(position).toLocalDate();
-		}
-
-		@Override
-		public boolean isOfRightType(Object value) {
-			return value instanceof LocalDate;
 		}
 	},
 
@@ -189,9 +167,9 @@ public enum ValueType {
 	 * an instant of time. will show up as different date/time .based on the
 	 * locale. Likely candidate to represent most "date-time" fields
 	 */
-	TIMESTAMP(DateType.class, 5) {
+	TIMESTAMP {
 		@Override
-		public Object parse(String value) {
+		public Instant parse(String value) {
 			try {
 				return Instant.parse(value);
 			} catch (Exception e) {
@@ -206,34 +184,13 @@ public enum ValueType {
 		}
 
 		@Override
-		public Object getFromRs(ResultSet rs, int position) throws SQLException {
+		public Instant getFromRs(ResultSet rs, int position) throws SQLException {
 			return rs.getTimestamp(position).toInstant();
-		}
-
-		@Override
-		public boolean isOfRightType(Object value) {
-			return value instanceof Instant;
 		}
 	};
 
-	private final Class<? extends DataType> dataType;
-	private final int idx;
-
-	ValueType(Class<? extends DataType> dataType, int idx) {
-		this.dataType = dataType;
-		this.idx = idx;
-	}
-
 	/**
-	 * 
-	 * @return extended concrete class for this value type
-	 */
-	public Class<? extends DataType> getDataTypeClass() {
-		return this.dataType;
-	}
-
-	/**
-	 * this is called ONLY from DataType
+	 * parse this value type from a string
 	 * 
 	 * @param value
 	 *            non-null
@@ -241,13 +198,6 @@ public enum ValueType {
 	 *         not be parsed to the desired type
 	 */
 	public abstract Object parse(String value);
-
-	/**
-	 * @return 0-based index that can be used to represent valueType as int..
-	 */
-	public int getIdx() {
-		return this.idx;
-	}
 
 	/**
 	 * @param ps
@@ -265,12 +215,4 @@ public enum ValueType {
 	 * @throws SQLException
 	 */
 	public abstract Object getFromRs(ResultSet rs, int position) throws SQLException;
-	
-	/**
-	 * id this value an instance of the right type? e.g is it LocalDate for DATE?
-	 * @param value
-	 * @return true if this is of right type. false otherwise
-	 */
-	public abstract boolean isOfRightType(Object value);
-
 }

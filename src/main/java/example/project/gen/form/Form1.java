@@ -10,14 +10,9 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 2019-07-06T14:00:59.158 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
+ * <br /> generated at 2019-07-07T21:54:20.254 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
  */ 
 public class Form1 extends Form {
-	private static final String WHERE = " WHERE customer_id=? AND financial_year=?";
-	private static final String FETCH = "SELECT customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2 FROM test_table" + WHERE;
-	private static final String INSERT = "INSERT INTO test_table(customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2) values (?, ?, ?, ?, ?, ?, ?)" + WHERE;
-	private static final String UPDATE = "UPDATE test_table SET bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?" + WHERE;
-	private static final String DELETE = "DELETE FROM test_table" + WHERE;
 	public static final int customerIdd = 0;
 	public static final int customerId = 1;
 	public static final int financialYear = 2;
@@ -65,25 +60,29 @@ public class Form1 extends Form {
 		this.validations = vlds;
 
 		this.initialize();
+		this.setDbMeta();
 	}
 
-	@Override
-	protected String getFetchSql() {
-		return FETCH;
-	}
+	private static final String WHERE = " WHERE customer_id=? AND financial_year=?";
+	private static final int[] WHERE_IDX = {1, 2};
+	private static final String SELECT = "SELECT customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2 FROM test_table" + WHERE;
+	private static final int[] SELECT_IDX = {1, 2, 3, 4, 5, 6, 7};
+	private static final  String INSERT = "INSERT INTO test_table(customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2) values (?, ?, ?, ?, ?, ?, ?)";
+	private static final int[] INSERT_IDX = {1, 2, 3, 4, 5, 6, 7};
+	private static final  String UPDATE = "UPDATE test_table SET bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?" + WHERE;
+	private static final  int[] UPDATE_IDX = {3, 4, 5, 6, 7, 1, 2};
+	private static final String DELETE = "DELETE FROM test_table" + WHERE;
 
-	@Override
-	protected String getInsertSql() {
-		return INSERT;
-	}
-
-	@Override
-	protected String getUpdateSql() {
-		return UPDATE;
-	}
-
-	@Override
-	protected String getDeleteSql() {
-		return DELETE;
+	private void setDbMeta(){
+		DbMetaData dbm = new DbMetaData();
+		dbm.whereParams = this.getParams(WHERE_IDX);
+		dbm.selectSql = SELECT;
+		dbm.selectParams = this.getParams(SELECT_IDX);
+		dbm.insertSql = INSERT;
+		dbm.insertParams = this.getParams(INSERT_IDX);
+		dbm.updateSql = UPDATE;
+		dbm.updateParams = this.getParams(UPDATE_IDX);
+		dbm.deleteSql = DELETE;
+		this.dbMetaData = dbm;
 	}
 }

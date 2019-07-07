@@ -39,7 +39,7 @@ public class DependentListValidation implements IValidation {
 	private final int fieldIndex;
 	private final int parentFieldIndex;
 	private final String fieldName;
-	private final String errorId;
+	private final String messaageId;
 	
 
 	/**
@@ -48,15 +48,15 @@ public class DependentListValidation implements IValidation {
 	 * @param parentFieldIndex 
 	 * @param listName 
 	 * @param fieldName 
-	 * @param errorId 
+	 * @param messageId 
 	 * 
 	 */
-	public DependentListValidation(int fieldIndex, int parentFieldIndex, String listName, String fieldName, String errorId ) {
+	public DependentListValidation(int fieldIndex, int parentFieldIndex, String listName, String fieldName, String messageId ) {
 		this.fieldIndex = fieldIndex;
 		this.parentFieldIndex = parentFieldIndex;
 		this.validValues = KeyedValueLists.getList(listName);
 		this.fieldName = fieldName;
-		this.errorId = errorId;
+		this.messaageId = messageId;
 	}
 
 
@@ -74,7 +74,7 @@ public class DependentListValidation implements IValidation {
 		if(this.validValues.isValid(keyValue, value)) {
 			return true;
 		}
-		mesages.add(Message.newFieldError(this.fieldName, this.errorId, null));
+		mesages.add(Message.newFieldError(this.fieldName, this.messaageId, null));
 		return false;
 	}
 }

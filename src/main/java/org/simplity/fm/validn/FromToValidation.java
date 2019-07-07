@@ -30,7 +30,7 @@ import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 
 /**
- * TODO: hard coded for date. To be re-factored for all types
+ * pair of fields that form a range of values
  * 
  * @author simplity.org
  *
@@ -71,6 +71,8 @@ public class FromToValidation implements IValidation {
 			ok = this.longOk((long) fm, (long)to);
 		}else if(fm instanceof LocalDate) {
 			ok = this.dateOk((LocalDate)fm, (LocalDate)to);
+		}else if(fm instanceof Double) {
+			ok = this.doubleOk((double)fm, (double)to);
 		}else if(fm instanceof Instant) {
 			ok = this.timestampOk((Instant)fm, (Instant)to);
 		}else {
@@ -79,7 +81,7 @@ public class FromToValidation implements IValidation {
 		if(ok) {
 			return true;
 		}
-		
+
 		messages.add(Message.newFieldError(this.fieldName, this.messageId, null));
 		return false;
 	}
@@ -97,6 +99,13 @@ public class FromToValidation implements IValidation {
 	}
 
 	private boolean longOk(long fm, long to) {
+		if (this.equalOk) {
+			return to >= fm;
+		}
+		return to > fm;
+	}
+
+	private boolean doubleOk(double fm, double to) {
 		if (this.equalOk) {
 			return to >= fm;
 		}

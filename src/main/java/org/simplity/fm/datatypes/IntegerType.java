@@ -27,28 +27,58 @@ package org.simplity.fm.datatypes;
  * @author simplity.org
  *
  */
-public class BooleanType extends DataType {
+public class IntegerType extends DataType {
+	private final long minValue;
+	private final long maxValue;
 
 	/**
-	 * @param name 
+	 * 
+	 * @param name
 	 * @param messageId
+	 * @param minValue
+	 * @param maxValue
 	 */
-	public BooleanType(String name, String messageId) {
-		this.valueType = ValueType.BOOLEAN;
+	public IntegerType(String name, String messageId, long minValue, long maxValue) {
+		this.valueType = ValueType.INTEGER;
 		this.name = name;
 		this.messageId = messageId;
+		this.minValue = minValue;
+		this.maxValue = maxValue;
+
+		this.maxLength = ("" + this.maxValue).length();
+		int len = ("" + this.minValue).length();
+		if(len > this.maxLength) {
+			this.maxLength = len;
+		}
 	}
 
-	@Override
-	public Boolean parse(String value) {
-		return (Boolean)ValueType.BOOLEAN.parse(value);
-	}
-	
-	@Override
-	public Boolean parse(Object value) {
-		if(value instanceof Boolean) {
-			return (Boolean)value;
+
+	private Long validate(long value) {
+		if(value >= this.minValue && value <= this.maxValue) {
+			return value;
 		}
-		return (Boolean)ValueType.BOOLEAN.parse(value.toString());
+		return null;
+	}
+
+
+	@Override
+	public Long parse(Object object) {
+		if(object instanceof Number) {
+			return this.validate(((Number)object).longValue());
+		}
+		if(object instanceof String) {
+			return this.parse((String)object);
+		}
+		return null;
+	}
+
+
+	@Override
+	public Long parse(String value) {
+		try {
+		return this.validate(Long.parseLong(value));
+		}catch(Exception e) {
+			return null;
+		}
 	}
 }

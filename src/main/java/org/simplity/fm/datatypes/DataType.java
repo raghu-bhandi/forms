@@ -22,6 +22,9 @@
 package org.simplity.fm.datatypes;
 
 /**
+ * class that restricts possible valid values that a field can have. Used for
+ * parsing and validating a field value coming from a non-reliable source
+ * 
  * @author simplity.org
  *
  */
@@ -49,25 +52,20 @@ public abstract class DataType {
 
 	/**
 	 * @param value
-	 *            value to be parsed and validated into the right type after
+	 *            non-null. generic object to be  to be parsed and validated. 
+	 * @return null if the validation fails. object of the right type for the
+	 *         field.
+	 */
+	
+	public abstract Object parse(Object value);
+	/**
+	 * @param value
+	 *            non-null. value to be parsed and validated into the right type after
 	 *            validation
 	 * @return null if the validation fails. object of the right type for the
 	 *         field.
 	 */
-	public Object parse(String value) {
-		if (value == null) {
-			return null;
-		}
-		Object val = this.valueType.parse(value);
-		if (val != null && this.isOk(val)) {
-			return val;
-		}
-		return null;
-	}
-
-	protected abstract boolean isOk(Object value);
-
-
+	public abstract Object parse(String value);
 	/**
 	 * @return the name
 	 */

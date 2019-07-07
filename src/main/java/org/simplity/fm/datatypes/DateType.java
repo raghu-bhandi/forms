@@ -35,7 +35,7 @@ public class DateType extends DataType {
 
 	/**
 	 * @param name
-	 * @param errorId
+	 * @param messageId
 	 * 
 	 * @param minDays
 	 *            0 means today is OK. -100 means 100 days before today is the
@@ -46,23 +46,44 @@ public class DateType extends DataType {
 	 *            max. 100
 	 *            means 100 days after today is the max
 	 */
-	public DateType(String name, String errorId, long minDays, long maxDays) {
+	public DateType(String name, String messageId, long minDays, long maxDays) {
 		this.valueType = ValueType.DATE;
+		this.name = name;
+		this.messageId = messageId;
 		this.minValue = minDays;
 		this.maxValue = maxDays;
-		this.messageId = errorId;
 	}
 
 	@Override
-	protected boolean isOk(Object value) {
-		LocalDate thisDate = (LocalDate)value;
+	public LocalDate parse(String text) {
+		try{
+			return this.validate(LocalDate.parse(text));
+		}catch(Exception e) {
+			return null;
+		}
+		
+	}
+	
+	@Override
+	public LocalDate parse(Object object) {
+		if(object instanceof LocalDate) {
+			return this.validate((LocalDate)object);
+		}
+		
+		if(object instanceof String) {
+			return this.parse((String)object);
+		}
+		return null;
+	}
+	
+	private LocalDate validate(LocalDate date) {
 		LocalDate today = LocalDate.now();
-		if(today.plusDays(this.minValue).isAfter(thisDate)) {
-			return false;
+		if(today.plusDays(this.minValue).isAfter(date)) {
+			return null;
 		}
-		if(today.plusDays(this.maxValue).isBefore(thisDate)) {
-			return false;
+		if(today.plusDays(this.maxValue).isBefore(date)) {
+			return null;
 		}
-		return true;
+		return date;
 	}
 }

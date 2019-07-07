@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * maintains list of valid values by key. Like valid districts by state
+ * Base class to specify an enumeration of valid values for a field. The
+ * enumeration are further restricted based on a key field. This class is
+ * extended by the generated key value list clsses
  * 
  * @author simplity.org
  */

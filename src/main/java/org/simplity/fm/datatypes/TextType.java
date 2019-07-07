@@ -35,16 +35,16 @@ public class TextType extends DataType {
 	/**
 	 * 
 	 * @param name 
-	 * @param errorMessageId
+	 * @param messageId
 	 * @param minLength
 	 * @param maxLength
 	 * @param regex
 	 */
-	public TextType(String name, String errorMessageId, int minLength, int maxLength, String regex) {
+	public TextType(String name, String messageId, int minLength, int maxLength, String regex) {
 		this.valueType = ValueType.TEXT;
 		this.minLength = minLength;
 		this.maxLength = maxLength;
-		this.messageId = errorMessageId;
+		this.messageId = messageId;
 		if (regex == null || regex.isEmpty()) {
 			this.regex = null;
 		} else {
@@ -52,16 +52,21 @@ public class TextType extends DataType {
 		}
 	}
 
+
 	@Override
-	protected boolean isOk(Object val) {
-		String value = val.toString();
+	public String parse(Object object) {
+		return this.parse(object.toString());
+	}
+
+	@Override
+	public String parse(String value) {
 		int len = value.length();
 		if (len < this.minLength || (this.maxLength > 0 && len > this.maxLength)) {
-			return false;
+			return null;
 		}
-		if (this.regex == null) {
-			return true;
+		if (this.regex == null || Pattern.matches(this.regex, value)) {
+			return value;
 		}
-		return Pattern.matches(this.regex, value);
+		return null;
 	}
 }

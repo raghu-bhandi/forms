@@ -25,13 +25,14 @@ package org.simplity.fm.validn;
 import java.util.Set;
 
 /**
- * contains list of valid values
+ * Base class for defining a set of enumerations as valid values of a field.
+ * This class is extended by the generated ValueList classes
  * 
  * @author simplity.org
  */
 public abstract class ValueList {
 	protected String name;
-	protected Set<String> values ;
+	protected Set<String> values;
 
 	/**
 	 * 
@@ -41,7 +42,7 @@ public abstract class ValueList {
 	public boolean isValid(String value) {
 		return this.values.contains(value);
 	}
-	
+
 	/**
 	 * 
 	 * @return unique name of this list. A naming convention must be followed
@@ -49,4 +50,5 @@ public abstract class ValueList {
 	 */
 	public String getName() {
 		return this.name;
-	}}
+	}
+}

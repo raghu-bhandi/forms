@@ -33,7 +33,7 @@ import org.simplity.fm.datatypes.ValueType;
  */
 class DataType {
 	private static final String C = ", ";
-	static final int NBR_CELLS = 11;
+	static final int NBR_CELLS = 12;
 	/*
 	 * all columns in the fields sheet
 	 */
@@ -48,12 +48,12 @@ class DataType {
 	long maxValue;
 	String trueLabel;
 	String falseLabel;
-
+	private int nbrFractions;
 
 	static DataType fromRow(Row row) {
 		DataType dt = new DataType();
 		dt.name = Util.textValueOf(row.getCell(0));
-		if(dt.name == null) {
+		if (dt.name == null) {
 			ProjectInfo.logger.error("Field name is empty. row {} skipped", row.getRowNum());
 			return null;
 		}
@@ -74,11 +74,12 @@ class DataType {
 		dt.maxValue = Util.longValueOf(row.getCell(8));
 		dt.trueLabel = Util.textValueOf(row.getCell(9));
 		dt.falseLabel = Util.textValueOf(row.getCell(10));
+		dt.nbrFractions = (int)Util.longValueOf(row.getCell(11));
 		return dt;
 	}
 
 	void emitJava(StringBuilder sbf) {
-		String cls = this.valueType.getDataTypeClass().getSimpleName();
+		String cls = Util.getDataTypeClass(this.valueType).getSimpleName();
 		/*
 		 * following is the type of line to be output
 		 * public static final {className} {fieldName} = new
@@ -91,34 +92,44 @@ class DataType {
 		/*
 		 * append parameters list based on the data type
 		 */
-		switch (this.valueType) {
-		case TIMESTAMP:
-		case BOOLEAN:
-			break;
-		case DATE:
-		case INTEGER:
-		case DECIMAL:
-			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append('L');
-			break;
-		case TEXT:
-			sbf.append(C).append(this.minLength).append(C).append(this.maxLength).append(C).append(Util.escape(this.regex));
-			break;
-		default:
-			sbf.append(" generating compilation error on valueType=" + this.valueType);
-			break;
-		}
+		this.appendDtParams(sbf);
 		/*
 		 * close the constructor and we are done
 		 */
 		sbf.append(");");
 	}
 
+	private void appendDtParams(StringBuilder sbf) {
+		switch (this.valueType) {
+		case TIMESTAMP:
+		case BOOLEAN:
+			return;
+
+		case DATE:
+		case INTEGER:
+			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append('L');
+			return;
+
+		case DECIMAL:
+			sbf.append(C).append(this.minValue).append("L, ").append(this.maxValue).append('L').append(C)
+					.append(this.nbrFractions);
+			return;
+		case TEXT:
+			sbf.append(C).append(this.minLength).append(C).append(this.maxLength).append(C)
+					.append(Util.escape(this.regex));
+			return;
+		default:
+			sbf.append(" generating compilation error on valueType=" + this.valueType);
+			return;
+		}
+	}
+
 	void emitTs(StringBuilder sbf, String errorId) {
 		String eid = errorId;
-		if(eid == null || eid.isEmpty()) {
+		if (eid == null || eid.isEmpty()) {
 			eid = this.messageId;
 		}
-		sbf.append(this.valueType.getIdx());
+		sbf.append(Util.getValueTypeIdx(this.valueType));
 		sbf.append(C).append(Util.escapeTs(this.regex));
 		sbf.append(C).append(Util.escapeTs(eid));
 		sbf.append(C).append(this.minLength);
@@ -128,4 +139,5 @@ class DataType {
 		sbf.append(C).append(Util.escapeTs(this.trueLabel));
 		sbf.append(C).append(Util.escapeTs(this.falseLabel));
 	}
+
 }

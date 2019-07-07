@@ -19,54 +19,72 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package org.simplity.fm.datatypes;
 
 /**
- * validation parameters for a an integral value
- * 
  * @author simplity.org
  *
  */
-public class NumberType extends DataType {
+public class DecimalType extends DataType {
 	private final long minValue;
 	private final long maxValue;
-	private final int nbrFractions;
+	/**
+	 * calculated based nbr decimals as a factor to round-off teh value to teh
+	 * right decimal places
+	 */
+	private final long factor;
 
 	/**
 	 * 
-	 * @param name 
-	 * @param errorMessageId
+	 * @param name
+	 * @param messageId
 	 * @param minValue
 	 * @param maxValue
+	 * @param nbrDecimals
 	 */
-	public NumberType(String name, String errorMessageId, long minValue, long maxValue) {
-		this.messageId = errorMessageId;
+	public DecimalType(String name, String messageId, long minValue, long maxValue, int nbrDecimals) {
+		this.valueType = ValueType.DECIMAL;
+		this.name = name;
+		this.messageId = messageId;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
-		this.nbrFractions = 0;
 
-		if (this.minValue >= 0) {
-			this.minLength = ("" + this.minValue).length();
+		this.maxLength = ("" + this.maxValue).length();
+		int len = ("" + this.minValue).length();
+		if (len > this.maxLength) {
+			this.maxLength = len;
 		}
-		if (this.maxValue >= 0) {
-			this.maxLength = ("" + this.maxValue).length();
+		this.maxLength += nbrDecimals + 1;
+		long f = 10;
+		for (int i = 0; i < nbrDecimals; i++) {
+			f *= 10;
+		}
+		this.factor = f;
+	}
+
+	@Override
+	public Double parse(String value) {
+		try {
+			return this.validate(Double.parseDouble(value));
+		} catch (Exception e) {
+			return null;
 		}
 	}
 
 	@Override
-	public ValueType getValueType() {
-		if(this.nbrFractions > 0) {
-			return ValueType.DECIMAL;
+	public Double parse(Object value) {
+		if (value instanceof Number) {
+			return this.validate(((Number) value).doubleValue());
 		}
-		return ValueType.INTEGER;
+		return this.parse(value.toString());
 	}
-	
-	@Override
-	protected boolean isOk(Object val) {
-		/*
-		 * we do not expect limits at fraction level!!
-		 */
-		long value = ((Number) val).longValue();
-		return value >= this.minValue && value <= this.maxValue;
+
+	private Double validate(double d) {
+		long f = Math.round(d);
+		if (f > this.maxValue || f < this.minLength) {
+			return null;
+		}
+		return (double) ((d * this.factor) / this.factor);
 	}
 }

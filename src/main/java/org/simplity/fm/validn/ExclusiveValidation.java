@@ -28,7 +28,7 @@ import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 
 /**
- * a pair of mutually fields that are mutually exclusive. That is, bit should
+ * a pair of fields that are mutually exclusive. That is, both should
  * not be specified
  * 
  * @author simplity.org
@@ -38,7 +38,7 @@ public class ExclusiveValidation implements IValidation {
 	private final String fieldName;
 	private final int index1;
 	private final int index2;
-	private final boolean oneOfThemRequired;
+	private final boolean oneOfThemIsRequired;
 	private final String messageId;
 
 
@@ -46,14 +46,14 @@ public class ExclusiveValidation implements IValidation {
 	 * 
 	 * @param index1 index of first field in the form.
 	 * @param index2 index of second field in the form
-	 * @param oneOfThemRequired if true, at least one of them must have value. if false, both not having value is OK.
+	 * @param oneOfThemIsRequired if true, at least one of them must have value. if false, both not having value is OK.
 	 * @param fieldName with which message is to be added
 	 * @param messageId error message id
 	 */
-	public ExclusiveValidation(int index1, int index2, boolean oneOfThemRequired, String fieldName, String messageId) {
+	public ExclusiveValidation(int index1, int index2, boolean oneOfThemIsRequired, String fieldName, String messageId) {
 		this.index1 = index1;
 		this.index2 = index2;
-		this.oneOfThemRequired = oneOfThemRequired;
+		this.oneOfThemIsRequired = oneOfThemIsRequired;
 		this.fieldName = fieldName;
 		this.messageId = messageId;
 	}
@@ -64,7 +64,7 @@ public class ExclusiveValidation implements IValidation {
 		Object val2 = formData.getObject(this.index2);
 		
 		if(val1 == null) {
-			if(val2 == null && this.oneOfThemRequired) {
+			if(val2 == null && this.oneOfThemIsRequired) {
 				messages.add(Message.newFieldError(this.fieldName, this.messageId, null));
 				return false;
 			}

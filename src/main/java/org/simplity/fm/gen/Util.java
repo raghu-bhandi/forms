@@ -31,6 +31,13 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.simplity.fm.datatypes.BooleanType;
+import org.simplity.fm.datatypes.DateType;
+import org.simplity.fm.datatypes.DecimalType;
+import org.simplity.fm.datatypes.IntegerType;
+import org.simplity.fm.datatypes.TextType;
+import org.simplity.fm.datatypes.TimestampType;
+import org.simplity.fm.datatypes.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -249,6 +256,11 @@ class Util {
 
 	}
 
+	/**
+	 * 
+	 * @param obj
+	 * @return value of this object, quoted if required
+	 */
 	static Object escapeObject(Object obj) {
 		if (obj == null) {
 			return "null";
@@ -259,6 +271,55 @@ class Util {
 		}
 
 		return obj.toString();
+	}
+
+	/**
+	 * 
+	 * @param valueType
+	 * @return data type class name for this value type
+	 */
+	static Class<?> getDataTypeClass(ValueType valueType) {
+		switch (valueType) {
+		case BOOLEAN:
+			return BooleanType.class;
+		case DATE:
+			return DateType.class;
+		case DECIMAL:
+			return DecimalType.class;
+		case INTEGER:
+			return IntegerType.class;
+		case TEXT:
+			return TextType.class;
+		case TIMESTAMP:
+			return TimestampType.class;
+		default:
+			logger.error("{} is not a known value type", valueType);
+			return TextType.class;
+		}
+	}
+
+	/**
+	 * 
+	 * @param valueType
+	 * @return get index used by the client for this value type
+	 */
+	static int getValueTypeIdx(ValueType valueType) {
+		switch (valueType) {
+		case TEXT:
+			return 0;
+		case INTEGER:
+			return 1;
+		case DECIMAL:
+			return 2;
+		case BOOLEAN:
+			return 3;
+		case DATE:
+			return 4;
+		case TIMESTAMP:
+			return 5;
+		default:
+			return -1;
+		}
 	}
 
 }

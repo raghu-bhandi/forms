@@ -21,6 +21,8 @@
  */
 package org.simplity.fm.datatypes;
 
+import java.time.Instant;
+
 /**
  * 
  * time stamp is very unlikely to be parsed from a client as input. Validating a
@@ -30,19 +32,34 @@ package org.simplity.fm.datatypes;
  * @author simplity.org
  *
  */
-public class TimeStampType extends DataType {
+public class TimestampType extends DataType {
 
 	/**
 	 * @param name
 	 * @param errorId
 	 * 
 	 */
-	public TimeStampType(String name, String errorId) {
+	public TimestampType(String name, String errorId) {
 		this.valueType = ValueType.TIMESTAMP;
 	}
 
 	@Override
-	protected boolean isOk(Object value) {
-		return true;
+	public Instant parse(Object object) {
+		if(object instanceof Instant) {
+			return (Instant)object;
+		}
+		if(object instanceof String) {
+			return Instant.parse((String)object);
+		}
+		return null;
+	}
+
+	@Override
+	public Instant parse(String value) {
+		try {
+			return Instant.parse(value);
+		}catch(Exception e) {
+		return null;
+		}
 	}
 }

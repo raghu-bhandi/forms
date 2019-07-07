@@ -33,6 +33,7 @@ import java.util.Map;
 import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.form.Form.DbMetaData;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.rdb.IDbReader;
 import org.simplity.fm.rdb.IDbWriter;
@@ -259,8 +260,8 @@ public class FormData implements IFormData {
 			return true;
 		}
 		if (vt == ValueType.TEXT) {
-			
-			this.fieldValues[idx] = ""+value;
+
+			this.fieldValues[idx] = "" + value;
 			return true;
 		}
 		return false;
@@ -286,7 +287,7 @@ public class FormData implements IFormData {
 			return true;
 		}
 		Object obj = vt.parse(value);
-		if(obj != null) {
+		if (obj != null) {
 			this.fieldValues[idx] = obj;
 			return true;
 		}
@@ -342,7 +343,7 @@ public class FormData implements IFormData {
 			return true;
 		}
 		if (vt == ValueType.TEXT) {
-			this.fieldValues[idx] = ""+value;
+			this.fieldValues[idx] = "" + value;
 			return true;
 		}
 		return false;
@@ -371,11 +372,11 @@ public class FormData implements IFormData {
 			return true;
 		}
 		if (vt == ValueType.INTEGER) {
-			this.fieldValues[idx] = ((Number)value).longValue();
+			this.fieldValues[idx] = ((Number) value).longValue();
 			return true;
 		}
 		if (vt == ValueType.TEXT) {
-			this.fieldValues[idx] = ""+value;
+			this.fieldValues[idx] = "" + value;
 			return true;
 		}
 		return false;
@@ -614,7 +615,11 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean insertToDb() throws SQLException {
-		IDbWriter writer = this.form.getDbInserter(this.fieldValues);
+		IDbWriter writer = null;
+		DbMetaData meta = this.form.dbMetaData;
+		if (meta != null) {
+			writer = meta.getInserter(this.fieldValues);
+		}
 		if (writer == null) {
 			logger.error("Form {} is not designed for insert/add operation..");
 			return false;
@@ -624,7 +629,11 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean updateInDb() throws SQLException {
-		IDbWriter writer = this.form.getDbUpdater(this.fieldValues);
+		IDbWriter writer = null;
+		DbMetaData meta = this.form.dbMetaData;
+		if (meta != null) {
+			writer = meta.getUpdater(this.fieldValues);
+		}
 		if (writer == null) {
 			logger.error("Form {} is not designed for update operation..");
 			return false;
@@ -634,7 +643,11 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean deleteFromDb() throws SQLException {
-		IDbWriter writer = this.form.getDbDeleter(this.fieldValues);
+		IDbWriter writer = null;
+		DbMetaData meta = this.form.dbMetaData;
+		if (meta != null) {
+			writer = meta.getDeleter(this.fieldValues);
+		}
 		if (writer == null) {
 			logger.error("Form {} is not designed for delete operation..");
 			return false;
@@ -644,12 +657,16 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean fetchFromDb() throws SQLException {
-		IDbReader reader = this.form.getDbReader(this.fieldValues);
+		IDbReader reader = null;
+		DbMetaData meta = this.form.dbMetaData;
+		if (meta != null) {
+			reader = meta.getReader(this.fieldValues);
+		}
+
 		if (reader == null) {
 			logger.error("Form {} is not designed for db read. Operation not done.");
 			return false;
 		}
 		return RdbDriver.getDriver().read(reader) > 0;
 	}
-
 }

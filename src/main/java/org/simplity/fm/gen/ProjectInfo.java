@@ -186,7 +186,7 @@ class ProjectInfo {
 		Util.emitImport(sbf, org.simplity.fm.IDataTypes.class);
 		Util.emitImport(sbf, org.simplity.fm.datatypes.DataType.class);
 		for (ValueType vt : ValueType.values()) {
-			Util.emitImport(sbf, vt.getDataTypeClass());
+			Util.emitImport(sbf, Util.getDataTypeClass(vt));
 		}
 
 		String cls = Config.getConfig().getDataTypesClassName();

@@ -59,7 +59,7 @@ class Form {
 			"if-a-then-b type of inter-field validaitons", "custom validations" };
 	private static final String C = ", ";
 	private static final String EQ = " = ";
-	private static final String P = "\n\tprivate static final String ";
+	private static final String P = "\n\tprivate static final ";
 
 	String name;
 	SpecialInstructions si;
@@ -201,14 +201,6 @@ class Form {
 		sbf.append("\npublic class ").append(cls).append(" extends Form {");
 
 		/*
-		 * static constants for SQLS if that is enabled for this form;
-		 */
-		String dbMethods = null;
-		if (this.si.dbKeyFields != null) {
-			dbMethods = this.emitJavaDb(sbf, this.si.settings.get("dbTableName").toString(), this.si.dbKeyFields);
-		}
-
-		/*
 		 * all fields and child forms indexes are available as constants
 		 */
 		this.emitJavaConstants(sbf);
@@ -233,50 +225,59 @@ class Form {
 		this.emitJavaValidations(sbf, customPackage);
 
 		sbf.append("\n\n\t\tthis.initialize();");
-		sbf.append("\n\t}");
 
-		if (dbMethods != null) {
-			sbf.append(dbMethods);
+		String dbf = this.emitDbStuff(sbf);
+		if (dbf == null) {
+			sbf.append("\n\t}");
+		} else {
+			sbf.append(dbf);
 		}
+		
 		sbf.append("\n}\n");
 	}
 
-	private String emitJavaDb(StringBuilder sbf, String tableName, String[] names) {
+	private String emitDbStuff(StringBuilder sbf) {
+		String[] names = this.si.dbKeyFields;
+		if(names == null) {
+			return null;
+		}
+		
 		Field[] keys = new Field[names.length];
 		for (int i = 0; i < names.length; i++) {
 			Field field = this.fieldMap.get(names[i]);
 			if (field == null) {
 				logger.error(
-						"{} is specified as a key field iin sepcial instrucitons, but it is not defined as a field in fields sheet. Db related code wnot generated",
+						"{} is specified as a key field in sepcial instrucitons, but it is not defined as a field in fields sheet. Db related code wnot generated",
 						names[i]);
 				return null;
 			}
 			keys[i] = field;
 		}
-		StringBuilder mbf = new StringBuilder();
-		sbf.append(P).append("WHERE = \"");
-		this.emitWhere(sbf, keys);
-		sbf.append("\";");
 
-		sbf.append(P).append("FETCH = \"");
-		this.emitFetch(sbf, tableName);
-		sbf.append("\" + WHERE;");
-		this.emitMethod(mbf, "Fetch");
+		/*
+		 * close this function after appending special method call
+		 */
+		sbf.append("\n\t\tthis.setDbMeta();");
+		sbf.append("\n\t}\n");
 
-		sbf.append(P).append("INSERT = \"");
-		this.emitInsert(sbf, tableName);
-		sbf.append("\" + WHERE;");
-		this.emitMethod(mbf, "Insert");
+		String tableName = (String) this.si.settings.get("dbTableName");
+		StringBuilder dbm = new StringBuilder();
+		dbm.append("\n\n\tprivate void setDbMeta(){");
+		dbm.append("\n\t\tDbMetaData dbm = new DbMetaData();");
 
-		sbf.append(P).append("UPDATE = \"");
-		this.emitUpdate(sbf, tableName, keys);
-		sbf.append("\" + WHERE;");
-		this.emitMethod(mbf, "Update");
+		String whereIndexes = this.emitWhere(sbf, dbm, keys);
 
-		sbf.append(P).append("DELETE = \"DELETE FROM ").append(tableName).append("\" + WHERE;");
-		this.emitMethod(mbf, "Delete");
-
-		return mbf.toString();
+		this.emitSelect(sbf, dbm, tableName);
+		this.emitInsert(sbf, dbm, tableName);
+		this.emitUpdate(sbf, dbm, whereIndexes, tableName, keys);
+		
+		sbf.append(P).append("String DELETE = \"DELETE FROM ").append(tableName).append("\" + WHERE;");
+		
+		dbm.append("\n\t\tdbm.deleteSql = DELETE;");
+		dbm.append("\n\t\tthis.dbMetaData = dbm;");
+		dbm.append("\n\t}");
+		
+		return dbm.toString();
 	}
 
 	private void emitJavaConstants(StringBuilder sbf) {
@@ -478,8 +479,70 @@ class Form {
 		sbf.append("\n}\n");
 	}
 
-	private void emitInsert(StringBuilder sbf, String tableName) {
-		sbf.append("INSERT INTO ").append(tableName).append('(');
+	private boolean isKey(String nam, Field[] keys) {
+		for (Field field : keys) {
+			if (nam.equals(field.name)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	private String emitWhere(StringBuilder sbf, StringBuilder dbm, Field[] keys) {
+		StringBuilder idxSbf = new StringBuilder();
+		sbf.append(P).append("String WHERE = \" WHERE ");
+		boolean firstOne = true;
+		for (Field field : keys) {
+			if (firstOne) {
+				firstOne = false;
+			} else {
+				sbf.append(" AND ");
+				idxSbf.append(C);
+			}
+			sbf.append(field.dbColumnName).append("=?");
+			idxSbf.append(field.index);
+		}
+		sbf.append("\";");
+		sbf.append(P).append("int[] WHERE_IDX = {");
+		sbf.append(idxSbf);
+		sbf.append("};");
+		
+		dbm.append("\n\t\tdbm.whereParams = this.getParams(WHERE_IDX);");
+		
+		return idxSbf.toString();
+	}
+
+	private void emitSelect(StringBuilder sbf, StringBuilder dbm, String tableName) {
+		StringBuilder idxSbf = new StringBuilder();
+		sbf.append(P).append("String SELECT = \"SELECT ");
+
+		boolean firstOne = true;
+		for (Field field : this.fields) {
+			if (field.dbColumnName == null) {
+				continue;
+			}
+			if (firstOne) {
+				firstOne = false;
+			} else {
+				sbf.append(C);
+				idxSbf.append(C);
+			}
+			sbf.append(field.dbColumnName);
+			idxSbf.append(field.index);
+		}
+
+		sbf.append(" FROM ").append(tableName);
+		sbf.append("\" + WHERE;");
+		sbf.append(P).append("int[] SELECT_IDX = {").append(idxSbf).append("};");
+
+		dbm.append("\n\t\tdbm.selectSql = SELECT;");
+		dbm.append("\n\t\tdbm.selectParams = this.getParams(SELECT_IDX);");
+	}
+
+	private void emitInsert(StringBuilder sbf, StringBuilder dbm, String tableName) {
+		sbf.append(P).append(" String INSERT = \"INSERT INTO ").append(tableName).append('(');
+		StringBuilder idxSdf = new StringBuilder();
+		idxSdf.append(P).append("int[] INSERT_IDX = {");
 		StringBuilder vbf = new StringBuilder();
 		boolean firstOne = true;
 		for (Field field : this.fields) {
@@ -491,15 +554,23 @@ class Form {
 			} else {
 				sbf.append(C);
 				vbf.append(C);
+				idxSdf.append(C);
 			}
 			sbf.append(field.dbColumnName);
 			vbf.append('?');
+			idxSdf.append(field.index);
 		}
-		sbf.append(") values (").append(vbf).append(')');
+		sbf.append(") values (").append(vbf).append(")\";");
+		sbf.append(idxSdf).append("};");
+		
+		dbm.append("\n\t\tdbm.insertSql = INSERT;");
+		dbm.append("\n\t\tdbm.insertParams = this.getParams(INSERT_IDX);");
 	}
 
-	private void emitUpdate(StringBuilder sbf, String tableName, Field[] keys) {
-		sbf.append("UPDATE ").append(tableName).append(" SET ");
+	private void emitUpdate(StringBuilder sbf, StringBuilder dbm, String whereIndexes, String tableName, Field[] keys) {
+		sbf.append(P).append(" String UPDATE = \"UPDATE ").append(tableName).append(" SET ");
+		StringBuilder idxSbf = new StringBuilder();
+		idxSbf.append(P).append(" int[] UPDATE_IDX = {");
 		boolean firstOne = true;
 		for (Field field : this.fields) {
 			if (field.dbColumnName == null || this.isKey(field.name, keys)) {
@@ -509,54 +580,15 @@ class Form {
 				firstOne = false;
 			} else {
 				sbf.append(C);
+				idxSbf.append(C);
 			}
 			sbf.append(field.dbColumnName).append("=?");
+			idxSbf.append(field.index);
 		}
-	}
+		sbf.append("\" + WHERE;");
+		sbf.append(idxSbf).append(C).append(whereIndexes).append("};");
 
-	private boolean isKey(String nam, Field[] keys) {
-		for (Field field : keys) {
-			if (nam.equals(field.name)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private void emitFetch(StringBuilder sbf, String tableName) {
-		sbf.append("SELECT ");
-		boolean firstOne = true;
-		for (Field field : this.fields) {
-			if (field.dbColumnName == null) {
-				continue;
-			}
-			if (firstOne) {
-				firstOne = false;
-			} else {
-				sbf.append(C);
-			}
-			sbf.append(field.dbColumnName);
-		}
-		sbf.append(" FROM ").append(tableName);
-	}
-
-	private void emitWhere(StringBuilder sbf, Field[] keys) {
-		sbf.append(" WHERE ");
-		boolean firstOne = true;
-		for (Field field : keys) {
-			if (firstOne) {
-				firstOne = false;
-			} else {
-				sbf.append(" AND ");
-			}
-			sbf.append(field.dbColumnName).append("=?");
-		}
-	}
-
-	private void emitMethod(StringBuilder sbf, String method) {
-		sbf.append("\n\n\t@Override");
-		sbf.append("\n\tprotected String get").append(method).append("Sql() {");
-		sbf.append("\n\t\treturn ").append(method.toUpperCase()).append(';');
-		sbf.append("\n\t}");
+		dbm.append("\n\t\tdbm.updateSql = UPDATE;");
+		dbm.append("\n\t\tdbm.updateParams = this.getParams(UPDATE_IDX);");
 	}
 }

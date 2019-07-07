@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.rdb.IDbReader;
 import org.simplity.fm.rdb.IDbWriter;
 import org.simplity.fm.service.GetService;
@@ -139,24 +140,8 @@ public class Form {
 	protected IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
 
 	/**
-	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
-	 */
-	protected String readSql;
-	/**
-	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
-	 */
-	protected String updateSql;
-	/**
-	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
-	 */
-	protected String insertSql;
-	/**
-	 * prepared statement like select d1 as f1, d2 as f2.. from myView where k1=? and k2 = ?
-	 */
-	protected String deleteSql;
-	/**
 	 * index to the values array for the key fields. this is derived based on
-	 * fields. This based on the field meta data attribute isKeyField
+	 * fields. This is based on the field meta data attribute isKeyField
 	 */
 	protected int[] keyIndexes;
 	/**
@@ -173,18 +158,12 @@ public class Form {
 	 * implemented based on this field
 	 */
 	protected int userIdFieldIdx = -1;
-	
-	/**
-	 * index to the fields that are fetched from the database
-	 */
-	protected int[] fetchIndexes;
 
 	/**
-	 * for extended classes to set the attributes later
+	 * meta data required for db operations. null if this is not designed for db
+	 * operations
 	 */
-	public Form() {
-		//
-	}
+	protected DbMetaData dbMetaData;
 
 	protected void setUserId(String name) {
 		if (name != null) {
@@ -355,135 +334,109 @@ public class Form {
 		return null;
 	}
 
-	/**
-	 * 
-	 * @param data from  formData
-	 * @return prepared statement that can be used to read data from an RDBMS
-	 *         using the primary key of this form. null if this form is not
-	 *         designed for such an operation;
-	 */
-	IDbReader getDbReader(Object[] data) {
-		if(this.getFetchSql()== null) {
-			return null;
+	protected class DbMetaData {
+		public DbParam[] whereParams;
+		public String selectSql;
+		public DbParam[] selectParams;
+		public String insertSql;
+		public DbParam[] insertParams;
+		public String updateSql;
+		public DbParam[] updateParams;
+		public String deleteSql;
+
+		public DbMetaData() {
+			//
 		}
-		Field[] flds = Form.this.fields;
-		return new IDbReader() {
-			
-			@Override
-			public String getPreparedStatement() {
-				return Form.this.readSql;
+
+		IDbReader getReader(Object[] data) {
+			if (this.selectSql == null) {
+				return null;
 			}
-			@Override
-			public void setParams(PreparedStatement ps) throws SQLException {
-				int position = 1;
-				for(int idx : Form.this.keyIndexes) {
-					flds[idx].getValueType().setPsParam(ps, position, data[idx]);
-					position++;
+			return new IDbReader() {
+
+				@Override
+				public String getPreparedStatement() {
+					return DbMetaData.this.selectSql;
 				}
-			}
-			
-			@Override
-			public boolean readARow(ResultSet rs) throws SQLException {
-				int position = 1;
-				for(int idx : Form.this.fetchIndexes) {
-					data[idx] = flds[idx].getValueType().getFromRs(rs, position);
-					position++;
+
+				@Override
+				public void setParams(PreparedStatement ps) throws SQLException {
+					int position = 0;
+					for (DbParam p : DbMetaData.this.whereParams) {
+						position++;
+						p.valueType.setPsParam(ps, position, data[p.idx]);
+					}
 				}
-				return false;
+
+				@Override
+				public boolean readARow(ResultSet rs) throws SQLException {
+					int position = 0;
+					for (DbParam p : DbMetaData.this.selectParams) {
+						position++;
+						data[p.idx] = p.valueType.getFromRs(rs, position);
+					}
+					return false;
+				}
+
+			};
+		}
+
+		IDbWriter getUpdater(Object[] data) {
+			return this.getDbWriter(this.updateSql, this.updateParams, data);
+		}
+
+		IDbWriter getInserter(Object[] data) {
+			return this.getDbWriter(this.insertSql, this.insertParams, data);
+		}
+
+		IDbWriter getDeleter(Object[] data) {
+			return this.getDbWriter(this.deleteSql, this.whereParams, data);
+		}
+
+		private IDbWriter getDbWriter(String sql, DbParam[] params, Object[] data) {
+			if (sql == null) {
+				return null;
 			}
-			
-		};
+			return new IDbWriter() {
+
+				@Override
+				public String getPreparedStatement() {
+					return sql;
+				}
+
+				@Override
+				public void setParams(PreparedStatement ps) throws SQLException {
+					int position = 0;
+					for (DbParam p : params) {
+						position++;
+						p.valueType.setPsParam(ps, position, data[p.idx]);
+					}
+				}
+
+				@Override
+				public boolean toTreatSqlExceptionAsNoRowsAffected() {
+					return false;
+				}
+			};
+		}
 	}
 
-	/**
-	 * concrete class extends this if this operation is valid for this form
-	 * @return
-	 */
-	protected String getFetchSql() {
-		return null;
-	}
+	protected static class DbParam {
+		protected final int idx;
+		protected final ValueType valueType;
 
-	/**
-	 * concrete class extends this if this operation is valid for this form
-	 * @return
-	 */
-	protected String getInsertSql() {
-		return null;
-	}
-
-	/**
-	 * concrete class extends this if this operation is valid for this form
-	 * @return
-	 */
-	protected String getUpdateSql() {
-		return null;
-	}
-
-	/**
-	 * concrete class extends this if this operation is valid for this form
-	 * @return
-	 */
-	protected String getDeleteSql() {
-		return null;
-	}
-
-	/**
-	 * 
-	 * @param data from formData
-	 * @return prepared statement that can be used to update thus form onto
-	 *         an RDBMS using the primary key of this form. null if this form is
-	 *         not designed for such an operation;
-	 */
-	IDbWriter getDbUpdater(Object[] data) {
-		return this.getWriter(this.getUpdateSql(), data);
-	}
-
-	/**
-	 * @param data from formData
-	 * 
-	 * @return prepared statement that can be used to insert data into an RDBMS
-	 *         null if this form is not designed for such an operation;
-	 */
-	IDbWriter getDbInserter(Object[] data) {
-		return this.getWriter(this.getInsertSql(), data);
-	}
-
-	/**
-	 * @param data from formData
-	 * 
-	 * @return prepared statement that can be used to delete this from an RDBMS
-	 *         using the primary key of this form. null if this form is not
-	 *         designed for such an operation;
-	 */
-	IDbWriter getDbDeleter(Object[] data) {
-		return this.getWriter(this.getDeleteSql(), data);
+		public DbParam(int idx, ValueType valueType) {
+			this.idx = idx;
+			this.valueType = valueType;
+		}
 	}
 	
-	private IDbWriter getWriter(String sql, Object[] data) {
-		if(sql == null) {
-			return null;
+	protected DbParam[] getParams(int[] indexes) {
+		DbParam[] params = new DbParam[indexes.length];
+		for (int i = 0; i < params.length; i++) {
+			int idx = indexes[i];
+			params[i] = new DbParam(idx, this.fields[idx].getValueType());
 		}
-		Field[] flds = Form.this.fields;
-		return new IDbWriter() {
-			
-			@Override
-			public String getPreparedStatement() {
-				return sql;
-			}
-			
-			@Override
-			public void setParams(PreparedStatement ps) throws SQLException {
-				int position = 1;
-				for(int idx : Form.this.keyIndexes) {
-					flds[idx].getValueType().setPsParam(ps, position, data[idx]);
-					position++;
-				}
-			}
-
-			@Override
-			public boolean toTreatSqlExceptionAsNoRowsAffected() {
-				return false;
-			}
-		};
+		return params;
 	}
 }
