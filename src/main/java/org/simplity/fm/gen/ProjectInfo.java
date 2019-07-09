@@ -65,7 +65,7 @@ class ProjectInfo {
 
 	private static DataType[] loadTypes(Sheet sheet) {
 		logger.info("Started parsing for data types from sheet {} with {} rows ", sheet.getSheetName(),
-				sheet.getPhysicalNumberOfRows());
+				(sheet.getLastRowNum() - sheet.getFirstRowNum() + 1));
 		List<DataType> typeList = new ArrayList<>();
 		Util.consumeRows(sheet, DataType.NBR_CELLS, new Consumer<Row>() {
 
@@ -88,7 +88,6 @@ class ProjectInfo {
 	}
 
 	private static Map<String, ValueList> loadLists(Sheet sheet) {
-		Map<String, ValueList> map = new HashMap<>();
 		// we iterate up to a non-existing row to trigger build
 		int n = sheet.getLastRowNum() + 1;
 		logger.info("Started parsing for values lists. ");
@@ -97,14 +96,13 @@ class ProjectInfo {
 			
 			@Override
 			public void accept(Row row) {
-				ValueList list = builder.addRow(row);
-				if (list != null) {
-					map.put(list.name, list);
-					logger.info("Valueist {} parsed and added to the list", list.name);
-				}
+				builder.addRow(row);
 			}
 		});
-		
+		/**
+		 * signal to the builder to build teh last one that was still being built
+		 */
+		Map<String, ValueList> map =builder.done();
 		n = map.size();
 		if (n == 0) {
 			logger.info("No value lists added.");
@@ -115,7 +113,6 @@ class ProjectInfo {
 	}
 
 	private static Map<String, KeyedValueList> loadKeyedLists(Sheet sheet) {
-		Map<String, KeyedValueList> map = new HashMap<>();
 		// we iterate up to a non-existing row to trigger build
 		int n = sheet.getLastRowNum() + 1;
 		logger.info("Started parsing keyed lists ");
@@ -124,13 +121,10 @@ class ProjectInfo {
 			
 			@Override
 			public void accept(Row row) {
-				KeyedValueList list = builder.addRow(row);
-				if (list != null) {
-					map.put(list.name, list);
-					logger.info("Keyed Valueist {} parsed and added to the list", list.name);
-				}
+				builder.addRow(row);
 			}
 		});
+		Map<String, KeyedValueList> map = builder.done();
 		n = map.size();
 		if (n == 0) {
 			logger.info("No keyed value lists added.");

@@ -25,8 +25,10 @@ package org.simplity.fm.gen;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.poi.ss.usermodel.Row;
@@ -37,14 +39,14 @@ import org.apache.poi.ss.usermodel.Row;
  */
 class ValueList {
 	private static final String C = ", ";
-	static final int NBR_CELLS =3;
+	static final int NBR_CELLS = 3;
 	final String name;
 	final Pair[] pairs;
 
 	static Builder getBuilder() {
 		return new Builder();
 	}
-	
+
 	ValueList(String name, Pair[] pairs) {
 		this.name = name;
 		this.pairs = pairs;
@@ -53,21 +55,20 @@ class ValueList {
 	void emitJava(StringBuilder sbf, String packageName) {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
-		
+
 		Util.emitImport(sbf, Arrays.class);
 		Util.emitImport(sbf, Set.class);
 		Util.emitImport(sbf, HashSet.class);
 		Util.emitImport(sbf, org.simplity.fm.validn.ValueList.class);
-		
+
 		sbf.append("\n\n/**\n * List of valid values for list ").append(this.name);
 		sbf.append("\n * <br /> generated at ").append(LocalDateTime.now());
 		sbf.append("\n */ ");
-		
+
 		sbf.append("\npublic class ").append(Util.toClassName(this.name)).append(" extends ValueList {");
-		
 
 		sbf.append("\n\t private static final Set<String> _values = new HashSet<>(Arrays.asList(");
-		for(Pair p : this.pairs) {
+		for (Pair p : this.pairs) {
 			sbf.append(Util.escape(p.value)).append(C);
 		}
 		sbf.setLength(sbf.length() - C.length());
@@ -100,24 +101,27 @@ class ValueList {
 	 * 
 	 */
 	static class Builder {
+		private Map<String, ValueList> lists = new HashMap<>();
 		private String name = null;
 		private List<Pair> pairs = new ArrayList<>();
 
 		protected Builder() {
 			//
 		}
+
+		public Map<String, ValueList> done() {
+			this.build();
+			 Map<String, ValueList> result = this.lists;
+			 this.lists = new HashMap<>();
+			 return result;
+		}
+
 		/**
 		 * add row to the builder.
 		 * 
 		 * @param row
-		 * @return ValueList if the previous row was the last row for that list.
-		 *         null if this row is appended to the existing list
 		 */
-		ValueList addRow(Row row) {
-			if (row == null) {
-				return this.build();
-			}
-			ValueList result = null;
+		void addRow(Row row) {
 			String newName = Util.textValueOf(row.getCell(0));
 			String val = Util.textValueOf(row.getCell(1));
 			String label = Util.textValueOf(row.getCell(2));
@@ -127,33 +131,35 @@ class ValueList {
 				 */
 				if (newName == null) {
 					ProjectInfo.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
-					return null;
+					return;
 				}
 				this.newList(newName);
 			} else if (newName != null && newName.equals(this.name) == false) {
 				/*
 				 * this row is for the next list. build the previous one.
 				 */
-				result = this.build();
+				this.build();
 				this.newList(newName);
 			}
 
 			this.pairs.add(new Pair(label, val));
-			return result;
 		}
 
 		private void newList(String newName) {
 			this.pairs.clear();
 			this.name = newName;
-			ProjectInfo.logger.info("New valueList initiated for {} ", this.name);
+			if (newName != null) {
+				ProjectInfo.logger.info("New valueList initiated for {} ", this.name);
+			}
 		}
 
-		private ValueList build() {
+		private void build() {
 			if (this.name == null) {
 				ProjectInfo.logger.error("empty line in lists??, Your list may be all mixed-up!!.");
-				return null;
+				return;
 			}
-			return new ValueList(this.name, this.pairs.toArray(new Pair[0]));
+			this.lists.put(this.name, new ValueList(this.name, this.pairs.toArray(new Pair[0])));
+			ProjectInfo.logger.info("Value list {} pared and added to the map", this.name);
 		}
 	}
 }

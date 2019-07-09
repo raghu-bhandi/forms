@@ -9,7 +9,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 2019-07-07T21:54:20.465 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
+ * <br /> generated at 2019-07-09T22:32:57.245 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
  */ 
 public class Form2 extends Form {
 	public static final int productId = 0;

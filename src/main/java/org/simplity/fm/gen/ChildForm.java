@@ -48,11 +48,11 @@ class ChildForm {
 	int maxRows;
 	String errorId;
 	int index;
-	
+
 	static ChildForm[] fromSheet(Sheet sheet, Set<String> names) {
 		List<ChildForm> list = new ArrayList<>();
 		Util.consumeRows(sheet, NBR_CELLS, new Consumer<Row>() {
-			
+
 			@Override
 			public void accept(Row row) {
 				ChildForm child = fromRow(row);
@@ -62,17 +62,18 @@ class ChildForm {
 				if (names.add(child.name)) {
 					list.add(child);
 				} else {
-					Form.logger.error("Child form name {} is duplicate at row {}. skipped", child.name, row.getRowNum());
+					Form.logger.error("Child form name {} is duplicate at row {}. skipped", child.name,
+							row.getRowNum());
 				}
 			}
 		});
 		int n = list.size();
-		if ( n == 0) {
+		if (n == 0) {
 			Form.logger.info("No child forms parsed");
 			return null;
 		}
 		ChildForm[] arr = new ChildForm[n];
-		for(int i = 0; i < arr.length; i++) {
+		for (int i = 0; i < arr.length; i++) {
 			ChildForm child = list.get(i);
 			child.index = i;
 			arr[i] = child;
@@ -80,48 +81,50 @@ class ChildForm {
 		Form.logger.info("{} child forms parsed and added.", n);
 		return arr;
 	}
-	
+
 	static ChildForm fromRow(Row row) {
 		ChildForm t = new ChildForm();
 		t.name = Util.textValueOf(row.getCell(0));
-		if(t.name == null) {
+		if (t.name == null) {
 			Form.logger.error("Name missing in row {}. Skipped", row.getRowNum());
 			return null;
 		}
 		t.label = Util.textValueOf(row.getCell(1));
 		t.formName = Util.textValueOf(row.getCell(2));
-		if(t.formName == null) {
-			Form.logger.error("formName is a MUST for a childForm. It is missing in row {}. Row kkipped", row.getRowNum());
+		if (t.formName == null) {
+			Form.logger.error("formName is a MUST for a childForm. It is missing in row {}. Row kkipped",
+					row.getRowNum());
 			return null;
 		}
 		t.isTabular = Util.boolValueOf(row.getCell(3));
-		t.minRows = (int)Util.longValueOf(row.getCell(4));
-		t.maxRows = (int)Util.longValueOf(row.getCell(5));
+		t.minRows = (int) Util.longValueOf(row.getCell(4));
+		t.maxRows = (int) Util.longValueOf(row.getCell(5));
 		t.errorId = Util.textValueOf(row.getCell(6));
 		return t;
 	}
-	
+
 	void emitJavaConstant(StringBuilder sbf, int idx) {
 		sbf.append("\n\tpublic static final int ").append(this.name).append(" = ").append(idx).append(';');
 	}
 
 	/**
 	 * push this as an element of an array
+	 * 
 	 * @param sbf
 	 */
 	void emitJavaCode(StringBuilder sbf) {
 		sbf.append("\n\t\t\tnew ChildForm(");
-		
+
 		sbf.append(Util.escape(this.name));
 		sbf.append(C).append(Util.escape(this.formName));
 		sbf.append(C).append(this.isTabular);
 		sbf.append(C).append(this.minRows);
 		sbf.append(C).append(this.maxRows);
 		sbf.append(C).append(Util.escape(this.errorId));
-		
+
 		sbf.append(')');
 	}
-	
+
 	String getFormName() {
 		return this.formName;
 	}

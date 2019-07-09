@@ -8,11 +8,11 @@ import org.simplity.fm.validn.KeyedValueList;
 
 /**
  * List of valid values for list districts
- * <br /> generated at 2019-07-07T21:54:19.859
+ * <br /> generated at 2019-07-09T22:32:56.359
  */ 
 public class Districts extends KeyedValueList {
-	private static final String[] _names = {"100001"};
-	private static final Object[] _values = {new HashSet<>(Arrays.asList("1", "2", "3"))};
+	private static final String[] _names = {"KA", "TN"};
+	private static final Object[] _values = {new HashSet<>(Arrays.asList("0", "1", "2")), new HashSet<>(Arrays.asList("44", "45", "46", "47"))};
 	private static final String _name = "districts";
 
 /**

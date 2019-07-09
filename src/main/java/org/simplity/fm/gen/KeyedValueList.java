@@ -46,31 +46,33 @@ class KeyedValueList {
 	static Builder getBuilder() {
 		return new Builder();
 	}
+
 	KeyedValueList(String name, Map<String, Pair[]> lists) {
 		this.name = name;
 		this.lists = lists;
 	}
 
 	void emitJava(StringBuilder sbf, String packageName) {
+		ProjectInfo.logger.info("Started generating java for keyed list {} with {} keys", this.name, this.lists.size());
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
-		
+
 		Util.emitImport(sbf, Arrays.class);
 		Util.emitImport(sbf, Set.class);
 		Util.emitImport(sbf, HashSet.class);
 		Util.emitImport(sbf, HashMap.class);
 		Util.emitImport(sbf, org.simplity.fm.validn.KeyedValueList.class);
-		
+
 		sbf.append("\n\n/**\n * List of valid values for list ").append(this.name);
 		sbf.append("\n * <br /> generated at ").append(LocalDateTime.now());
 		sbf.append("\n */ ");
-		
+
 		sbf.append("\npublic class ").append(Util.toClassName(this.name)).append(" extends KeyedValueList {");
-		
+
 		sbf.append("\n\tprivate static final String[] _names = {");
 		StringBuilder vals = new StringBuilder();
 		vals.append("\n\tprivate static final Object[] _values = {");
-		for(Map.Entry<String, Pair[]> entry : this.lists.entrySet()) {
+		for (Map.Entry<String, Pair[]> entry : this.lists.entrySet()) {
 			sbf.append(Util.escape(entry.getKey())).append(C);
 			this.emitJavaSet(vals, entry.getValue());
 			vals.append(C);
@@ -81,7 +83,7 @@ class KeyedValueList {
 		vals.setLength(vals.length() - C.length());
 		vals.append("};");
 		sbf.append(vals.toString());
-	
+
 		sbf.append("\n\tprivate static final String _name = \"").append(this.name).append("\";");
 
 		sbf.append("\n\n/**\n *").append(this.name).append("\n */");
@@ -89,7 +91,7 @@ class KeyedValueList {
 		sbf.append("\n\tpublic ").append(Util.toClassName(this.name)).append("() {");
 		sbf.append("\n\t\tthis.name = _name;");
 		sbf.append("\n\t\tthis.values = new HashMap<>();");
-		
+
 		sbf.append("\n\t\tfor (int i = 0; i < _names.length;i++) {");
 		sbf.append("\n\t\t\tthis.values.put(_names[i], (Set<String>)_values[i]);");
 		sbf.append("\n\t\t}");
@@ -99,29 +101,29 @@ class KeyedValueList {
 
 	private void emitJavaSet(StringBuilder vals, Pair[] ps) {
 		vals.append("new HashSet<>(Arrays.asList(");
-		for(Pair p : ps) {
+		for (Pair p : ps) {
 			vals.append(Util.escape(p.value)).append(C);
 		}
 		vals.setLength(vals.length() - C.length());
 		vals.append("))");
 	}
-	
+
 	protected void emitTs(StringBuilder sbf, String indent) {
 		boolean firstOne = true;
-		for(Map.Entry<String, Pair[]> entry : this.lists.entrySet()) {
-			if(firstOne) {
-				firstOne  =false;
-			}else {
+		for (Map.Entry<String, Pair[]> entry : this.lists.entrySet()) {
+			if (firstOne) {
+				firstOne = false;
+			} else {
 				sbf.append(C);
 			}
 			sbf.append(indent);
 			sbf.append(Util.escape(entry.getKey())).append(" : [");
 			String newIndent = indent + '\t';
 			boolean f = true;
-			for(Pair p : entry.getValue()) {
-				if(f) {
+			for (Pair p : entry.getValue()) {
+				if (f) {
 					f = false;
-				}else {
+				} else {
 					sbf.append(C);
 				}
 				sbf.append(newIndent);
@@ -137,6 +139,7 @@ class KeyedValueList {
 	 * 
 	 */
 	static class Builder {
+		Map<String, KeyedValueList> klists = new HashMap<>();
 		private String name = null;
 		private String keyName = null;
 		private Map<String, Pair[]> lists = new HashMap<>();
@@ -145,18 +148,21 @@ class KeyedValueList {
 		protected Builder() {
 			//
 		}
+
+		Map<String, KeyedValueList> done() {
+			this.build();
+			Map<String, KeyedValueList> result = this.klists;
+			this.newList(null, null);
+			this.klists = new HashMap<>();
+			return result;
+		}
+
 		/**
 		 * add row to the builder.
 		 * 
 		 * @param row
-		 * @return ValueList if the previous row was the last row for that list.
-		 *         null if this row is appended to the existing list
 		 */
-		KeyedValueList addRow(Row row) {
-			if (row == null) {
-				return this.build();
-			}
-			KeyedValueList result = null;
+		void addRow(Row row) {
 			String newName = Util.textValueOf(row.getCell(0));
 			String newKey = Util.textValueOf(row.getCell(1));
 			String val = Util.textValueOf(row.getCell(2));
@@ -167,48 +173,47 @@ class KeyedValueList {
 				 */
 				if (newName == null) {
 					ProjectInfo.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
-					return null;
+					return;
 				}
 				this.newList(newName, newKey);
 			} else if (newName != null && newName.equals(this.name) == false) {
 				/*
 				 * this row is for the next list. build the previous one.
 				 */
-				result = this.build();
+				this.build();
 				this.newList(newName, newKey);
-			}else if(newKey != null && newKey.contentEquals(this.keyName) == false) {
+			} else if (newKey != null && newKey.contentEquals(this.keyName) == false) {
 				this.addList(newKey);
 			}
 
 			this.pairs.add(new Pair(label, val));
-			return result;
 		}
 
 		private void newList(String newName, String newKey) {
 			this.pairs.clear();
-			this.lists.clear();
-			this.keyName =newKey;
+			this.lists = new HashMap<>();
+			this.keyName = newKey;
 			this.name = newName;
-			ProjectInfo.logger.info("New keyed value list initiated for for {} ", this.name);
 		}
 
 		private void addList(String newKey) {
 			if (this.keyName == null || this.pairs.size() == 0) {
 				ProjectInfo.logger.error("empty line in lists??, valueList not created.");
-			}else {
+			} else {
 				this.lists.put(this.keyName, this.pairs.toArray(new Pair[0]));
 				this.pairs.clear();
 			}
 			this.keyName = newKey;
 		}
 
-		private KeyedValueList build() {
+		private void build() {
 			if (this.name == null) {
 				ProjectInfo.logger.error("empty line in lists??, valueList not created.");
-				return null;
+				return;
 			}
 			this.addList(null);
-			return new KeyedValueList(this.name, this.lists);
+			this.klists.put(this.name, new KeyedValueList(this.name, this.lists));
+			ProjectInfo.logger.info("Keyed value list {} parsed and added with {} keys.", this.name, this.lists.size());
 		}
 	}
 }

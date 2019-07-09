@@ -213,6 +213,12 @@ class Util {
 		return false;
 	}
 
+	/**
+	 * 
+	 * @param sheet
+	 * @param nbrCells
+	 * @param consumer
+	 */
 	public static void consumeRows(Sheet sheet, int nbrCells, Consumer<Row> consumer) {
 		boolean isFirst = true;
 		for (Row row : sheet) {
