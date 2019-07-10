@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.rdb.IDbReader;
 import org.simplity.fm.rdb.IDbWriter;
 import org.simplity.fm.service.GetService;
@@ -334,7 +333,7 @@ public class Form {
 		return null;
 	}
 
-	protected class DbMetaData {
+	protected static class DbMetaData {
 		public DbParam[] whereParams;
 		public String selectSql;
 		public DbParam[] selectParams;
@@ -421,16 +420,7 @@ public class Form {
 		}
 	}
 
-	protected static class DbParam {
-		protected final int idx;
-		protected final ValueType valueType;
 
-		public DbParam(int idx, ValueType valueType) {
-			this.idx = idx;
-			this.valueType = valueType;
-		}
-	}
-	
 	protected DbParam[] getParams(int[] indexes) {
 		DbParam[] params = new DbParam[indexes.length];
 		for (int i = 0; i < params.length; i++) {

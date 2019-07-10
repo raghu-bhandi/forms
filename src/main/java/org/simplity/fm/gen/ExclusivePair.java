@@ -108,7 +108,7 @@ class ExclusivePair {
 		sbf.append(C).append(this.isRequired);
 		sbf.append(C).append(Util.escape(this.fieldName));
 		sbf.append(C).append(Util.escape(this.errorId));
-		sbf.append(");");
+		sbf.append(")");
 	}
 }
 

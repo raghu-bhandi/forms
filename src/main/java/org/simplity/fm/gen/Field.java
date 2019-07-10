@@ -174,7 +174,7 @@ class Field {
 			this.emitListTs(sbf, valueLists);
 			sbf.append(",null");
 		}else {
-			sbf.append(",null");
+			sbf.append("null,");
 			this.emitKeyedListTs(sbf, keyedLists);
 		}
 		
