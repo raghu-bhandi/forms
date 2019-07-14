@@ -204,6 +204,7 @@ class Form {
 		 * all fields and child forms indexes are available as constants
 		 */
 		this.emitJavaConstants(sbf);
+		this.emitDbStuff(sbf);
 
 		/*
 		 * constructor
@@ -224,60 +225,130 @@ class Form {
 
 		this.emitJavaValidations(sbf, customPackage);
 
-		sbf.append("\n\n\t\tthis.initialize();");
+		sbf.append("\n\n\t\tthis.setDbMeta();");
+		sbf.append("\n\t\tthis.initialize();");
 
-		String dbf = this.emitDbStuff(sbf);
-		if (dbf == null) {
-			sbf.append("\n\t}");
-		} else {
-			sbf.append(dbf);
-		}
-		
-		sbf.append("\n}\n");
+		sbf.append("\n\t}\n}\n");
 	}
 
-	private String emitDbStuff(StringBuilder sbf) {
-		String[] names = this.si.dbKeyFields;
-		if(names == null) {
-			return null;
-		}
-		
-		Field[] keys = new Field[names.length];
-		for (int i = 0; i < names.length; i++) {
-			Field field = this.fieldMap.get(names[i]);
-			if (field == null) {
-				logger.error(
-						"{} is specified as a key field in sepcial instrucitons, but it is not defined as a field in fields sheet. Db related code wnot generated",
-						names[i]);
-				return null;
-			}
-			keys[i] = field;
-		}
-
-		/*
-		 * close this function after appending special method call
-		 */
-		sbf.append("\n\t\tthis.setDbMeta();");
-		sbf.append("\n\t}\n");
-
+	private void emitDbStuff(StringBuilder sbf) {
 		String tableName = (String) this.si.settings.get("dbTableName");
-		StringBuilder dbm = new StringBuilder();
-		dbm.append("\n\n\tprivate void setDbMeta(){");
-		dbm.append("\n\t\tDbMetaData dbm = new DbMetaData();");
+		String[] names = this.si.dbKeyFields;
+		Field[] keys = null;
+		if (tableName == null) {
+			logger.warn("dbTableName not set. no db related code genrated for this form");
+		} else {
+			names = this.si.dbKeyFields;
+			if (names == null) {
+				logger.error("dbTableName is set to {} but keyFieldNames not set.", tableName);
+			} else {
+				keys = new Field[names.length];
+				for (int i = 0; i < names.length; i++) {
+					Field field = this.fieldMap.get(names[i]);
+					if (field == null) {
+						logger.error(
+								"{} is specified as a key field in sepcial instrucitons, but it is not defined as a field in fields sheet. Db related code wnot generated",
+								names[i]);
+						keys = null;
+						break;
+					}
+					keys[i] = field;
+				}
+			}
+		}
 
-		String whereIndexes = this.emitWhere(sbf, dbm, keys);
+		if (tableName == null || names == null || keys == null) {
+			sbf.append("\n\n\tprivate void setDbMeta(){\n\t\t//\n\t}");
+			return;
+		}
 
-		this.emitSelect(sbf, dbm, tableName);
-		this.emitInsert(sbf, dbm, tableName);
-		this.emitUpdate(sbf, dbm, whereIndexes, tableName, keys);
-		
-		sbf.append(P).append("String DELETE = \"DELETE FROM ").append(tableName).append("\" + WHERE;");
-		
-		dbm.append("\n\t\tdbm.deleteSql = DELETE;");
-		dbm.append("\n\t\tthis.dbMetaData = dbm;");
-		dbm.append("\n\t}");
-		
-		return dbm.toString();
+		String whereIndexes = this.emitWhere(sbf, keys);
+
+		this.emitSelect(sbf, tableName);
+		this.emitInsert(sbf, tableName);
+		this.emitUpdate(sbf, whereIndexes, tableName, keys);
+		sbf.append(P).append("String DELETE = \"DELETE FROM ").append(tableName).append("\";");
+
+		this.emitChildDbDeclarations(sbf);
+
+		sbf.append("\n\n\tprivate void setDbMeta(){");
+		String t = "\n\t\tm.";
+		sbf.append("\n\t\tDbMetaData m = new DbMetaData();");
+		sbf.append(t).append("whereClause = WHERE;");
+		sbf.append(t).append("whereParams = this.getParams(WHERE_IDX);");
+		sbf.append(t).append("selectClause = SELECT;");
+		sbf.append(t).append("selectParams = this.getParams(SELECT_IDX);");
+		sbf.append(t).append("insertClause = INSERT;");
+		sbf.append(t).append("insertParams = this.getParams(INSERT_IDX);");
+		sbf.append(t).append("updateClause = UPDATE;");
+		sbf.append(t).append("updateParams = this.getParams(UPDATE_IDX);");
+		sbf.append(t).append("deleteClause = DELETE;");
+		if (this.si.keyIsGenerated) {
+			sbf.append(t).append("keyIsGenerated = true;");
+		}
+
+		this.emitChildDbParam(sbf);
+
+		sbf.append("\n\t\tthis.dbMetaData = m;");
+		sbf.append("\n\t}");
+	}
+
+	/**
+	 * @param sbf
+	 */
+	private void emitChildDbParam(StringBuilder sbf) {
+		if(this.childForms == null) {
+			return;
+		}
+		sbf.append("\n\t\tChildDbMetaData[] cm = {");
+		for (ChildForm child : this.childForms) {
+			if (child.linkChildFields == null) {
+				sbf.append("null, ");
+			}else {
+				String f = child.formName.toUpperCase();
+				sbf.append("this.newChildDbMeta(").append(f).append("_LINK, ");
+				sbf.append(f).append("_IDX), ");
+			}
+		}
+		sbf.setLength(sbf.length() - 2);
+		sbf.append("};\n\t\tm.childMeta = cm;");
+
+	}
+
+	/**
+	 * @param sbf
+	 */
+	private void emitChildDbDeclarations(StringBuilder sbf) {
+		if(this.childForms == null) {
+			return;
+		}
+		for (ChildForm child : this.childForms) {
+			if (child.linkChildFields == null) {
+				continue;
+			}
+			sbf.append("\n\n\tprivate static final String[] ").append(child.formName.toUpperCase()).append("_LINK = {");
+			for (String txt : child.linkChildFields) {
+				sbf.append('"').append(txt).append("\", ");
+			}
+			sbf.setLength(sbf.length() - 2);
+			sbf.append("};");
+
+			sbf.append("\n\tprivate static final int[] ").append(child.formName.toUpperCase()).append("_IDX = {");
+			for (String txt : child.linkChildFields) {
+				Field field = this.fieldMap.get(txt);
+				if (field == null) {
+					logger.error(
+							"{} is not a valid field. It is specified as a link parent field in th echild form {}, (form name = {})",
+							txt, child.name, child.formName);
+					sbf.append("\"InvalidName ").append(txt).append("\", ");
+				} else {
+					sbf.append(field.index).append(C);
+				}
+			}
+			sbf.setLength(sbf.length() - 2);
+			sbf.append("};");
+		}
+
 	}
 
 	private void emitJavaConstants(StringBuilder sbf) {
@@ -488,7 +559,7 @@ class Form {
 		return false;
 	}
 
-	private String emitWhere(StringBuilder sbf, StringBuilder dbm, Field[] keys) {
+	private String emitWhere(StringBuilder sbf, Field[] keys) {
 		StringBuilder idxSbf = new StringBuilder();
 		sbf.append(P).append("String WHERE = \" WHERE ");
 		boolean firstOne = true;
@@ -503,16 +574,13 @@ class Form {
 			idxSbf.append(field.index);
 		}
 		sbf.append("\";");
-		sbf.append(P).append("int[] WHERE_IDX = {");
-		sbf.append(idxSbf);
-		sbf.append("};");
-		
-		dbm.append("\n\t\tdbm.whereParams = this.getParams(WHERE_IDX);");
-		
-		return idxSbf.toString();
+		String idxStr = idxSbf.toString();
+		sbf.append(P).append("int[] WHERE_IDX = {").append(idxStr).append("};");
+
+		return idxStr;
 	}
 
-	private void emitSelect(StringBuilder sbf, StringBuilder dbm, String tableName) {
+	private void emitSelect(StringBuilder sbf, String tableName) {
 		StringBuilder idxSbf = new StringBuilder();
 		sbf.append(P).append("String SELECT = \"SELECT ");
 
@@ -532,14 +600,12 @@ class Form {
 		}
 
 		sbf.append(" FROM ").append(tableName);
-		sbf.append("\" + WHERE;");
+		sbf.append("\";");
 		sbf.append(P).append("int[] SELECT_IDX = {").append(idxSbf).append("};");
 
-		dbm.append("\n\t\tdbm.selectSql = SELECT;");
-		dbm.append("\n\t\tdbm.selectParams = this.getParams(SELECT_IDX);");
 	}
 
-	private void emitInsert(StringBuilder sbf, StringBuilder dbm, String tableName) {
+	private void emitInsert(StringBuilder sbf, String tableName) {
 		sbf.append(P).append(" String INSERT = \"INSERT INTO ").append(tableName).append('(');
 		StringBuilder idxSdf = new StringBuilder();
 		idxSdf.append(P).append("int[] INSERT_IDX = {");
@@ -560,14 +626,12 @@ class Form {
 			vbf.append('?');
 			idxSdf.append(field.index);
 		}
+
 		sbf.append(") values (").append(vbf).append(")\";");
 		sbf.append(idxSdf).append("};");
-		
-		dbm.append("\n\t\tdbm.insertSql = INSERT;");
-		dbm.append("\n\t\tdbm.insertParams = this.getParams(INSERT_IDX);");
 	}
 
-	private void emitUpdate(StringBuilder sbf, StringBuilder dbm, String whereIndexes, String tableName, Field[] keys) {
+	private void emitUpdate(StringBuilder sbf, String whereIndexes, String tableName, Field[] keys) {
 		sbf.append(P).append(" String UPDATE = \"UPDATE ").append(tableName).append(" SET ");
 		StringBuilder idxSbf = new StringBuilder();
 		idxSbf.append(P).append(" int[] UPDATE_IDX = {");
@@ -585,10 +649,8 @@ class Form {
 			sbf.append(field.dbColumnName).append("=?");
 			idxSbf.append(field.index);
 		}
-		sbf.append("\" + WHERE;");
-		sbf.append(idxSbf).append(C).append(whereIndexes).append("};");
 
-		dbm.append("\n\t\tdbm.updateSql = UPDATE;");
-		dbm.append("\n\t\tdbm.updateParams = this.getParams(UPDATE_IDX);");
+		sbf.append("\";");
+		sbf.append(idxSbf).append(C).append(whereIndexes).append("};");
 	}
 }

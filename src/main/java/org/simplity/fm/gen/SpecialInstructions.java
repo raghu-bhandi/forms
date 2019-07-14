@@ -41,7 +41,7 @@ class SpecialInstructions {
 	protected static final Logger logger = LoggerFactory.getLogger(SpecialInstructions.class);
 	private static final String L = "\n\t\t\tthis.";
 
-	private static final String[] ATTS = { "userIdFIeldName", "createGetService", "createSaveService",
+	private static final String[] ATTS = { "userIdFieldName", "createGetService", "createSaveService",
 			"createSubmitService", "partialSaveAllowed" };
 	private static final String[] PROCS = { "preGetProcessor", "postGetProcessor", "preSaveProcessor",
 			"postSaveProcessor", "preSubmitProcessor", "postSubmitProcessor" };
@@ -49,6 +49,7 @@ class SpecialInstructions {
 	final Map<String, Object> settings = new HashMap<>();
 	boolean addCommonFields = false;
 	String[] dbKeyFields;
+	boolean keyIsGenerated;
 
 	static SpecialInstructions fromSheet(Sheet sheet) {
 		SpecialInstructions si = new SpecialInstructions();
@@ -82,6 +83,10 @@ class SpecialInstructions {
 					si.dbKeyFields[i] = names[i].trim();
 				}
 				logger.info("Db Key fields{} extracted", obj);
+				obj = si.settings.get("dbKeyIsGenerated");
+				if(obj != null && obj.toString().toUpperCase() == "TRUE") {
+					si.keyIsGenerated = true;
+				}
 			} else {
 				logger.error(
 						"dbKeyFieldNames should be one field name, or a comma separated list of names. value of {} is not accepted, and db related code not geenrated",

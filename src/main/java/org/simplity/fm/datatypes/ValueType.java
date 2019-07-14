@@ -79,7 +79,11 @@ public enum ValueType {
 
 		@Override
 		public Long getFromRs(ResultSet rs, int position) throws SQLException {
-			return rs.getLong(position);
+			long result = rs.getLong(position);
+			if(rs.wasNull()) {
+				return null;
+			}
+			return result;
 		}
 	},
 	/**
@@ -102,7 +106,11 @@ public enum ValueType {
 
 		@Override
 		public Double getFromRs(ResultSet rs, int position) throws SQLException {
-			return rs.getDouble(position);
+			double result = rs.getDouble(position);
+			if(rs.wasNull()) {
+				return null;
+			}
+			return result;
 		}
 	},
 	/**
@@ -134,7 +142,11 @@ public enum ValueType {
 
 		@Override
 		public Boolean getFromRs(ResultSet rs, int position) throws SQLException {
-			return rs.getBoolean(position);
+			boolean result = rs.getBoolean(position);
+			if(rs.wasNull()) {
+				return null;
+			}
+			return result;
 		}
 	},
 	/**
@@ -159,7 +171,11 @@ public enum ValueType {
 
 		@Override
 		public LocalDate getFromRs(ResultSet rs, int position) throws SQLException {
-			return rs.getDate(position).toLocalDate();
+			Date date = rs.getDate(position);
+			if(rs.wasNull()) {
+				return null;
+			}
+			return date.toLocalDate();
 		}
 	},
 
@@ -185,7 +201,11 @@ public enum ValueType {
 
 		@Override
 		public Instant getFromRs(ResultSet rs, int position) throws SQLException {
-			return rs.getTimestamp(position).toInstant();
+			Timestamp stamp = rs.getTimestamp(position);
+			if(rs.wasNull()) {
+				return null;
+			}
+			return stamp.toInstant();
 		}
 	};
 

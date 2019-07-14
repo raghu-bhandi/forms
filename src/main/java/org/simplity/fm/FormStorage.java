@@ -20,27 +20,25 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.rdb;
+package org.simplity.fm;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import org.simplity.fm.io.FileSystemStore;
+import org.simplity.fm.io.IFormStorage;
 
 /**
+ * temporary class till we decide about the fate of file storage
+ * 
  * @author simplity.org
  *
  */
-public interface IColumnData {
+public class FormStorage {
+	private static final IFormStorage instance = new FileSystemStore();
+
 	/**
 	 * 
-	 * @param ps
-	 * @param idx
+	 * @return non-null file storage
 	 */
-	public void setToPs(PreparedStatement ps, int idx);
-	
-	/**
-	 * 
-	 * @param rs
-	 * @param idx
-	 */
-	public void getFromRs(ResultSet rs, int idx);
+	public static IFormStorage getStore() {
+		return instance;
+	}
 }

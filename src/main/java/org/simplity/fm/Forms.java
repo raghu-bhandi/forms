@@ -56,6 +56,7 @@ public final class Forms {
 			allForms.put(formName, form);
 			return form;
 		} catch (Exception e) {
+			e.printStackTrace();
 			logger.error("Form {} could not be located and used as a class for form. Error {}", formName, e.getMessage());
 			return null;
 		}

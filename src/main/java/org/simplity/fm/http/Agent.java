@@ -78,7 +78,7 @@ public class Agent {
 	// private static final int STATUS_METHOD_NOT_ALLOWED = 405;
 	private static final int STATUS_INVALID_DATA = 406;
 	private static final int STATUS_INTERNAL_ERROR = 500;
-	private static final String SERVICE_NAME = "_serviceName";
+	private static final String SERVICE_NAME = "_s";
 	/**
 	 * TODO: cache manager to be used for session cache. Using a local map for
 	 * the time being

@@ -27,14 +27,14 @@ import java.io.Reader;
 import java.io.Writer;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
+import org.simplity.fm.FormStorage;
 import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.http.LoggedInUser;
-import org.simplity.fm.io.DataStore;
-import org.simplity.fm.io.IoConsumer;
 import org.simplity.fm.io.IoUtil;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -179,13 +179,18 @@ public abstract class AbstractService implements IService {
 		 * small time cheating with lambda, to get a value set there..
 		 */
 		ObjectNode[] nodes = new ObjectNode[1];
-		boolean ok = DataStore.getStore().retrieve(key, new IoConsumer<Reader>() {
+		boolean ok = FormStorage.getStore().retrieve(key, new Consumer <Reader>() {
 
 			@Override
-			public void accept(Reader reader) throws IOException {
-				JsonNode node = new ObjectMapper().readTree(reader);
-				if (node != null && node.getNodeType() == JsonNodeType.OBJECT) {
-					nodes[0] = (ObjectNode) node;
+			public void accept(Reader reader){
+				try {
+					JsonNode node = new ObjectMapper().readTree(reader);
+					if (node != null && node.getNodeType() == JsonNodeType.OBJECT) {
+						nodes[0] = (ObjectNode) node;
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		});
@@ -207,11 +212,16 @@ public abstract class AbstractService implements IService {
 	 * @throws IOException
 	 */
 	protected boolean streamFromStore(String key, Writer writer) throws IOException {
-		return DataStore.getStore().retrieve(key, new IoConsumer<Reader>() {
+		return FormStorage.getStore().retrieve(key, new Consumer<Reader>() {
 
 			@Override
-			public void accept(Reader reader) throws IOException {
-				IoUtil.copy(reader, writer);
+			public void accept(Reader reader) {
+				try {
+					IoUtil.copy(reader, writer);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 	}

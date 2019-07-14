@@ -7,7 +7,7 @@ import org.simplity.fm.validn.ValueList;
 
 /**
  * List of valid values for list severity
- * <br /> generated at 2019-07-09T22:32:56.356
+ * <br /> generated at 2019-07-14T14:02:42.957
  */ 
 public class Severity extends ValueList {
 	 private static final Set<String> _values = new HashSet<>(Arrays.asList("1", "2", "3", "3"));

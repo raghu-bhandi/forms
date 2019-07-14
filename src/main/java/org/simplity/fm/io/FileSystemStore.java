@@ -27,14 +27,18 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.function.Consumer;
 
 /**
+ * An example implementation of Form Filer that can be used to begin with.
+ * Objective of this class is just to demonstrate. Real life implementations need
+ * to do much more. This is used for example
+ * 
  * @author simplity.org
  *
  */
-public class FileSystemStore extends DataStore {
-	private static final String FOLDER = "c:/forms/draft/";
-	private static final String SUBMIT_FOLDER = "c:/forms/submit/";
+public class FileSystemStore implements IFormStorage {
+	private static final String FOLDER = "c:/forms/storage/";
 	private static final String EXTN = ".json";
 	static {
 		File f = new File(FOLDER);
@@ -44,7 +48,7 @@ public class FileSystemStore extends DataStore {
 	}
 
 	@Override
-	public boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException {
+	public boolean retrieve(String id, Consumer<Reader> consumer) throws IOException {
 		File f = new File(FOLDER + id + EXTN);
 		if (!f.exists()) {
 			return false;
@@ -56,7 +60,7 @@ public class FileSystemStore extends DataStore {
 	}
 
 	@Override
-	public void store(String id, IoConsumer<Writer> consumer) throws IOException {
+	public void store(String id, Consumer<Writer> consumer) throws IOException {
 		File f = new File(FOLDER + id + EXTN);
 		if (!f.exists()) {
 			f.createNewFile();
@@ -72,12 +76,5 @@ public class FileSystemStore extends DataStore {
 		if (!f.exists()) {
 			f.delete();
 		}
-	}
-
-	@Override
-	public void moveToStaging(String id, String finalId) {
-		File fm = new File(FOLDER + id + EXTN);
-		File to = new File(SUBMIT_FOLDER + finalId + EXTN);
-		fm.renameTo(to);
 	}
 }

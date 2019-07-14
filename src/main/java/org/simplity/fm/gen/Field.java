@@ -64,15 +64,15 @@ class Field {
 	static Field[] fromSheet(Sheet sheet, Field[] commonFields) {
 		List<Field> list = new ArrayList<>();
 		Set<String> fieldNames = new HashSet<>();
-		if(commonFields != null) {
-			for(Field field :commonFields) {
+		if (commonFields != null) {
+			for (Field field : commonFields) {
 				list.add(field);
 				fieldNames.add(field.name);
 			}
 			logger.info("{} common fields added to the form", commonFields.length);
 		}
 		Util.consumeRows(sheet, NBR_CELLS, new Consumer<Row>() {
-			
+
 			@Override
 			public void accept(Row row) {
 				Field field = fromRow(row);
@@ -86,15 +86,15 @@ class Field {
 				}
 			}
 		});
-		
+
 		int n = list.size();
-		if ( n == 0) {
+		if (n == 0) {
 			logger.warn("No fields for this form!!");
 			return null;
 		}
 		logger.info("{} fields added..", n);
 		Field[] arr = new Field[n];
-		for(int i = 0; i < arr.length; i++) {
+		for (int i = 0; i < arr.length; i++) {
 			Field field = list.get(i);
 			field.index = i;
 			arr[i] = field;
@@ -122,7 +122,7 @@ class Field {
 		f.listName = Util.textValueOf(row.getCell(11));
 		f.listKey = Util.textValueOf(row.getCell(12));
 		f.dbColumnName = Util.textValueOf(row.getCell(13));
-		
+
 		return f;
 	}
 
@@ -139,15 +139,17 @@ class Field {
 		/*
 		 * list is handled by inter-field in case key is specified
 		 */
-		if(this.listKey == null) {
-		sbf.append(C).append(Util.escape(this.listName));
-		}else {
+		if (this.listKey == null) {
+			sbf.append(C).append(Util.escape(this.listName));
+		} else {
 			sbf.append(C).append("null");
 		}
+		sbf.append(C).append(Util.escape(this.dbColumnName));
 		sbf.append(')');
 	}
 
-	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists, Map<String, KeyedValueList> keyedLists) {
+	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,
+			Map<String, KeyedValueList> keyedLists) {
 		sbf.append("\n\t").append(this.name).append(" = new Field('").append(this.name);
 		sbf.append("', ").append(this.index);
 		sbf.append(C).append(Util.escapeTs(this.label));
@@ -161,35 +163,40 @@ class Field {
 		/*
 		 * data types params are inserted here
 		 */
-		dataTypes.get(this.dataType).emitTs(sbf, this.errorId);
-
+		DataType dt = dataTypes.get(this.dataType);
+		if (dt == null) {
+			logger.error("DataType {} is not defined.", this.dataType);
+		} else {
+			dt.emitTs(sbf, this.errorId);
+		}
 		/*
 		 * drop-down list
 		 */
 		sbf.append(C).append(Util.escapeTs(this.listKey));
 		sbf.append(C);
-		if(this.listName == null) {
+		if (this.listName == null) {
 			sbf.append("null, null");
-		}else if(this.listKey == null) {
+		} else if (this.listKey == null) {
 			this.emitListTs(sbf, valueLists);
 			sbf.append(",null");
-		}else {
+		} else {
 			sbf.append("null,");
 			this.emitKeyedListTs(sbf, keyedLists);
 		}
-		
+
 		sbf.append(");");
 	}
-	
+
 	private void emitListTs(StringBuilder sbf, Map<String, ValueList> valueLists) {
-		if(this.listName == null) {
+		if (this.listName == null) {
 			sbf.append("null");
 			return;
 		}
-		
+
 		ValueList list = valueLists.get(this.listName);
 		if (list == null) {
-			logger.info("List name {} is not found. probably it is a run time list. Client script with no list.", this.listName);
+			logger.info("List name {} is not found. probably it is a run time list. Client script with no list.",
+					this.listName);
 			sbf.append("null");
 			return;
 		}
@@ -197,16 +204,17 @@ class Field {
 		list.emitTs(sbf, "\n\t\t\t\t");
 		sbf.append("\n\t\t\t]");
 	}
-	
+
 	private void emitKeyedListTs(StringBuilder sbf, Map<String, KeyedValueList> valueLists) {
-		if(this.listName == null) {
+		if (this.listName == null) {
 			sbf.append("null");
 			return;
 		}
-		
+
 		KeyedValueList list = valueLists.get(this.listName);
 		if (list == null) {
-			Form.logger.info("List name {} is not found. probably it is a run time list. Client script with no list.", this.listName);
+			Form.logger.info("List name {} is not found. probably it is a run time list. Client script with no list.",
+					this.listName);
 			sbf.append("null");
 			return;
 		}

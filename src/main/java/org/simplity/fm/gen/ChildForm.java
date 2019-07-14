@@ -38,7 +38,7 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class ChildForm {
 	private static final String C = ", ";
-	private static final int NBR_CELLS = 7;
+	private static final int NBR_CELLS = 9;
 
 	String name;
 	String label;
@@ -47,6 +47,8 @@ class ChildForm {
 	int minRows;
 	int maxRows;
 	String errorId;
+	String[] linkParentFields;
+	String[] linkChildFields;
 	int index;
 
 	static ChildForm[] fromSheet(Sheet sheet, Set<String> names) {
@@ -100,9 +102,37 @@ class ChildForm {
 		t.minRows = (int) Util.longValueOf(row.getCell(4));
 		t.maxRows = (int) Util.longValueOf(row.getCell(5));
 		t.errorId = Util.textValueOf(row.getCell(6));
+		String txt1 = Util.textValueOf(row.getCell(7));
+		String txt2 = Util.textValueOf(row.getCell(8));
+		
+		if(txt1 == null) {
+			if(txt2 != null) {
+				Form.logger.error("Child form has specified parent link fields, but not child link fields. Ignored");
+			}
+			return t;
+		}
+
+		if(txt2 == null) {
+			Form.logger.error("Child form has specified child link fields, but not prent link fields. Ignored");
+			return t;
+		}
+		t.linkParentFields = splitToArray(txt1);
+		t.linkChildFields = splitToArray(txt2);
+		if(t.linkChildFields.length != t.linkParentFields.length) {
+			Form.logger.error("Child form has specified {} child link fields, but {} prent link fields. Can not link with suh a mismatch", t.linkChildFields.length, t.linkParentFields.length);
+			t.linkChildFields = null;
+			t.linkParentFields = null;
+		}
 		return t;
 	}
 
+	private static String[] splitToArray(String text) {
+		String result[] = text.split(",");
+		for (int i = 0; i < result.length; i++) {
+			result[i] = result[i].trim();
+		}
+		return result;
+	}
 	void emitJavaConstant(StringBuilder sbf, int idx) {
 		sbf.append("\n\tpublic static final int ").append(this.name).append(" = ").append(idx).append(';');
 	}

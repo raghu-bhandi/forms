@@ -14,7 +14,7 @@ import org.simplity.fm.datatypes.TimestampType;
 
 /**
  * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>
- * <br /> generated at 2019-07-09T22:32:56.352
+ * <br /> generated at 2019-07-14T14:02:42.946
  */ 
 public class DefinedDataTypes implements IDataTypes {
 	public static final TextType customerId = new TextType("customerId", "invalidCustId", 10, 10, "[A-Z]{3}-[\\d]{2}-[A-Z]{3}");
@@ -27,8 +27,14 @@ public class DefinedDataTypes implements IDataTypes {
 	public static final IntegerType orderQty = new IntegerType("orderQty", "InvalidOrderQty", 1L, 2000L);
 	public static final IntegerType color = new IntegerType("color", "invalidColor", 0L, 100L);
 	public static final IntegerType severity = new IntegerType("severity", "invalidSeverity", 0L, 100L);
+	public static final DateType date = new DateType("date", "invalidDate", -73000L, 73000L);
+	public static final TextType state = new TextType("state", "invalidState", 2, 2, "[A-Z][A-Z]");
+	public static final TextType text = new TextType("text", "invalidText", 2, 100, null);
+	public static final TextType pan = new TextType("pan", "invalidPan", 10, 10, "[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]");
+	public static final IntegerType aadhaar = new IntegerType("aadhaar", "invalidAadhaar", 100000000000L, 999999999999L);
+	public static final IntegerType district = new IntegerType("district", "invalidDistrict", 1L, 9999L);
 
-	public static final DataType[] allTypes = {customerId, fy, trueFalse, futureDate, qty, pastDate, textId, orderQty, color, severity};
+	public static final DataType[] allTypes = {customerId, fy, trueFalse, futureDate, qty, pastDate, textId, orderQty, color, severity, date, state, text, pan, aadhaar, district};
 	 private Map<String, DataType> typesMap;
 	/**
 	 * default constructor

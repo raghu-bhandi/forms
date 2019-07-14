@@ -21,28 +21,31 @@
  */
 package org.simplity.fm.form;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.rdb.IDbReader;
-import org.simplity.fm.rdb.IDbWriter;
+import org.simplity.fm.Forms;
+import org.simplity.fm.rdb.DbParam;
+import org.simplity.fm.rdb.IDbClient;
+import org.simplity.fm.rdb.RdbDriver;
+import org.simplity.fm.rdb.RdbDriver.DbHandle;
 import org.simplity.fm.service.GetService;
 import org.simplity.fm.service.IFormProcessor;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.service.SaveService;
 import org.simplity.fm.service.SubmitService;
 import org.simplity.fm.validn.IValidation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
 public class Form {
-
+	private static final Logger logger = LoggerFactory.getLogger(Form.class);
 	/**
 	 * array index for pre get form processors
 	 */
@@ -202,6 +205,51 @@ public class Form {
 		if (this.userIdFieldName != null) {
 			this.userIdFieldIdx = this.getField(this.userIdFieldName).getIndex();
 		}
+		/*
+		 * db meta for child forms?
+		 */
+		if(this.dbMetaData != null && this.dbMetaData.childMeta != null) {
+		this.initializeDbMeta();
+		}
+	}
+
+	private static final String WH = " WHERE ";
+	/**
+	 * 
+	 */
+	private void initializeDbMeta() {
+		boolean foundOne = false;
+		StringBuilder sbf = new StringBuilder(WH);
+		for (int i = 0; i < this.childForms.length; i++) {
+			ChildDbMetaData cm  = this.dbMetaData.childMeta[i];
+			if(cm == null) {
+				continue;
+			}
+			foundOne = true;
+			/*
+			 * reset the sbf to re-use it
+			 */
+			sbf.setLength(WH.length());
+			Form form = this.childForms[i].form;
+			for(String f: cm.childLinkNames) {
+				Field field = form.getField(f);
+				if(field == null) {
+					logger.error("Child link field {} is specified in parent form, but is not defiined as a field in the child form {}", f, form.getFormId());
+					foundOne = false;
+					break;
+				}
+				sbf.append(field.getDbColumnName()).append("=?, ");
+			}
+			/*
+			 * remove the last comma..
+			 */
+			sbf.setLength(sbf.length() - 2);
+			cm.whereClause  = sbf.toString();
+		}
+		
+		if(!foundOne) {
+			this.dbMetaData.childMeta = null;
+		}
 	}
 
 	/**
@@ -245,6 +293,9 @@ public class Form {
 	 * @return non-null unique id
 	 */
 	public String getFormId() {
+		if (this.version == null) {
+			return this.uniqueName;
+		}
 		return this.uniqueName + '_' + this.version;
 	}
 
@@ -333,94 +384,6 @@ public class Form {
 		return null;
 	}
 
-	protected static class DbMetaData {
-		public DbParam[] whereParams;
-		public String selectSql;
-		public DbParam[] selectParams;
-		public String insertSql;
-		public DbParam[] insertParams;
-		public String updateSql;
-		public DbParam[] updateParams;
-		public String deleteSql;
-
-		public DbMetaData() {
-			//
-		}
-
-		IDbReader getReader(Object[] data) {
-			if (this.selectSql == null) {
-				return null;
-			}
-			return new IDbReader() {
-
-				@Override
-				public String getPreparedStatement() {
-					return DbMetaData.this.selectSql;
-				}
-
-				@Override
-				public void setParams(PreparedStatement ps) throws SQLException {
-					int position = 0;
-					for (DbParam p : DbMetaData.this.whereParams) {
-						position++;
-						p.valueType.setPsParam(ps, position, data[p.idx]);
-					}
-				}
-
-				@Override
-				public boolean readARow(ResultSet rs) throws SQLException {
-					int position = 0;
-					for (DbParam p : DbMetaData.this.selectParams) {
-						position++;
-						data[p.idx] = p.valueType.getFromRs(rs, position);
-					}
-					return false;
-				}
-
-			};
-		}
-
-		IDbWriter getUpdater(Object[] data) {
-			return this.getDbWriter(this.updateSql, this.updateParams, data);
-		}
-
-		IDbWriter getInserter(Object[] data) {
-			return this.getDbWriter(this.insertSql, this.insertParams, data);
-		}
-
-		IDbWriter getDeleter(Object[] data) {
-			return this.getDbWriter(this.deleteSql, this.whereParams, data);
-		}
-
-		private IDbWriter getDbWriter(String sql, DbParam[] params, Object[] data) {
-			if (sql == null) {
-				return null;
-			}
-			return new IDbWriter() {
-
-				@Override
-				public String getPreparedStatement() {
-					return sql;
-				}
-
-				@Override
-				public void setParams(PreparedStatement ps) throws SQLException {
-					int position = 0;
-					for (DbParam p : params) {
-						position++;
-						p.valueType.setPsParam(ps, position, data[p.idx]);
-					}
-				}
-
-				@Override
-				public boolean toTreatSqlExceptionAsNoRowsAffected() {
-					return false;
-				}
-			};
-		}
-	}
-
-
 	protected DbParam[] getParams(int[] indexes) {
 		DbParam[] params = new DbParam[indexes.length];
 		for (int i = 0; i < params.length; i++) {
@@ -428,5 +391,147 @@ public class Form {
 			params[i] = new DbParam(idx, this.fields[idx].getValueType());
 		}
 		return params;
+	}
+
+	protected ChildDbMetaData newChildDbMeta(String[] names, int[]indexes) {
+		ChildDbMetaData c = new ChildDbMetaData();
+		c.whereParams = this.getParams(indexes);
+		c.childLinkNames = names;
+		return c;
+	}
+	
+	/*
+	 * organizing db related data and functions into a static class
+	 */
+	protected static class DbMetaData {
+		public String whereClause;
+		public DbParam[] whereParams;
+		public String selectClause;
+		public DbParam[] selectParams;
+		public String insertClause;
+		public DbParam[] insertParams;
+		public String updateClause;
+		public DbParam[] updateParams;
+		public String deleteClause;
+		public boolean keyIsGenerated;
+		public ChildDbMetaData[] childMeta;
+
+		public DbMetaData() {
+			//
+		}
+		public boolean fetch(Object[] data, Object[][][] gridData) throws SQLException {
+			if (this.selectClause == null) {
+				return false;
+			}
+			DbMetaData meta = DbMetaData.this;
+			RdbDriver.getDriver().transact(new IDbClient() {
+
+				@Override
+				public boolean transact(DbHandle handle) throws SQLException {
+					handle.readForm(meta.selectClause + meta.whereClause, meta.whereParams, meta.selectParams, data);
+					if (meta.childMeta != null) {
+						int idx = 0;
+						for (ChildDbMetaData cm : meta.childMeta) {
+							if (cm != null) {
+								DbMetaData childDetils = cm.childMeta;
+								gridData[idx] = handle.readChildRows(childDetils.selectClause + cm.whereClause,
+										cm.whereParams, childDetils.selectParams, data, cm.nbrChildFields);
+							}
+							idx++;
+						}
+					}
+					return true;
+				}
+			}, true);
+			return true;
+		}
+
+		public boolean update(Object[] data, Object[][][] gridData) throws SQLException {
+			if (this.updateClause == null) {
+				return false;
+			}
+			DbMetaData meta = DbMetaData.this;
+			RdbDriver.getDriver().transact(new IDbClient() {
+
+				@Override
+				public boolean transact(DbHandle handle) throws SQLException {
+					handle.writeForm(meta.updateClause + meta.whereClause, meta.updateParams, data, null);
+					if (meta.childMeta != null) {
+						DbMetaData.this.writeChildren(handle, meta, data, gridData);
+					}
+					return true;
+				}
+			}, false);
+			return true;
+		}
+
+		protected void writeChildren(DbHandle handle, DbMetaData meta, Object[] data, Object[][][] tabularData)
+				throws SQLException {
+			int idx = 0;
+			for (ChildDbMetaData cm : meta.childMeta) {
+				if (cm != null) {
+					DbMetaData childDetils = cm.childMeta;
+					/*
+					 * delete child rows
+					 */
+					handle.writeForm(childDetils.deleteClause + cm.whereClause, cm.whereParams, data, null);
+					/*
+					 * now insert them
+					 */
+					if (tabularData != null) {
+						handle.formBatch(childDetils.insertClause, childDetils.insertParams, tabularData[idx]);
+					}
+				}
+				idx++;
+			}
+		}
+
+		public boolean insert(Object[] data, Object[][][] gridData) throws SQLException {
+			if (this.insertClause == null) {
+				return false;
+			}
+			DbMetaData meta = DbMetaData.this;
+			final long[] generatedKeys = this.keyIsGenerated ? new long[1] : null;
+			
+			RdbDriver.getDriver().transact(new IDbClient() {
+
+				@Override
+				public boolean transact(DbHandle handle) throws SQLException {
+					handle.writeForm(meta.insertClause, meta.insertParams, data, generatedKeys);
+					if (meta.childMeta != null) {
+						DbMetaData.this.writeChildren(handle, meta, data, gridData);
+					}
+					return true;
+				}
+			}, false);
+			return true;
+		}
+
+		public boolean delete(Object[] data) throws SQLException {
+			if (this.deleteClause == null) {
+				return false;
+			}
+			DbMetaData meta = DbMetaData.this;
+			RdbDriver.getDriver().transact(new IDbClient() {
+
+				@Override
+				public boolean transact(DbHandle handle) throws SQLException {
+					handle.writeForm(meta.deleteClause + meta.whereClause, meta.whereParams, data, null);
+					if (meta.childMeta != null) {
+						DbMetaData.this.writeChildren(handle, meta, data, null);
+					}
+					return true;
+				}
+			}, false);
+			return true;
+		}
+	}
+
+	protected static class ChildDbMetaData {
+		protected String[] childLinkNames;
+		protected String whereClause;
+		protected DbParam[] whereParams;
+		protected DbMetaData childMeta;
+		protected int nbrChildFields;
 	}
 }

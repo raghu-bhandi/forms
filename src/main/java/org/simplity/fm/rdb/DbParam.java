@@ -20,26 +20,34 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.io;
+package org.simplity.fm.rdb;
 
-import java.io.IOException;
+import org.simplity.fm.datatypes.ValueType;
 
 /**
- * created to avoid handling IO exceptions in te generic interface
- * 
  * @author simplity.org
- * @param <T>
- *            should
  *
  */
-public interface IoConsumer<T> {
+public class DbParam {
+	/**
+	 * 0-based index in the form-fields that this parameter corresponds to (for getting/setting value in form data array)
+	 */
+	public final int idx;
+	/**
+	 * value type of this parameter based on which set/get method is ssued
+	 * on the statement
+	 */
+	public final ValueType valueType;
 
 	/**
-	 * accept the reader/writer and feel free to have statements that throw
-	 * IOException
+	 * create this parameter as an immutable data structure
 	 * 
-	 * @param t
-	 * @throws IOException
+	 * @param idx
+	 * @param valueType
 	 */
-	public void accept(T t) throws IOException;
+	public DbParam(int idx, ValueType valueType) {
+		this.idx = idx;
+		this.valueType = valueType;
+	}
+
 }

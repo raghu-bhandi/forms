@@ -67,7 +67,8 @@ public class ChildForm {
 	 * @param fieldName
 	 *            non-null unique across all fields of the form
 	 * @param formName
-	 *            non-null name of the form that describes fields/columns in the child-form
+	 *            non-null name of the form that describes fields/columns in the
+	 *            child-form
 	 * @param isTabular
 	 *            is this a tabular form, or just a sub-form
 	 * @param minRows

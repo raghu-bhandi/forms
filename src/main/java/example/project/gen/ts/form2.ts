@@ -1,20 +1,18 @@
 /*
- * generated from C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx at 2019-07-09T22:32:57.248
+ * generated from C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx at 2019-07-14T14:02:43.495
  */
 import { Form , Field } from '../form/form';
 
 export class Form2 extends Form {
 	private static _instance = new Form2();
-	productId = new Field('productId', 0, 'Product Id', 'product Id', null, true, true, false, true,
+	customerId = new Field('customerId', 0, 'Customer Id', null, null, true, false, false, true,
+				0, '[A-Z]{3}-[\\d]{2}-[A-Z]{3}', 'invalidCustId', 10, 10, 0, 0, null, null, null, null, null);
+	productId = new Field('productId', 1, 'Product Id', 'product Id', null, true, true, false, true,
 				0, '[\\w]*', 'invalidTextId', 4, 15, 0, 0, null, null, null, null, null);
-	quantity = new Field('quantity', 1, 'Quantity', 'quantity', null, true, true, false, false,
+	quantity = new Field('quantity', 2, 'Quantity', 'quantity', null, true, true, false, false,
 				1, null, 'InvalidOrderQty', 1, 4, 1, 2000, null, null, null, null, null);
-	color = new Field('color', 2, 'Color', 'Select', null, true, true, false, false,
-				1, null, 'invalidColor', 1, 5, 0, 100, null, null, null, [
-				['Red', '1'],
-				['Green', '2'],
-				['Blue', '3']
-			],null);
+	color = new Field('color', 3, 'Color', 'Select', null, true, true, false, false,
+				1, null, 'invalidColor', 1, 5, 0, 100, null, null, null, null,null);
 
 	public static getInstance(): Form2 {
 		return Form2._instance;
@@ -23,6 +21,7 @@ export class Form2 extends Form {
 	constructor() {
 		super();
 		this.fields = [
+			this.customerId,
 			this.productId,
 			this.quantity,
 			this.color

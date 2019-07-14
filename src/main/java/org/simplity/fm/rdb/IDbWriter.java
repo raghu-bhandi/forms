@@ -49,12 +49,4 @@ public interface IDbWriter {
 	 * @throws SQLException
 	 */
 	public void setParams(PreparedStatement ps) throws SQLException;
-
-	/**
-	 * 
-	 * @return if true, sql exception on execution is assumed to be for now rows
-	 *         for the desired operation. In such a case, 0 is returned after
-	 *         such an exception instead of throwing an exception.
-	 */
-	public boolean toTreatSqlExceptionAsNoRowsAffected();
 }

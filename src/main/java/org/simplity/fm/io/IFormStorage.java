@@ -25,21 +25,13 @@ package org.simplity.fm.io;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.function.Consumer;
 
 /**
  * @author simplity.org
  *
  */
-public abstract class DataStore {
-	private static DataStore instance = new FileSystemStore();
-
-	/**
-	 * 
-	 * @return get a store configured for this app
-	 */
-	public static DataStore getStore() {
-		return instance;
-	}
+public interface IFormStorage {
 
 	/**
 	 * retrieve data and provide it to the consumer
@@ -52,7 +44,7 @@ public abstract class DataStore {
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
-	public abstract boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException;
+	public abstract boolean retrieve(String id, Consumer<Reader> consumer) throws IOException;
 
 	/**
 	 * trash the document
@@ -65,16 +57,6 @@ public abstract class DataStore {
 	public abstract void trash(String id) throws IOException;
 
 	/**
-	 * move the document to the staging  area with a new id
-	 * 
-	 * @param id
-	 *            existing id of the document
-	 * @param StagingId unique id in the staging area
-	 * @throws IOException
-	 *             in case of any error in persistence process
-	 */
-	public abstract void moveToStaging(String id, String StagingId) throws IOException;
-	/**
 	 * store the data from the
 	 * 
 	 * @param id
@@ -84,5 +66,5 @@ public abstract class DataStore {
 	 * @throws IOException
 	 *             in case of any error in persistence process
 	 */
-	public abstract void store(String id, IoConsumer<Writer> consumer) throws IOException;
+	public abstract void store(String id, Consumer<Writer> consumer) throws IOException;
 }

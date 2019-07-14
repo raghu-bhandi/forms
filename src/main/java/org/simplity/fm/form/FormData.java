@@ -35,9 +35,6 @@ import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.form.Form.DbMetaData;
 import org.simplity.fm.http.LoggedInUser;
-import org.simplity.fm.rdb.IDbReader;
-import org.simplity.fm.rdb.IDbWriter;
-import org.simplity.fm.rdb.RdbDriver;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
@@ -597,10 +594,17 @@ public class FormData implements IFormData {
 				continue;
 			}
 			gen.writeFieldName(fields[j].getFieldName());
-			gen.writeObject(value);
+			gen.writeObject(jsonQuickFix(value));
 		}
 	}
 
+	private Object jsonQuickFix(Object value) {
+		if(value instanceof LocalDate || value instanceof Instant) {
+			return value.toString();
+		}
+		return value;
+	}
+	
 	private static String getChildAsText(JsonNode json, String fieldName) {
 		JsonNode node = json.get(fieldName);
 		if (node == null) {
@@ -615,58 +619,41 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean insertToDb() throws SQLException {
-		IDbWriter writer = null;
 		DbMetaData meta = this.form.dbMetaData;
-		if (meta != null) {
-			writer = meta.getInserter(this.fieldValues);
-		}
-		if (writer == null) {
+		if (meta == null) {
 			logger.error("Form {} is not designed for insert/add operation..");
 			return false;
 		}
-		return RdbDriver.getDriver().write(writer) > 0;
+		return meta.insert(this.fieldValues, this.gridData);
 	}
 
 	@Override
 	public boolean updateInDb() throws SQLException {
-		IDbWriter writer = null;
 		DbMetaData meta = this.form.dbMetaData;
-		if (meta != null) {
-			writer = meta.getUpdater(this.fieldValues);
-		}
-		if (writer == null) {
+		if (meta == null) {
 			logger.error("Form {} is not designed for update operation..");
 			return false;
 		}
-		return RdbDriver.getDriver().write(writer) > 0;
+		return meta.update(this.fieldValues, this.gridData);
 	}
 
 	@Override
 	public boolean deleteFromDb() throws SQLException {
-		IDbWriter writer = null;
 		DbMetaData meta = this.form.dbMetaData;
-		if (meta != null) {
-			writer = meta.getDeleter(this.fieldValues);
-		}
-		if (writer == null) {
+		if (meta == null) {
 			logger.error("Form {} is not designed for delete operation..");
 			return false;
 		}
-		return RdbDriver.getDriver().write(writer) > 0;
+		return meta.delete(this.fieldValues);
 	}
 
 	@Override
 	public boolean fetchFromDb() throws SQLException {
-		IDbReader reader = null;
 		DbMetaData meta = this.form.dbMetaData;
-		if (meta != null) {
-			reader = meta.getReader(this.fieldValues);
-		}
-
-		if (reader == null) {
+		if (meta == null) {
 			logger.error("Form {} is not designed for db read. Operation not done.");
 			return false;
 		}
-		return RdbDriver.getDriver().read(reader) > 0;
+		return meta.fetch(this.fieldValues, this.gridData);
 	}
 }

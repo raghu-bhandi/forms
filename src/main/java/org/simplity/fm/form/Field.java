@@ -96,6 +96,11 @@ public class Field {
 	private ValueList valueList;
 
 	/**
+	 * db column name
+	 */
+	private final String dbColumnName;
+
+	/**
 	 * this is generally invoked by the generated code for a Data Structure
 	 * 
 	 * @param fieldName
@@ -129,9 +134,12 @@ public class Field {
 	 *            rendered in a drop-down. If the value list depends on value of
 	 *            another field, then it is part of inter-field validation, and
 	 *            not part of this field.
+	 * @param dbColumnName
+	 *            column name in the data base, if this is linked to one
 	 */
 	public Field(String fieldName, int index, DataType dataType, String defaultValue, String messageId,
-			boolean isRequired, boolean isEditable, boolean isDerivedField, boolean isKeyField, String valueListName) {
+			boolean isRequired, boolean isEditable, boolean isDerivedField, boolean isKeyField, String valueListName,
+			String dbColumnName) {
 		this.fieldName = fieldName;
 		this.index = index;
 		this.isRequired = isRequired;
@@ -148,6 +156,7 @@ public class Field {
 			this.valueListName = valueListName;
 			this.valueList = ValueLists.getList(valueListName);
 		}
+		this.dbColumnName = dbColumnName;
 
 	}
 
@@ -196,6 +205,12 @@ public class Field {
 		return this.dataType.getValueType();
 	}
 
+	/**
+	 * @return the dbColumnName
+	 */
+	public String getDbColumnName() {
+		return this.dbColumnName;
+	}
 	/**
 	 * parse into the desired type, validate and return the value. caller should
 	 * check for exception for validation failure and not returned value as

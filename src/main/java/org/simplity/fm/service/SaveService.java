@@ -26,14 +26,15 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
+import org.simplity.fm.FormStorage;
 import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.http.LoggedInUser;
-import org.simplity.fm.io.DataStore;
-import org.simplity.fm.io.IoConsumer;
+import org.simplity.fm.io.IFormStorage;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -92,12 +93,17 @@ public class SaveService extends AbstractService {
 			return false;
 		}
 
-		DataStore store = DataStore.getStore();
-		store.store(formData.getDocumentId(), new IoConsumer<Writer>() {
+		IFormStorage store = FormStorage.getStore();
+		store.store(formData.getDocumentId(), new Consumer<Writer>() {
 
 			@Override
-			public void accept(Writer w) throws IOException {
-				formData.serializeAsJson(w);
+			public void accept(Writer w)  {
+				try {
+					formData.serializeAsJson(w);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 

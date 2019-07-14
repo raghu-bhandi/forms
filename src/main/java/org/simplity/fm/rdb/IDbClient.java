@@ -20,36 +20,32 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.form;
+package org.simplity.fm.rdb;
 
-import org.simplity.fm.datatypes.ValueType;
+import java.sql.SQLException;
 
 /**
- * immutable data structure that represents a parameter in DB operations
+ * interface for a class that wants to do db operations under a transaction
+ * processing, so that any exception before the successful completion of all
+ * updates must result in a roll-back.
  * 
  * @author simplity.org
  *
  */
-public class DbParam {
-	/**
-	 * 1-based index in the prepared statement or result set
-	 */
-	public final int idx;
-	/**
-	 * value type of this parameter based on which set/get method is ssued on
-	 * the statement
-	 */
-	public final ValueType valueType;
+public interface IDbClient {
 
 	/**
-	 * create this parameter as an immutable data structure
+	 * method that is called-back with a handler. this method can use the
+	 * handler to any number of read/write operations. Any exception is caught
+	 * by the caller and the transaction is rolled back in case auto-commit is not used.
+	 * Transaction is also rolled-back if you return false;
 	 * 
-	 * @param idx
-	 * @param valueType
+	 * @param handle
+	 * @return true if all OK. false in case you detect some condition because
+	 *         of which the transaction is to be cancelled. ignored if
+	 *         auto-commit is used
+	 * @throws SQLException 
 	 */
-	public DbParam(int idx, ValueType valueType) {
-		this.idx = idx;
-		this.valueType = valueType;
-	}
+	public boolean transact(RdbDriver.DbHandle handle) throws SQLException;
 
 }

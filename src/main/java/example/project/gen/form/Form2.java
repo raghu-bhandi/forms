@@ -9,12 +9,17 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 2019-07-09T22:32:57.245 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
+ * <br /> generated at 2019-07-14T14:02:43.494 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
  */ 
 public class Form2 extends Form {
-	public static final int productId = 0;
-	public static final int quantity = 1;
-	public static final int color = 2;
+	public static final int customerId = 0;
+	public static final int productId = 1;
+	public static final int quantity = 2;
+	public static final int color = 3;
+
+	private void setDbMeta(){
+		//
+	}
 
 	/**
 	 *
@@ -24,15 +29,17 @@ public class Form2 extends Form {
 			this.partialSaveAllowed = false;
 
 		Field[] flds = {
-			new Field("productId", 0, DefinedDataTypes.textId, null, null, true, true, false, true, null), 
-			new Field("quantity", 1, DefinedDataTypes.orderQty, null, null, true, true, false, false, null), 
-			new Field("color", 2, DefinedDataTypes.color, null, null, true, true, false, false, "colors")
+			new Field("customerId", 0, DefinedDataTypes.customerId, null, null, true, false, false, true, null, "customer_id"), 
+			new Field("productId", 1, DefinedDataTypes.textId, null, null, true, true, false, true, null, "product_id"), 
+			new Field("quantity", 2, DefinedDataTypes.orderQty, null, null, true, true, false, false, null, "quantity"), 
+			new Field("color", 3, DefinedDataTypes.color, null, null, true, true, false, false, "colors", "color")
 		};
 		this.fields = flds;
 
 		IValidation[] vlds = {};
 		this.validations = vlds;
 
+		this.setDbMeta();
 		this.initialize();
 	}
 }

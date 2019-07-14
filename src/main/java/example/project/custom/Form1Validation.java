@@ -28,6 +28,8 @@ import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 import org.simplity.fm.validn.IValidation;
 
+import example.project.gen.form.Form1;
+
 /**
  * @author simplity.org
  *
@@ -35,9 +37,13 @@ import org.simplity.fm.validn.IValidation;
 public class Form1Validation implements IValidation{
 
 	@Override
-	public boolean isValid(FormData form, List<Message> mesages) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean isValid(FormData form, List<Message> messages) {
+		long int1 = form.getLongValue(Form1.intField1);
+		if(int1 > 100 || int1 < 10) {
+			messages.add(Message.newFieldError("intField1", "customValidaitonError", null));
+			return false;
+		}
+		return true;
 	}
 
 }

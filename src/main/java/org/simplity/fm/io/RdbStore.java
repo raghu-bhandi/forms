@@ -31,6 +31,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.function.Consumer;
 
 /**
  * data is store din an RDBMS as Clob. This should work with any of the popular
@@ -39,7 +40,7 @@ import java.sql.SQLException;
  * @author simplity.org
  *
  */
-public class RdbStore extends DataStore{
+public class RdbStore implements IFormStorage{
 	/**
 	 * TODO: to be replaced with dbDriver concept for production
 	 */
@@ -51,10 +52,9 @@ public class RdbStore extends DataStore{
 	private static final String INSERT = "insert into " + TABLE_NAME + " values(?,0,?)";
 	private static final String SELECT = "select " + CLOB + " from " + TABLE_NAME + WHERE;
 	private static final String DELETE = "delete " + TABLE_NAME + WHERE;
-	private static final String UPDATE = "update " + TABLE_NAME + " set submitted = 1, key =? " + WHERE;
 
 	@Override
-	public boolean retrieve(String id, IoConsumer<Reader> consumer) throws IOException {
+	public boolean retrieve(String id, Consumer<Reader> consumer) throws IOException {
 		try (Connection con = DriverManager.getConnection(CON_STRING)) {
 			PreparedStatement st = con.prepareStatement(SELECT);
 			st.setString(1, id);
@@ -74,7 +74,7 @@ public class RdbStore extends DataStore{
 	}
 
 	@Override
-	public void store(String id, IoConsumer<Writer> consumer) throws IOException {
+	public void store(String id, Consumer<Writer> consumer) throws IOException {
 		try (Connection con = DriverManager.getConnection(CON_STRING)) {
 			/*
 			 * TODO: We have four options. We do not know which one is better.
@@ -107,20 +107,6 @@ public class RdbStore extends DataStore{
 		try (Connection con = DriverManager.getConnection(CON_STRING)) {
 			try (PreparedStatement st = con.prepareStatement(DELETE)) {
 				st.setString(1, id);
-				st.executeUpdate();
-				st.close();
-			}
-		} catch (SQLException e) {
-			throw new IOException(e);
-		}
-	}
-
-	@Override
-	public void moveToStaging(String id, String newId) throws IOException {
-		try (Connection con = DriverManager.getConnection(CON_STRING)) {
-			try (PreparedStatement st = con.prepareStatement(UPDATE)) {
-				st.setString(1, id);
-				st.setString(2, newId);
 				st.executeUpdate();
 				st.close();
 			}
