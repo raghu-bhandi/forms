@@ -43,10 +43,11 @@ import org.slf4j.LoggerFactory;
 class Field {
 	protected static final Logger logger = LoggerFactory.getLogger(Field.class);
 	private static final String C = ", ";
-	static final int NBR_CELLS = 14;
+	static final int NBR_CELLS = 15;
 
 	String name;
 	String label;
+	String altLabel;
 	String placeHolder;
 	String dataType;
 	String errorId;
@@ -110,18 +111,19 @@ class Field {
 			return null;
 		}
 		f.label = Util.textValueOf(row.getCell(1));
-		// 2 is description. we are not parsing that.
-		f.placeHolder = Util.textValueOf(row.getCell(3));
-		f.dataType = Util.textValueOf(row.getCell(4));
-		f.defaultValue = Util.textValueOf(row.getCell(5));
-		f.errorId = Util.textValueOf(row.getCell(6));
-		f.isRequired = Util.boolValueOf(row.getCell(7));
-		f.isEditable = Util.boolValueOf(row.getCell(8));
-		f.isDerived = Util.boolValueOf(row.getCell(9));
-		f.isKey = Util.boolValueOf(row.getCell(10));
-		f.listName = Util.textValueOf(row.getCell(11));
-		f.listKey = Util.textValueOf(row.getCell(12));
-		f.dbColumnName = Util.textValueOf(row.getCell(13));
+		f.label = Util.textValueOf(row.getCell(2));
+		// 3 is description. we are not parsing that.
+		f.placeHolder = Util.textValueOf(row.getCell(4));
+		f.dataType = Util.textValueOf(row.getCell(5));
+		f.defaultValue = Util.textValueOf(row.getCell(6));
+		f.errorId = Util.textValueOf(row.getCell(7));
+		f.isRequired = Util.boolValueOf(row.getCell(8));
+		f.isEditable = Util.boolValueOf(row.getCell(9));
+		f.isDerived = Util.boolValueOf(row.getCell(10));
+		f.isKey = Util.boolValueOf(row.getCell(11));
+		f.listName = Util.textValueOf(row.getCell(12));
+		f.listKey = Util.textValueOf(row.getCell(13));
+		f.dbColumnName = Util.textValueOf(row.getCell(14));
 
 		return f;
 	}
@@ -153,6 +155,7 @@ class Field {
 		sbf.append("\n\t").append(this.name).append(" = new Field('").append(this.name);
 		sbf.append("', ").append(this.index);
 		sbf.append(C).append(Util.escapeTs(this.label));
+		sbf.append(C).append(Util.escapeTs(this.altLabel));
 		sbf.append(C).append(Util.escapeTs(this.placeHolder));
 		sbf.append(C).append(Util.escapeTs(this.defaultValue));
 		sbf.append(C).append(this.isRequired);
