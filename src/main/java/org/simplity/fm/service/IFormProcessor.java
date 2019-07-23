@@ -35,12 +35,12 @@ import org.simplity.fm.form.IFormData;
 public interface IFormProcessor {
 	/**
 	 * carry out custom logic  
-	 * @param form
+	 * @param formData
 	 * @param messages
 	 * @return true if it is OK to continue. in such a case, no error message
 	 *         should have been added to the list.
 	 *         false if it is not ok to continue. at least one error message
 	 *         should have been added to the list
 	 */
-	public boolean process(IFormData form, List<Message> messages);
+	public boolean process(IFormData formData, List<Message> messages);
 }

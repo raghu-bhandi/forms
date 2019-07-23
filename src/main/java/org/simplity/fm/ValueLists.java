@@ -51,6 +51,7 @@ public final class ValueLists {
 			allLists.put(listName, list);
 			return list;
 		} catch (Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}

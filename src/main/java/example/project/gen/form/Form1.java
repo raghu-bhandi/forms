@@ -12,32 +12,33 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 2019-07-14T14:02:43.330 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
+ * <br /> generated at 2019-07-16T17:16:38.801 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
  */ 
 public class Form1 extends Form {
 	public static final int customerId = 0;
-	public static final int financialYear = 1;
-	public static final int boolField = 2;
-	public static final int fromDate = 3;
-	public static final int toDate = 4;
-	public static final int intField1 = 5;
-	public static final int intField2 = 6;
-	public static final int derivedField = 7;
-	public static final int fyStartDate = 8;
-	public static final int state = 9;
-	public static final int district = 10;
-	public static final int kaSpecificField = 11;
-	public static final int aadhaar = 12;
-	public static final int pan = 13;
+	public static final int headerId = 1;
+	public static final int financialYear = 2;
+	public static final int boolField = 3;
+	public static final int fromDate = 4;
+	public static final int toDate = 5;
+	public static final int intField1 = 6;
+	public static final int intField2 = 7;
+	public static final int derivedField = 8;
+	public static final int fyStartDate = 9;
+	public static final int state = 10;
+	public static final int district = 11;
+	public static final int kaSpecificField = 12;
+	public static final int aadhaar = 13;
+	public static final int pan = 14;
 	public static final int orderLines = 0;
 	private static final String WHERE = " WHERE cust_id=? AND financial_year=?";
-	private static final int[] WHERE_IDX = {0, 1};
-	private static final String SELECT = "SELECT cust_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district FROM test_table";
-	private static final int[] SELECT_IDX = {0, 1, 2, 3, 4, 5, 6, 9, 10};
-	private static final  String INSERT = "INSERT INTO test_table(cust_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-	private static final int[] INSERT_IDX = {0, 1, 2, 3, 4, 5, 6, 9, 10};
-	private static final  String UPDATE = "UPDATE test_table SET bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?";
-	private static final  int[] UPDATE_IDX = {2, 3, 4, 5, 6, 9, 10, 0, 1};
+	private static final int[] WHERE_IDX = {0, 2};
+	private static final String SELECT = "SELECT cust_id, header_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_Specific_field, aadhaar, pan FROM test_table";
+	private static final int[] SELECT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
+	private static final  String INSERT = "INSERT INTO test_table(cust_id, header_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_Specific_field, aadhaar, pan) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final int[] INSERT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
+	private static final  String UPDATE = "UPDATE test_table SET header_id=?, bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?, ka_Specific_field=?, aadhaar=?, pan=?";
+	private static final  int[] UPDATE_IDX = {1, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 0, 2};
 	private static final String DELETE = "DELETE FROM test_table";
 
 	private static final String[] FORM2_LINK = {"customerId"};
@@ -74,19 +75,20 @@ public class Form1 extends Form {
 
 		Field[] flds = {
 			new Field("customerId", 0, DefinedDataTypes.customerId, null, null, true, false, false, true, null, "cust_id"), 
-			new Field("financialYear", 1, DefinedDataTypes.fy, null, null, true, true, false, true, null, "financial_year"), 
-			new Field("boolField", 2, DefinedDataTypes.trueFalse, null, null, false, true, false, false, null, "bool_field"), 
-			new Field("fromDate", 3, DefinedDataTypes.futureDate, null, null, false, true, false, false, null, "from_date"), 
-			new Field("toDate", 4, DefinedDataTypes.futureDate, null, null, false, true, false, false, null, "to_date"), 
-			new Field("intField1", 5, DefinedDataTypes.qty, "33", null, false, true, false, false, null, "int_field1"), 
-			new Field("intField2", 6, DefinedDataTypes.qty, "45", null, false, true, false, false, null, "int_field2"), 
-			new Field("derivedField", 7, DefinedDataTypes.qty, null, null, false, false, true, false, null, null), 
-			new Field("fyStartDate", 8, DefinedDataTypes.date, null, null, false, false, false, false, null, null), 
-			new Field("state", 9, DefinedDataTypes.state, null, null, true, true, false, false, "states", "state"), 
-			new Field("district", 10, DefinedDataTypes.district, null, null, true, true, false, false, null, "district"), 
-			new Field("kaSpecificField", 11, DefinedDataTypes.text, null, null, false, true, false, false, null, null), 
-			new Field("aadhaar", 12, DefinedDataTypes.aadhaar, null, null, false, true, false, false, null, null), 
-			new Field("pan", 13, DefinedDataTypes.pan, null, null, false, true, false, false, null, null)
+			new Field("headerId", 1, DefinedDataTypes.id, null, null, true, false, false, false, null, "header_id"), 
+			new Field("financialYear", 2, DefinedDataTypes.fy, null, null, true, true, false, true, null, "financial_year"), 
+			new Field("boolField", 3, DefinedDataTypes.trueFalse, null, null, false, true, false, false, null, "bool_field"), 
+			new Field("fromDate", 4, DefinedDataTypes.futureDate, null, null, false, true, false, false, null, "from_date"), 
+			new Field("toDate", 5, DefinedDataTypes.futureDate, null, null, false, true, false, false, null, "to_date"), 
+			new Field("intField1", 6, DefinedDataTypes.qty, "33", null, false, true, false, false, null, "int_field1"), 
+			new Field("intField2", 7, DefinedDataTypes.qty, "45", null, false, true, false, false, null, "int_field2"), 
+			new Field("derivedField", 8, DefinedDataTypes.qty, null, null, false, false, true, false, null, null), 
+			new Field("fyStartDate", 9, DefinedDataTypes.date, null, null, false, false, false, false, null, null), 
+			new Field("state", 10, DefinedDataTypes.state, null, null, true, true, false, false, "states", "state"), 
+			new Field("district", 11, DefinedDataTypes.district, null, null, true, true, false, false, null, "district"), 
+			new Field("kaSpecificField", 12, DefinedDataTypes.text, null, null, false, true, false, false, null, "ka_Specific_field"), 
+			new Field("aadhaar", 13, DefinedDataTypes.aadhaar, null, null, false, true, false, false, null, "aadhaar"), 
+			new Field("pan", 14, DefinedDataTypes.pan, null, null, false, true, false, false, null, "pan")
 		};
 		this.fields = flds;
 
@@ -94,11 +96,11 @@ public class Form1 extends Form {
 			new ChildForm("orderLines", "form2", true, 1, 200, "wrongLines")};
 		this.childForms = chlds;
 
-		IValidation[] vlds = {new FromToValidation(3, 4, false, "fromDate", "invalidDateRange"),
-			new ExclusiveValidation(12, 13, true, "aadhaar", "panOrAadhaar"),
-			new InclusiveValidation(5, 6, null, "intField1", "intfield1INtField2AreTogether"),
-			new InclusiveValidation(9, 11, "KA", "state", "requiredOnKa"),
-			new DependentListValidation(10, 9, "districts", "district", null),
+		IValidation[] vlds = {new FromToValidation(4, 5, false, "fromDate", "invalidDateRange"),
+			new ExclusiveValidation(13, 14, true, "aadhaar", "panOrAadhaar"),
+			new InclusiveValidation(6, 7, null, "intField1", "intfield1INtField2AreTogether"),
+			new InclusiveValidation(10, 12, "KA", "state", "requiredOnKa"),
+			new DependentListValidation(11, 10, "districts", "district", null),
 			new example.project.custom.Form1Validation()};
 		this.validations = vlds;
 

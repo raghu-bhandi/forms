@@ -12,14 +12,22 @@ import org.simplity.fm.form.Form;
  */
 public class Services {
 	/**
-	 * separator between operation and form name to suggest a service name, like get-form1
+	 * separator between operation and form name to suggest a service name, like
+	 * get-form1
 	 */
 	public static final char SERVICE_SEPARATOR = '-';
+	/**
+	 * name of the standard service that is used for managing all requested
+	 * related to forms
+	 */
+	public static final String FORM_SERVICE = "formService";
 	private static final Services instance = new Services();
+
 	/**
 	 * 
 	 * @param serviceName
-	 * @return service instance for this service name, or null if no such service
+	 * @return service instance for this service name, or null if no such
+	 *         service
 	 */
 	public static IService getService(String serviceName) {
 		IService service = instance.services.get(serviceName);
@@ -36,10 +44,10 @@ public class Services {
 		if (fs == null) {
 			return null;
 		}
-		
+
 		String oper = serviceName.substring(0, idx);
 		service = fs.getService(oper);
-		if(service != null) {
+		if (service != null) {
 			instance.services.put(serviceName, service);
 		}
 		return service;
@@ -47,6 +55,7 @@ public class Services {
 
 	/**
 	 * utility for special services to register them selves
+	 * 
 	 * @param serviceName
 	 * @param service
 	 */
@@ -59,6 +68,6 @@ public class Services {
 	private Map<String, IService> services = new HashMap<>();
 
 	private Services() {
-		// forbidden
+		this.services.put(FORM_SERVICE, new FormService());
 	}
 }

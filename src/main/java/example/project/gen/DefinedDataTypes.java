@@ -14,7 +14,7 @@ import org.simplity.fm.datatypes.TimestampType;
 
 /**
  * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>
- * <br /> generated at 2019-07-14T14:02:42.946
+ * <br /> generated at 2019-07-16T17:16:38.210
  */ 
 public class DefinedDataTypes implements IDataTypes {
 	public static final TextType customerId = new TextType("customerId", "invalidCustId", 10, 10, "[A-Z]{3}-[\\d]{2}-[A-Z]{3}");
@@ -33,8 +33,9 @@ public class DefinedDataTypes implements IDataTypes {
 	public static final TextType pan = new TextType("pan", "invalidPan", 10, 10, "[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]");
 	public static final IntegerType aadhaar = new IntegerType("aadhaar", "invalidAadhaar", 100000000000L, 999999999999L);
 	public static final IntegerType district = new IntegerType("district", "invalidDistrict", 1L, 9999L);
+	public static final IntegerType id = new IntegerType("id", "invalidId", 1L, 9999999999999L);
 
-	public static final DataType[] allTypes = {customerId, fy, trueFalse, futureDate, qty, pastDate, textId, orderQty, color, severity, date, state, text, pan, aadhaar, district};
+	public static final DataType[] allTypes = {customerId, fy, trueFalse, futureDate, qty, pastDate, textId, orderQty, color, severity, date, state, text, pan, aadhaar, district, id};
 	 private Map<String, DataType> typesMap;
 	/**
 	 * default constructor

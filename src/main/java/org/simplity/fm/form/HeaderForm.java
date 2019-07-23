@@ -20,48 +20,18 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
-
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.simplity.fm.Message;
-import org.simplity.fm.form.FormData;
-import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.Form;
-import org.simplity.fm.http.LoggedInUser;
+package org.simplity.fm.form;
 
 /**
- * Simple service that just saves the form with no saves the form received from
- * 
  * @author simplity.org
  *
  */
-public class GetService extends AbstractService {
+public abstract class HeaderForm extends Form{
+	
 
 	/**
-	 * @param formStructure
+	 * @return new header data instance
 	 */
-	public GetService(Form formStructure) {
-		super(formStructure);
-		this.operation = FormOperation.GET;
-	}
+	abstract public IHederData newHeaderData();
 
-	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception{
-		List<Message> messages = new ArrayList<>();
-		FormData formData = this.newForm(user, keyFields, messages);
-		if(formData == null) {
-			return this.failed(messages);
-		}
-
-		boolean ok = this.retrieveForm(user, formData, messages, writer);
-		if(ok) {
-			return this.succeeded();
-		}
-		return this.failed(messages);
-	}
-	
 }

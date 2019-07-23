@@ -48,13 +48,10 @@ public class JettyHandler extends AbstractHandler {
 			throws IOException, ServletException {
 		baseRequest.setHandled(true);
 		Agent agent = Agent.getAgent();
+		System.out.println("REceived a request for context method = " + baseRequest.getMethod() + " and pathInfo = " + baseRequest.getPathInfo());
 		String method = baseRequest.getMethod().toUpperCase();
 		if(method.equals("POST")) {
 			agent.serve(baseRequest, response, true);
-			return;
-		}
-		if(method.equals("GET")) {
-			agent.serve(baseRequest, response, false);
 			return;
 		}
 		if(method.equals("OPTIONS")) {

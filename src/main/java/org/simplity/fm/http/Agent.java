@@ -67,18 +67,6 @@ public class Agent {
 		return singleInstance;
 	}
 
-	private static final String AUTH_HEADER = "Authorization";
-	private static final String[] HDR_NAMES = { "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
-			"Access-Control-Max-Age", "Connection", "Cache-Control", "Expires" };
-	private static final String[] HDR_TEXTS = { "POST, GET, OPTIONS", "authorization,content-type", "1728000",
-			"Keep-Alive", "no-cache, no-store, must-revalidate", "0" };
-	private static final int STATUS_ALL_OK = 200;
-	private static final int STATUS_AUTH_REQUIRED = 401;
-	private static final int STATUS_INVALID_SERVICE = 404;
-	// private static final int STATUS_METHOD_NOT_ALLOWED = 405;
-	private static final int STATUS_INVALID_DATA = 406;
-	private static final int STATUS_INTERNAL_ERROR = 500;
-	private static final String SERVICE_NAME = "_s";
 	/**
 	 * TODO: cache manager to be used for session cache. Using a local map for
 	 * the time being
@@ -87,19 +75,21 @@ public class Agent {
 
 	/**
 	 * response for a pre-flight request
-	 * @param req 
+	 * 
+	 * @param req
 	 * 
 	 * @param resp
 	 */
-	public void setOptions (HttpServletRequest req, HttpServletResponse resp) {
-		for (int i = 0; i < HDR_NAMES.length; i++) {
-			resp.setHeader(HDR_NAMES[i], HDR_TEXTS[i]);
+	public void setOptions(HttpServletRequest req, HttpServletResponse resp) {
+		for (int i = 0; i < Http.HDR_NAMES.length; i++) {
+			resp.setHeader(Http.HDR_NAMES[i], Http.HDR_TEXTS[i]);
 		}
 		/*
-		 * we have no issue with CORS. We are ready to respond to any client so long the auth is taken care of
+		 * we have no issue with CORS. We are ready to respond to any client so
+		 * long the auth is taken care of
 		 */
 		resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
-		resp.setStatus(STATUS_ALL_OK);
+		resp.setStatus(Http.STATUS_ALL_OK);
 	}
 
 	/**
@@ -117,15 +107,18 @@ public class Agent {
 	public void serve(HttpServletRequest req, HttpServletResponse resp, boolean inputDataIsInPayload)
 			throws IOException {
 		LoggedInUser user = this.getUser(req);
+		logger.info("Started serving request {}", req.getPathTranslated());
+		System.out.println("Received a request for context path = " + req.getContextPath() + " and pathInfo = "
+				+ req.getPathInfo());
 		if (user == null) {
 			logger.info("No User. Responding with auth required atatus");
-			resp.setStatus(STATUS_AUTH_REQUIRED);
+			resp.setStatus(Http.STATUS_AUTH_REQUIRED);
 			return;
 		}
 
 		IService service = this.getService(req);
 		if (service == null) {
-			resp.setStatus(STATUS_INVALID_SERVICE);
+			resp.setStatus(Http.STATUS_INVALID_SERVICE);
 			return;
 		}
 
@@ -148,13 +141,13 @@ public class Agent {
 				 */
 				JsonNode node = new ObjectMapper().readTree(ins);
 				if (node.getNodeType() != JsonNodeType.OBJECT) {
-					resp.setStatus(STATUS_INVALID_DATA);
+					resp.setStatus(Http.STATUS_INVALID_DATA);
 					return;
 				}
 				json = (ObjectNode) node;
 			} catch (Exception e) {
 				logger.info("Invalid data recd from client {}", e.getMessage());
-				resp.setStatus(STATUS_INVALID_DATA);
+				resp.setStatus(Http.STATUS_INVALID_DATA);
 				return;
 			}
 		} else {
@@ -189,7 +182,7 @@ public class Agent {
 			 * TODO : wire this to error handling process provided by the
 			 * configuration
 			 */
-			resp.setStatus(STATUS_INTERNAL_ERROR);
+			resp.setStatus(Http.STATUS_INTERNAL_ERROR);
 			return;
 		}
 	}
@@ -201,7 +194,7 @@ public class Agent {
 	 * @param writer
 	 */
 	private void respondWithError(HttpServletResponse resp, Message[] messages, Writer writer) {
-		resp.setStatus(STATUS_INVALID_DATA);
+		resp.setStatus(Http.STATUS_INVALID_DATA);
 		if (messages == null || messages.length == 0) {
 			return;
 		}
@@ -240,9 +233,9 @@ public class Agent {
 	 * @param resp
 	 */
 	private void setHeaders(HttpServletResponse resp) {
-		resp.setStatus(STATUS_ALL_OK);
-		for (int i = 0; i < HDR_NAMES.length; i++) {
-			resp.setHeader(HDR_NAMES[i], HDR_TEXTS[i]);
+		resp.setStatus(Http.STATUS_ALL_OK);
+		for (int i = 0; i < Http.HDR_NAMES.length; i++) {
+			resp.setHeader(Http.HDR_NAMES[i], Http.HDR_TEXTS[i]);
 		}
 	}
 
@@ -268,9 +261,9 @@ public class Agent {
 	}
 
 	private IService getService(HttpServletRequest req) {
-		String serviceName = req.getHeader(SERVICE_NAME);
+		String serviceName = req.getHeader(Http.SERVICE_HEADER);
 		if (serviceName == null) {
-			logger.info("header {} not received", SERVICE_NAME);
+			logger.info("header {} not received", Http.SERVICE_HEADER);
 
 			return null;
 		}
@@ -289,7 +282,7 @@ public class Agent {
 	 * @return
 	 */
 	private LoggedInUser getUser(HttpServletRequest req) {
-		String token = req.getHeader(AUTH_HEADER);
+		String token = req.getHeader(Http.AUTH_HEADER);
 		if (token == null) {
 			return null;
 		}

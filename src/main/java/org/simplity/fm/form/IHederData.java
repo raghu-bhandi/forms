@@ -23,21 +23,39 @@
 package org.simplity.fm.form;
 
 /**
- * various operations that are implemented on a form
  * @author simplity.org
  *
  */
-public enum FormOperation { 
+public interface IHederData extends IFormData{
+
 	/**
-	 * get/retrieve this form from storage. get a blank form, possibly populated with some default values
+	 * 
+	 * @return name of the form this header is meant for
 	 */
-	GET, 
+	public String getFormName();
+	
 	/**
-	 * save the form as draft 
+	 * 
+	 * @return serialized form data
 	 */
-	SAVE, 
+	public String getFormData();
+	
 	/**
-	 * submit the form for further processing
+	 * 
+	 * @return requested operation on this form
 	 */
-	SUBMIT
+	
+	public FormOperation getFormOperation();
+	
+	/**
+	 * 
+	 * @param serializedData
+	 */
+	public void setFormData(String serializedData);
+	
+	/**
+	 * 
+	 * @param value
+	 */
+	public void setIsSubmitted(boolean value);
 }

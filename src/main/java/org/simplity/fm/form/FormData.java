@@ -27,8 +27,8 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.InvalidValueException;
@@ -53,7 +53,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public class FormData implements IFormData {
 	private static final Logger logger = LoggerFactory.getLogger(FormData.class);
-	private static final char KEY_JOINER = '_';
 	/**
 	 * data structure describes the template for which this object provides
 	 * actual data
@@ -64,78 +63,30 @@ public class FormData implements IFormData {
 	 */
 	private final Object[] fieldValues;
 	/**
-	 * grid data. null if this template has no fields
+	 * data for child forms. null if this form has no children
 	 */
-	private final Object[][][] gridData;
+	private final FormData[][] childData;
 
-	/**
-	 * operation for which this form is created
-	 */
-	private final FormOperation operation;
-
-	/**
-	 * @param form
-	 *            data structure describes the template for which this object
-	 *            provides
-	 *            actual data
-	 * @param operation
-	 * @param values
-	 *            grid data. null if this template has no fields
-	 * @param tables
-	 *            grid data. null if this template has no fields
-	 */
-	public FormData(Form form, FormOperation operation, Object[] values, Object[][][] tables) {
+	FormData(Form form, Object[] fieldValues, FormData[][] childData) {
 		this.form = form;
-		this.fieldValues = values;
-		this.gridData = tables;
-		this.operation = operation;
-	}
-
-	/**
-	 * @return the operation
-	 */
-	public FormOperation getOperation() {
-		return this.operation;
-	}
-
-	@Override
-	public String getFormId() {
-		return this.form.getFormId();
-	}
-
-	@Override
-	public String getVersion() {
-		return this.form.version;
-	}
-
-	@Override
-	public String getDocumentId() {
-		/*
-		 * concatenate key fields to get document id
-		 */
-		int[] indexes = this.form.getKeyIndexes();
-		if (indexes == null || indexes.length == 0) {
-			return null;
+		if(form.fields == null) {
+			this.fieldValues = null;
+		}else if(fieldValues == null) {
+			this.fieldValues = new Object[form.fields.length];
+		}else {
+			this.fieldValues = fieldValues;
 		}
-
-		String key = this.getFormId();
-		for (int idx : indexes) {
-			Object obj = this.fieldValues[idx];
-			if (obj == null) {
-				logger.warn("Key field {} has no value. Null is returned as documentId",
-						this.form.fields[idx].getFieldName());
-				return null;
-			}
-			key += KEY_JOINER + obj.toString();
+		
+		if (form.childForms == null) {
+			this.childData = null;
+		}else if (childData == null) {
+			this.childData = new FormData[form.childForms.length][];
+		}else {
+			this.childData = childData;
 		}
-		return key;
 	}
 
-	/**
-	 * 
-	 * @return value of user id field in this form. null if such a field is not
-	 *         defined, or that field has no value.
-	 */
+	@Override
 	public String getUserId() {
 		int idx = this.form.getUserIdFieldIdx();
 		if (idx == -1) {
@@ -146,51 +97,6 @@ public class FormData implements IFormData {
 			return null;
 		}
 		return obj.toString();
-	}
-
-	/**
-	 * set owner for this form
-	 * 
-	 * @param user
-	 * @return true if the owner was indeed set. false in case of any issue in
-	 *         setting it
-	 */
-	public boolean setOwner(LoggedInUser user) {
-		int idx = this.form.getUserIdFieldIdx();
-		if (idx == -1) {
-			return false;
-		}
-		Field field = this.form.fields[idx];
-		String uid = user.getUserId();
-		if (uid != null) {
-			try {
-				this.fieldValues[idx] = field.parse(user.getUserId());
-				return true;
-			} catch (InvalidValueException e) {
-				// ;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * does this form belong the the user
-	 * 
-	 * @param user
-	 *            logged in user object
-	 * @return true if this form belongs to the logged in user. false if it does
-	 *         not,or if we can't say
-	 */
-	public boolean isOwner(LoggedInUser user) {
-		String uidIn = user.getUserId();
-		if (uidIn == null) {
-			return false;
-		}
-		String uid = this.getUserId();
-		if (uid == null) {
-			return false;
-		}
-		return uid.equals(uidIn);
 	}
 
 	private boolean idxOk(int idx) {
@@ -406,38 +312,8 @@ public class FormData implements IFormData {
 	}
 
 	@Override
-	public void deserialize(String data) {
-		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
-	}
-
-	@Override
-	public boolean deserialize(String data, List<Message> errors) {
-		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
-	}
-
-	@Override
-	public String serialize() {
-		throw new Error("internal serialization method not yet implemented for form. Use json format instead");
-	}
-
-	@Override
 	public void load(ObjectNode json) {
 		this.validateAndLoad(json, true, null);
-	}
-
-	@Override
-	public void loadKeys(Map<String, String> values, List<Message> errors) {
-		int[] indexes = this.form.getKeyIndexes();
-		if (indexes == null) {
-			return;
-		}
-
-		Field[] fields = this.form.getFields();
-
-		for (int idx : indexes) {
-			Field f = fields[idx];
-			validateAndSet(f, values.get(f.getFieldName()), this.fieldValues, idx, false, errors);
-		}
 	}
 
 	@Override
@@ -467,48 +343,69 @@ public class FormData implements IFormData {
 		}
 
 		for (int i = 0; i < children.length; i++) {
-			ChildForm field = children[i];
-			String fieldName = field.fieldName;
+			ChildForm childForm = children[i];
+			String fieldName = childForm.fieldName;
 			JsonNode child = json.get(fieldName);
-			Form struct = field.form;
-			ArrayNode node = null;
-			if (child != null && child.getNodeType() == JsonNodeType.ARRAY) {
-				node = (ArrayNode) child;
-			}
-			/*
-			 * TODO: if this table had rows in the saved form, should we retain
-			 * that or reset that to null?
-			 */
-			if (node == null) {
-				// continue;
-			}
-			int n = node == null ? 0 : node.size();
-
-			if (errors != null) {
-				if (n < field.minRows || (n != 0 && n > field.maxRows)) {
-					errors.add(Message.newFieldError(fieldName, field.errorMessageId, null));
-					continue;
+			if (child == null) {
+				if (errors != null && childForm.minRows > 0) {
+					errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
 				}
-			}
-			if (n == 0 || node == null) {
 				continue;
 			}
 
-			int nbrCols = struct.getFields().length;
-			Object[][] grid = new Object[n][];
-			this.gridData[i] = grid;
+			JsonNodeType nt = child.getNodeType();
+			if (childForm.isTabular == false) {
+				if (nt != JsonNodeType.OBJECT) {
+					if (errors != null) {
+						logger.error(
+								"Form {} has a child form named {} and hence an object is expeted. But {} is received as data",
+								this.form.getFormId(), fieldName, nt);
+						continue;
+					}
+				}
+				FormData fd = this.form.newFD();
+				this.childData[i] = new FormData[1];
+				this.childData[i][0] = fd;
+				fd.validateAndLoad((ObjectNode) child, allFieldsAreOptional, errors);
+				continue;
+			}
+
+			ArrayNode node = null;
+			int n = 0;
+			if (nt == JsonNodeType.ARRAY) {
+				node = (ArrayNode) child;
+				n = node.size();
+				if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
+					node = null;
+				}
+			}
+
+			if (node == null) {
+				if (errors != null) {
+					errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+				}
+				continue;
+			}
+
+			if (n == 0) {
+				continue;
+			}
+			List<FormData> fds = new ArrayList<>();
 			for (int j = 0; j < n; j++) {
 				JsonNode col = node.get(j);
+
 				if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
 					if (errors != null) {
 						errors.add(Message.newError(IService.MSG_INVALID_DATA));
 					}
-					break;
+					continue;
 				}
-
-				Object[] row = new Object[nbrCols];
-				setFeilds((ObjectNode) col, struct, row, allFieldsAreOptional, errors);
-				grid[j] = row;
+				FormData fd = this.form.newFD();
+				fds.add(fd);
+				fd.validateAndLoad(json, allFieldsAreOptional, errors);
+			}
+			if (fds.size() > 0) {
+				this.childData[i] = fds.toArray(new FormData[0]);
 			}
 		}
 	}
@@ -555,35 +452,38 @@ public class FormData implements IFormData {
 	@Override
 	public void serializeAsJson(Writer writer) throws IOException {
 		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
-			gen.writeStartObject();
-			this.writeFields(gen, this.fieldValues, this.form.getFields());
-			if (this.gridData != null) {
-				this.writeGrids(gen);
-			}
-			gen.writeEndObject();
+			this.serialize(gen);
 		}
 	}
 
-	private void writeGrids(JsonGenerator gen) throws IOException {
-		ChildForm[] tableFields = this.form.getChildForms();
-		for (int i = 0; i < this.gridData.length; i++) {
-			Object[][] grid = this.gridData[i];
-			if (grid == null) {
+	private void serialize(JsonGenerator gen) throws IOException {
+		gen.writeStartObject();
+		this.writeFields(gen, this.fieldValues, this.form.getFields());
+		if (this.childData != null) {
+			this.serializeChildren(gen);
+		}
+
+		gen.writeEndObject();
+	}
+
+	private void serializeChildren(JsonGenerator gen) throws IOException {
+		int i = 0;
+		for (ChildForm cf : this.form.childForms) {
+			FormData[] data = this.childData[i];
+			if (data == null) {
 				continue;
 			}
-			ChildForm field = tableFields[i];
-			gen.writeArrayFieldStart(field.fieldName);
-			this.writeGrid(gen, grid, field.form);
-			gen.writeEndArray();
-		}
-	}
-
-	private void writeGrid(JsonGenerator gen, Object[][] grid, Form gridStructure) throws IOException {
-		Field[] columns = gridStructure.getFields();
-		for (int i = 0; i < grid.length; i++) {
-			gen.writeStartObject();
-			this.writeFields(gen, grid[i], columns);
-			gen.writeEndObject();
+			gen.writeFieldName(cf.fieldName);
+			if (this.form.childForms[i].isTabular) {
+				gen.writeStartArray();
+				for (FormData fd : data) {
+					fd.serialize(gen);
+				}
+				gen.writeEndArray();
+			} else {
+				data[0].serialize(gen);
+			}
+			i++;
 		}
 	}
 
@@ -599,12 +499,12 @@ public class FormData implements IFormData {
 	}
 
 	private Object jsonQuickFix(Object value) {
-		if(value instanceof LocalDate || value instanceof Instant) {
+		if (value instanceof LocalDate || value instanceof Instant) {
 			return value.toString();
 		}
 		return value;
 	}
-	
+
 	private static String getChildAsText(JsonNode json, String fieldName) {
 		JsonNode node = json.get(fieldName);
 		if (node == null) {
@@ -624,7 +524,7 @@ public class FormData implements IFormData {
 			logger.error("Form {} is not designed for insert/add operation..");
 			return false;
 		}
-		return meta.insert(this.fieldValues, this.gridData);
+		return meta.insert(this);
 	}
 
 	@Override
@@ -634,7 +534,7 @@ public class FormData implements IFormData {
 			logger.error("Form {} is not designed for update operation..");
 			return false;
 		}
-		return meta.update(this.fieldValues, this.gridData);
+		return meta.update(this);
 	}
 
 	@Override
@@ -644,7 +544,7 @@ public class FormData implements IFormData {
 			logger.error("Form {} is not designed for delete operation..");
 			return false;
 		}
-		return meta.delete(this.fieldValues);
+		return meta.delete(this);
 	}
 
 	@Override
@@ -654,6 +554,40 @@ public class FormData implements IFormData {
 			logger.error("Form {} is not designed for db read. Operation not done.");
 			return false;
 		}
-		return meta.fetch(this.fieldValues, this.gridData);
+		return meta.fetch(this);
+	}
+
+	@Override
+	public boolean isOwner(LoggedInUser user) {
+		int idx = this.form.userIdFieldIdx;
+		if (idx == -1) {
+			logger.warn("Form {} has not set user id field name. isOwner() will always return true",
+					this.form.uniqueName);
+			return true;
+		}
+		return user.getUserId().equals(this.fieldValues[idx]);
+	}
+
+	@Override
+	public void setOwner(LoggedInUser user) {
+		int idx = this.form.userIdFieldIdx;
+		if (idx != -1) {
+			this.fieldValues[idx] = user.getUserId();
+		}
+	}
+
+	@Override
+	public Object[] getFieldValues() {
+		return this.fieldValues;
+	}
+
+	@Override
+	public FormData[][] getChildData() {
+		return this.childData;
+	}
+	
+	@Override
+	public Form getForm() {
+		return this.form;
 	}
 }

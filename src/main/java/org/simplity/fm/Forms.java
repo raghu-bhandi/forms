@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.simplity.fm.form.Form;
+import org.simplity.fm.form.HeaderForm;
+import org.simplity.fm.form.IHederData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,7 @@ import org.slf4j.LoggerFactory;
  */
 public final class Forms {
 	private static final Logger logger = LoggerFactory.getLogger(Forms.class);
+	private static final String HEADER_FORM = "headerForm";
 	private static final Map<String, Form> allForms = new HashMap<>();
 
 	/**
@@ -60,5 +63,21 @@ public final class Forms {
 			logger.error("Form {} could not be located and used as a class for form. Error {}", formName, e.getMessage());
 			return null;
 		}
+	}
+	
+	/**
+	 * @return the envelope designed for this app
+	 */
+	public static HeaderForm getHeaderForm() {
+		Form form = getForm(HEADER_FORM);
+		if(form == null) {
+			logger.error("APplicaiton has not defined form named {} ", HEADER_FORM);
+			return null;
+		}
+		if(form instanceof HeaderForm) {
+			return (HeaderForm) form;
+		}
+		logger.error("Application has defined form named {} of type {}, but it does not implement {}", HEADER_FORM, form.getClass().getName(), IHederData.class.getName());
+		return null;
 	}
 }

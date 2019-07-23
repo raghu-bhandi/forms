@@ -40,7 +40,7 @@ public interface IValidation {
 	 * execute this validation for a form
 	 * 
 	 * @param form
-	 * @param mesages
+	 * @param messages
 	 * @return true if all OK. false if an error message is added to the list
 	 */
 	public boolean isValid(FormData form, List<Message> messages);

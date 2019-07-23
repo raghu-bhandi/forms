@@ -26,16 +26,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.Forms;
 import org.simplity.fm.rdb.DbParam;
 import org.simplity.fm.rdb.IDbClient;
 import org.simplity.fm.rdb.RdbDriver;
 import org.simplity.fm.rdb.RdbDriver.DbHandle;
-import org.simplity.fm.service.GetService;
 import org.simplity.fm.service.IFormProcessor;
 import org.simplity.fm.service.IService;
-import org.simplity.fm.service.SaveService;
-import org.simplity.fm.service.SubmitService;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -346,42 +342,10 @@ public class Form {
 
 	/**
 	 * 
-	 * @param operation
 	 * @return A form that can take field/table values
 	 */
-	public FormData newFormData(FormOperation operation) {
-		Object[] values = null;
-		Object[][][] tables = null;
-		if (this.fields != null && this.fields.length != 0) {
-			values = new Object[this.fields.length];
-		}
-		if (this.childForms != null && this.childForms.length != 0) {
-			tables = new Object[this.childForms.length][][];
-		}
-		return new FormData(this, operation, values, tables);
-	}
-
-	/**
-	 * 
-	 * @param operation
-	 * @return a service for the specified operation. null if such an operation
-	 *         is not valid for this form
-	 */
-	public IService getService(String operation) {
-		if (SERVICE_TYPE_GET.equals(operation)) {
-			if (this.createGetService) {
-				return new GetService(this);
-			}
-		} else if (SERVICE_TYPE_SAVE.equals(operation)) {
-			if (this.createSaveService) {
-				return new SaveService(this);
-			}
-		} else if (SERVICE_TYPE_SUBMIT.equals(operation)) {
-			if (this.createSubmitService) {
-				return new SubmitService(this);
-			}
-		}
-		return null;
+	public FormData newFD() {
+		return new FormData(this, null, null);
 	}
 
 	protected DbParam[] getParams(int[] indexes) {
@@ -419,10 +383,13 @@ public class Form {
 		public DbMetaData() {
 			//
 		}
-		public boolean fetch(Object[] data, Object[][][] gridData) throws SQLException {
+		public boolean fetch(FormData fd) throws SQLException {
 			if (this.selectClause == null) {
 				return false;
 			}
+			Object[] data = fd.getFieldValues();
+			FormData[][] childData = fd.getChildData();
+			ChildForm[] childForms = fd.getForm().getChildForms();
 			DbMetaData meta = DbMetaData.this;
 			RdbDriver.getDriver().transact(new IDbClient() {
 
@@ -434,8 +401,9 @@ public class Form {
 						for (ChildDbMetaData cm : meta.childMeta) {
 							if (cm != null) {
 								DbMetaData childDetils = cm.childMeta;
-								gridData[idx] = handle.readChildRows(childDetils.selectClause + cm.whereClause,
+								Object[][] rows = handle.readChildRows(childDetils.selectClause + cm.whereClause,
 										cm.whereParams, childDetils.selectParams, data, cm.nbrChildFields);
+								childData[idx] = createChildData(rows, childForms[idx].form);
 							}
 							idx++;
 						}
@@ -446,10 +414,20 @@ public class Form {
 			return true;
 		}
 
-		public boolean update(Object[] data, Object[][][] gridData) throws SQLException {
+		protected static FormData[] createChildData(Object[][] rows, Form form) {
+			FormData[] result = new FormData[rows.length];
+			for (int i = 0; i < result.length; i++) {
+				result[i] = new FormData(form, rows[i], null);
+			}
+			return result;
+		}
+
+		public boolean update(FormData fd) throws SQLException {
 			if (this.updateClause == null) {
 				return false;
 			}
+			Object[] data = fd.getFieldValues();
+			FormData[][] childData = fd.getChildData();
 			DbMetaData meta = DbMetaData.this;
 			RdbDriver.getDriver().transact(new IDbClient() {
 
@@ -457,7 +435,7 @@ public class Form {
 				public boolean transact(DbHandle handle) throws SQLException {
 					handle.writeForm(meta.updateClause + meta.whereClause, meta.updateParams, data, null);
 					if (meta.childMeta != null) {
-						DbMetaData.this.writeChildren(handle, meta, data, gridData);
+						DbMetaData.this.writeChildren(handle, meta, data, childData);
 					}
 					return true;
 				}
@@ -465,7 +443,7 @@ public class Form {
 			return true;
 		}
 
-		protected void writeChildren(DbHandle handle, DbMetaData meta, Object[] data, Object[][][] tabularData)
+		protected void writeChildren(DbHandle handle, DbMetaData meta, Object[] data, FormData[][] childData)
 				throws SQLException {
 			int idx = 0;
 			for (ChildDbMetaData cm : meta.childMeta) {
@@ -478,19 +456,21 @@ public class Form {
 					/*
 					 * now insert them
 					 */
-					if (tabularData != null) {
-						handle.formBatch(childDetils.insertClause, childDetils.insertParams, tabularData[idx]);
+					if (childData != null) {
+						handle.formBatch(childDetils.insertClause, childDetils.insertParams, childData[idx]);
 					}
 				}
 				idx++;
 			}
 		}
 
-		public boolean insert(Object[] data, Object[][][] gridData) throws SQLException {
+		public boolean insert(FormData fd) throws SQLException {
 			if (this.insertClause == null) {
 				return false;
 			}
 			DbMetaData meta = DbMetaData.this;
+			Object[] data = fd.getFieldValues();
+			FormData[][] childData = fd.getChildData();
 			final long[] generatedKeys = this.keyIsGenerated ? new long[1] : null;
 			
 			RdbDriver.getDriver().transact(new IDbClient() {
@@ -499,7 +479,7 @@ public class Form {
 				public boolean transact(DbHandle handle) throws SQLException {
 					handle.writeForm(meta.insertClause, meta.insertParams, data, generatedKeys);
 					if (meta.childMeta != null) {
-						DbMetaData.this.writeChildren(handle, meta, data, gridData);
+						DbMetaData.this.writeChildren(handle, meta, data, childData);
 					}
 					return true;
 				}
@@ -507,10 +487,11 @@ public class Form {
 			return true;
 		}
 
-		public boolean delete(Object[] data) throws SQLException {
+		public boolean delete(FormData fd) throws SQLException {
 			if (this.deleteClause == null) {
 				return false;
 			}
+			Object[] data = fd.getFieldValues();
 			DbMetaData meta = DbMetaData.this;
 			RdbDriver.getDriver().transact(new IDbClient() {
 
@@ -533,5 +514,14 @@ public class Form {
 		protected DbParam[] whereParams;
 		protected DbMetaData childMeta;
 		protected int nbrChildFields;
+	}
+
+	/**
+	 * @param oper
+	 * @return service for this operation on this form
+	 */
+	public IService getService(String oper) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

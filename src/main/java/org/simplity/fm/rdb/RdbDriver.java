@@ -37,6 +37,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.form.FormData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,11 +94,11 @@ public class RdbDriver {
 	 * connection string
 	 * 
 	 * @param conString
-	 * @param driveClassName
+	 * @param driverClassName
 	 * @throws Exception
 	 */
-	public static void SetConnectionString(String conString, String driveClassName) throws Exception {
-		Class.forName(driveClassName);
+	public static void SetConnectionString(String conString, String driverClassName) throws Exception {
+		Class.forName(driverClassName);
 		/*
 		 * test it
 		 */
@@ -322,10 +323,14 @@ public class RdbDriver {
 		}
 	}
 
-	protected static int[] doFormBatch(Connection con, String sql, DbParam[] params, Object[][] tabularData)
+	protected static int[] doFormBatch(Connection con, String sql, DbParam[] params, FormData[] childData)
 			throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
-			for (Object[] row : tabularData) {
+			for (FormData fd : childData) {
+				/*
+				 * we do not have mechanism to persist grand children as of now..
+				 */
+				Object[] row = fd.getFieldValues();
 				ps.addBatch();
 				int posn = 0;
 				for (DbParam p : params) {
@@ -760,17 +765,17 @@ public class RdbDriver {
 		 *            to be used for child
 		 * @param params
 		 *            parameters to be set to the SQL
-		 * @param tabularData
+		 * @param childData
 		 *            child data to be persisted
 		 * @return array of number of affected rows for each child row
 		 * @throws SQLException
 		 */
-		public int[] formBatch(String sql, DbParam[] params, Object[][] tabularData) throws SQLException {
+		public int[] formBatch(String sql, DbParam[] params, FormData[] childData) throws SQLException {
 			if (this.readOnly) {
 				throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
 			}
 			this.isDirty = true;
-			return doFormBatch(this.con, sql, params, tabularData);
+			return doFormBatch(this.con, sql, params, childData);
 		}
 
 		/**
@@ -868,8 +873,8 @@ public class RdbDriver {
 		}
 		
 		@Override
-		public int[] formBatch(String sql, DbParam[] params, Object[][] tabularData) throws SQLException {
-			warn(sql, params, tabularData[0]);
+		public int[] formBatch(String sql, DbParam[] params, FormData[] childData) throws SQLException {
+			warn(sql, params, childData[0].getFieldValues());
 			return new int[params.length];
 		}
 		

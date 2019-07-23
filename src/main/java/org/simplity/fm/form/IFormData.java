@@ -28,10 +28,10 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.http.LoggedInUser;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -62,76 +62,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  */
 public interface IFormData {
 	/**
-	 * unique id assigned to this form. like customerDetails. This is unique
-	 * across all types of forms within a project
-	 * 
-	 * @return non-null unique id
-	 */
-	public String getFormId();
-
-	/**
-	 * 
-	 * @return version of the form based on which this form data is created
-	 */
-	public String getVersion();
-
-	/**
-	 *
-	 * @return unique key/id for the document/record for which this form is
-	 *         currently having data. It would be typically formed based on the
-	 *         primary key(s) of the underlying document
-	 */
-	public String getDocumentId();
-
-	/**
-	 * de-serialize text into data. used when the data is known to be valid, and
-	 * need not be validated. Typically when this is de-serialized from
-	 * persistence layer.
-	 * 
-	 * @param data
-	 *            text that is the result of serialize() of this DataStructure.
-	 * 
-	 */
-	public void deserialize(String data);
-
-	/**
-	 * de-serialize with validations
-	 * 
-	 * @param data
-	 *            coming from a client
-	 * @param errors
-	 *            list to which, any validation errors are added
-	 * @return true if allOk. No errors are added to the list. False in case one
-	 *         or more validation errors are added to the list
-	 */
-	public boolean deserialize(String data, List<Message> errors);
-
-	/**
-	 * 
-	 * @return a string that contains all the data from this data-structure.
-	 *         This string can be used to transmit all data across
-	 *         layers/network and can be de-serialized back to this data
-	 *         structure
-	 */
-	public String serialize();
-
-	/**
 	 * load from a JSON node with no validation. To be called when loading from
 	 * a dependable source
 	 * 
 	 * @param json
 	 */
 	public void load(ObjectNode json);
-
-	/**
-	 * load keys from a map. input is suspect.
-	 * 
-	 * @param values
-	 *            non-null
-	 * @param errors
-	 *            non-null to which any validation errors are added
-	 */
-	public void loadKeys(Map<String, String> values, List<Message> errors);
 
 	/**
 	 * load keys from a JSON. input is suspect.
@@ -195,14 +131,16 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 * @return value of the field if it long. 0 index is invalid or the value is not integral.
+	 * @return value of the field if it long. 0 index is invalid or the value is
+	 *         not integral.
 	 */
 	public long getLongValue(int fieldIndex);
 
 	/**
 	 * 
 	 * @param fieldIndex
-	 * @return value of the field if it decimal. 0 index is invalid or the value is not double/decimal.
+	 * @return value of the field if it decimal. 0 index is invalid or the value
+	 *         is not double/decimal.
 	 */
 	public double getDecimalValue(int fieldIndex);
 
@@ -215,9 +153,12 @@ public interface IFormData {
 	public LocalDate getDateValue(int fieldIndex);
 
 	/**
-	 * Note that this is NOT LocalDateTime. It is instant. We do not deal with localDateTime as of now.
+	 * Note that this is NOT LocalDateTime. It is instant. We do not deal with
+	 * localDateTime as of now.
+	 * 
 	 * @param fieldIndex
-	 * @return value of the field as instant of time. null if the field is not an instant.
+	 * @return value of the field as instant of time. null if the field is not
+	 *         an instant.
 	 *         field, or it has null value
 	 */
 	public Instant getTimestamp(int fieldIndex);
@@ -233,10 +174,12 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 *            value of the right type.
-	 * @return true if value was indeed set. false if the field is not defined, or
+	 * @return true if value was indeed set. false if the field is not defined,
+	 *         or
 	 *         the type of object was not right for the field
 	 */
 	public boolean setObject(int fieldIndex, Object value);
@@ -244,7 +187,8 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of String type. false otherwise, and
@@ -255,7 +199,8 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of Date type. false otherwise, and
@@ -266,10 +211,12 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 * 
-	 * @return true if field exists, and is of Instant type. false otherwise, and
+	 * @return true if field exists, and is of Instant type. false otherwise,
+	 *         and
 	 *         the value is not set
 	 */
 	public boolean setTimestamp(int fieldIndex, Instant value);
@@ -277,7 +224,8 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of boolean type. false otherwise,
@@ -288,7 +236,8 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of integer type. false otherwise,
@@ -299,7 +248,8 @@ public interface IFormData {
 	/**
 	 * 
 	 * @param fieldIndex
-	 *            index of the field. refer to getFieldIndex to get the index by name
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of double type. false otherwise,
@@ -341,4 +291,37 @@ public interface IFormData {
 	 * @throws SQLException
 	 */
 	public boolean deleteFromDb() throws SQLException;
+
+	/**
+	 * @return get user id field, if one exists. null otherwise
+	 */
+	String getUserId();
+
+	/**
+	 * @param user
+	 * @return is this user the owner of this form? If this form has no concept
+	 *         of an owner, then this method returns true for any/all users.
+	 */
+	boolean isOwner(LoggedInUser user);
+
+	/**
+	 * @return field values
+	 */
+	Object[] getFieldValues();
+
+	/**
+	 * 
+	 * @return child data, or null if this form data has no child forms
+	 */
+	FormData[][] getChildData();
+
+	/**
+	 * @param user
+	 */
+	void setOwner(LoggedInUser user);
+
+	/**
+	 * @return form for which data is carried
+	 */
+	Form getForm();
 }
