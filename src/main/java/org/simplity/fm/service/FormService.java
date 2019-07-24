@@ -28,12 +28,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.simplity.fm.Config;
 import org.simplity.fm.Forms;
 import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.form.HeaderForm;
-import org.simplity.fm.form.IHederData;
+import org.simplity.fm.form.HeaderData;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.http.Http;
 import org.simplity.fm.http.LoggedInUser;
@@ -70,11 +70,12 @@ public class FormService implements IService{
 	@Override
 	public ServiceResult serve(LoggedInUser loggedinUser, ObjectNode payload, Writer writer)
 			throws Exception {
-		HeaderForm headerForm = Forms.getHeaderForm();
-		if (headerForm == null) {
+		HeaderData headerData = Config.getConfig().newHeaderData();
+		if(headerData == null) {
+			logger.error("Header Form is not configured. FormService can not operate.");
 			return this.failed(IService.MSG_INTERNAL_ERROR);
 		}
-
+		
 		JsonNode node = payload.get(Http.FORM_HEADER_TAG);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
 			logger.error("Payload has to have a header object named {} ", Http.FORM_HEADER_TAG);
@@ -83,7 +84,6 @@ public class FormService implements IService{
 
 		List<Message> msgs = new ArrayList<>();
 
-		IHederData headerData = headerForm.newHeaderData();
 		headerData.validateAndLoad((ObjectNode) node, false, msgs);
 		if(msgs.size() > 0) {
 			logger.error("Header data is invalid ");

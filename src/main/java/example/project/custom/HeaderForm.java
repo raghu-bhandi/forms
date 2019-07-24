@@ -20,42 +20,22 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.form;
+package example.project.custom;
+
+import org.simplity.fm.form.HeaderIndexes;
+
+import example.project.gen.form.Form1;
 
 /**
  * @author simplity.org
  *
  */
-public interface IHederData extends IFormData{
-
+public class HeaderForm extends org.simplity.fm.form.HeaderForm {
 	/**
 	 * 
-	 * @return name of the form this header is meant for
 	 */
-	public String getFormName();
-	
-	/**
-	 * 
-	 * @return serialized form data
-	 */
-	public String getFormData();
-	
-	/**
-	 * 
-	 * @return requested operation on this form
-	 */
-	
-	public FormOperation getFormOperation();
-	
-	/**
-	 * 
-	 * @param serializedData
-	 */
-	public void setFormData(String serializedData);
-	
-	/**
-	 * 
-	 * @param value
-	 */
-	public void setIsSubmitted(boolean value);
+	public HeaderForm() {
+		this.form = new Form1();
+		this.indexes = new HeaderIndexes(Form1.aadhaar, Form1.aadhaar, Form1.aadhaar, Form1.aadhaar);
+	}
 }

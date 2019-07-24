@@ -25,6 +25,8 @@ package org.simplity.fm;
 import java.io.InputStream;
 import java.util.Properties;
 
+import org.simplity.fm.form.IHeaderForm;
+import org.simplity.fm.form.HeaderData;
 import org.simplity.fm.rdb.RdbDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +50,8 @@ public class Config {
 	private static final String VAL3 = "c:/fm/xls/";
 	private static final String NAME4 = "customCodePackage";
 	private static final String VAL4 = "example.project.custom";
+	private static final String NAME5 = "headerFormClassName";
+	private static final String VAL5 = "HeaderForm";
 	private static final String DATA_SOURCE = "dataSourceJndiName";
 	private static final String CON_STRING = "dbConnectoinString";
 	private static final String DRIVER_NAME = "DbDriverClassName";
@@ -83,6 +87,12 @@ public class Config {
 		config.generatedSourceRoot = getProperty(p, NAME2, VAL2, true);
 		config.xlsRootFolder = getProperty(p, NAME3, VAL3, true);
 		config.customCodePackage = getProperty(p, NAME4, VAL4, false);
+		String hdr = getProperty(p, NAME5, VAL5, false);
+		try {
+			config.headerForm = (IHeaderForm)Class.forName(config.customCodePackage + hdr).newInstance();
+		}catch(Exception e) {
+			logger.error("Unable to set formHeader using class name {} and package {}. Form service will not work.", config.customCodePackage, hdr);
+		}
 		
 		setupDb(p);
 		return config;
@@ -110,7 +120,8 @@ public class Config {
 
 		String driver = p.getProperty(DRIVER_NAME);
 		if (driver == null || driver.isEmpty()) {
-			logger.error("{} specified for db conenction, but {} is not set. JDBC driver cannot be initialized");
+			logger.error("{} specified for db conenction, but {} is not set. JDBC driver cannot be initialized",
+					CON_STRING, DRIVER_NAME);
 			return;
 		}
 
@@ -128,10 +139,10 @@ public class Config {
 		String val = p.getProperty(name);
 		if (val == null) {
 			if (def == null) {
-				logger.error("no value for property {} defined.");
+				logger.error("no value for property {} defined.", name);
 				return null;
 			}
-			logger.error("no value for property {} defined. A Defualt of {} assumed");
+			logger.error("no value for property {} defined. A Defualt of {} assumed", name, def);
 			return def;
 		}
 		if (isFolder) {
@@ -152,6 +163,7 @@ public class Config {
 	private String generatedSourceRoot;
 	private String xlsRootFolder;
 	private String customCodePackage;
+	private IHeaderForm headerForm;
 
 	/**
 	 * @return package name with trailing that all generated classes belong to.
@@ -194,5 +206,16 @@ public class Config {
 	 */
 	public String getDataTypesClassName() {
 		return "DefinedDataTypes";
+	}
+
+	/**
+	 * 
+	 * @return new instance of <code>IHeaderData</code> or null if it is not configured
+	 */
+	public HeaderData newHeaderData() {
+		if (this.headerForm == null) {
+			return null;
+		}
+		return this.headerForm.newHeaderData();
 	}
 }

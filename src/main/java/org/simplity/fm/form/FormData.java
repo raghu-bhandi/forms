@@ -57,17 +57,23 @@ public class FormData implements IFormData {
 	 * data structure describes the template for which this object provides
 	 * actual data
 	 */
-	private final Form form;
+	protected final Form form;
 	/**
 	 * field values. null if this template has no fields
 	 */
-	private final Object[] fieldValues;
+	protected final Object[] fieldValues;
 	/**
 	 * data for child forms. null if this form has no children
 	 */
-	private final FormData[][] childData;
+	protected final FormData[][] childData;
 
-	FormData(Form form, Object[] fieldValues, FormData[][] childData) {
+	/**
+	 * 
+	 * @param form
+	 * @param fieldValues
+	 * @param childData
+	 */
+	public FormData(Form form, Object[] fieldValues, FormData[][] childData) {
 		this.form = form;
 		if(form.fields == null) {
 			this.fieldValues = null;

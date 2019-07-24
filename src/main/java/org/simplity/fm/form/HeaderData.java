@@ -20,45 +20,72 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm;
+package org.simplity.fm.form;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.simplity.fm.form.Form;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * static class that can locate a design-time
- * 
  * @author simplity.org
  *
  */
-public final class Forms {
-	private static final Logger logger = LoggerFactory.getLogger(Forms.class);
-	private static final Map<String, Form> allForms = new HashMap<>();
+public class HeaderData extends FormData {
+	private static final Logger logger = LoggerFactory.getLogger(FormData.class);
+	private HeaderIndexes indexes;
+	/**
+	 * @param form
+	 * @param indexes 
+	 */
+	public HeaderData(Form form, HeaderIndexes indexes) {
+		super(form, null, null);
+		this.indexes = indexes;
+	}
+
 
 	/**
 	 * 
-	 * @param formName
-	 * @return form , or null if there is such form
+	 * @return name of the form this header is meant for
 	 */
-	public static Form getForm(String formName) {
-		Form form = allForms.get(formName);
-		if (form != null) {
-			return form;
-		}
+	public String getFormName() {
+		return (String) this.fieldValues[this.indexes.formNameIndex];
+	}
+
+	/**
+	 * 
+	 * @return serialized form data
+	 */
+	public String getFormData() {
+		return (String) this.fieldValues[this.indexes.formDataIndex];
+	}
+
+	/**
+	 * 
+	 * @return requested operation on this form
+	 */
+
+	public FormOperation getFormOperation() {
+		String oper = (String) this.fieldValues[this.indexes.formOperationIndex];
 		try {
-			String cls = Config.getConfig().getGeneratedPackageName() + ".form."
-					+ formName.substring(0, 1).toUpperCase() + formName.substring(1);
-			form = (Form) Class.forName(cls).newInstance();
-			allForms.put(formName, form);
-			return form;
+			return FormOperation.valueOf(oper.toUpperCase());
 		} catch (Exception e) {
-			e.printStackTrace();
-			logger.error("Form {} could not be located and used as a class for form. Error {}", formName, e.getMessage());
+			logger.error("Header data has an invalid formOperaiton of {}", oper);
 			return null;
 		}
+	}
+
+	/**
+	 * 
+	 * @param serializedData
+	 */
+	public void setFormData(String serializedData) {
+		this.fieldValues[this.indexes.formDataIndex] = serializedData;
+	}
+
+	/**
+	 * 
+	 * @param value
+	 */
+	public void setIsSubmitted(boolean value) {
+		this.fieldValues[this.indexes.isSubmittedIndex] = value;
 	}
 }

@@ -26,12 +26,14 @@ package org.simplity.fm.form;
  * @author simplity.org
  *
  */
-public abstract class HeaderForm extends Form{
+public class HeaderForm{
+	protected Form form;
+	protected HeaderIndexes indexes;
 	
-
 	/**
-	 * @return new header data instance
+	 * @return the formNameIndex
 	 */
-	abstract public IHederData newHeaderData();
-
+	public HeaderData newHeaderData() {
+		return new HeaderData(this.form, this.indexes);
+	}
 }
