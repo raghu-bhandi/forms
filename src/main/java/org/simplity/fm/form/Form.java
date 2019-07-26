@@ -21,17 +21,12 @@
  */
 package org.simplity.fm.form;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.simplity.fm.rdb.DbParam;
-import org.simplity.fm.rdb.IDbClient;
-import org.simplity.fm.rdb.RdbDriver;
-import org.simplity.fm.rdb.RdbDriver.DbHandle;
 import org.simplity.fm.service.IFormProcessor;
-import org.simplity.fm.service.IService;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,12 +158,6 @@ public class Form {
 	 */
 	protected DbMetaData dbMetaData;
 
-	protected void setUserId(String name) {
-		if (name != null) {
-			this.userIdFieldIdx = this.fieldMap.get(name).getIndex();
-		}
-	}
-
 	/**
 	 * MUST BE CALLED after setting all protected fields
 	 */
@@ -199,17 +188,23 @@ public class Form {
 		}
 
 		if (this.userIdFieldName != null) {
-			this.userIdFieldIdx = this.getField(this.userIdFieldName).getIndex();
+			Field field = this.fieldMap.get(this.userIdFieldName);
+			if (field == null) {
+				logger.error("userIdField {} specified, but not defined", this.userIdFieldName);
+			} else {
+				this.userIdFieldIdx = field.getIndex();
+			}
 		}
 		/*
 		 * db meta for child forms?
 		 */
-		if(this.dbMetaData != null && this.dbMetaData.childMeta != null) {
-		this.initializeDbMeta();
+		if (this.dbMetaData != null && this.dbMetaData.childMeta != null) {
+			this.initializeDbMeta();
 		}
 	}
 
 	private static final String WH = " WHERE ";
+
 	/**
 	 * 
 	 */
@@ -217,8 +212,8 @@ public class Form {
 		boolean foundOne = false;
 		StringBuilder sbf = new StringBuilder(WH);
 		for (int i = 0; i < this.childForms.length; i++) {
-			ChildDbMetaData cm  = this.dbMetaData.childMeta[i];
-			if(cm == null) {
+			ChildDbMetaData cm = this.dbMetaData.childMeta[i];
+			if (cm == null) {
 				continue;
 			}
 			foundOne = true;
@@ -227,10 +222,12 @@ public class Form {
 			 */
 			sbf.setLength(WH.length());
 			Form form = this.childForms[i].form;
-			for(String f: cm.childLinkNames) {
+			for (String f : cm.childLinkNames) {
 				Field field = form.getField(f);
-				if(field == null) {
-					logger.error("Child link field {} is specified in parent form, but is not defiined as a field in the child form {}", f, form.getFormId());
+				if (field == null) {
+					logger.error(
+							"Child link field {} is specified in parent form, but is not defiined as a field in the child form {}",
+							f, form.getFormId());
 					foundOne = false;
 					break;
 				}
@@ -240,10 +237,10 @@ public class Form {
 			 * remove the last comma..
 			 */
 			sbf.setLength(sbf.length() - 2);
-			cm.whereClause  = sbf.toString();
+			cm.whereClause = sbf.toString();
 		}
-		
-		if(!foundOne) {
+
+		if (!foundOne) {
 			this.dbMetaData.childMeta = null;
 		}
 	}
@@ -342,10 +339,18 @@ public class Form {
 
 	/**
 	 * 
-	 * @return A form that can take field/table values
+	 * @return db meta data for this form
 	 */
-	public FormData newFD() {
-		return new FormData(this, null, null);
+	public DbMetaData getDbMetaData() {
+		return this.dbMetaData;
+	}
+
+	/**
+	 * 
+	 * @return prepared statement to delete this form data from the DB
+	 */
+	public String getDeleeSql() {
+		return this.dbMetaData.deleteClause + this.dbMetaData.whereClause;
 	}
 
 	protected DbParam[] getParams(int[] indexes) {
@@ -357,171 +362,31 @@ public class Form {
 		return params;
 	}
 
-	protected ChildDbMetaData newChildDbMeta(String[] names, int[]indexes) {
+	/**
+	 * 
+	 * @param rows
+	 * @return child data for this form based on rows of data
+	 */
+	public FormData[] createChildData(Object[][] rows) {
+		FormData[] result = new FormData[rows.length];
+		for (int i = 0; i < result.length; i++) {
+			result[i] = new FormData(this, rows[i], null);
+		}
+		return result;
+	}
+
+	protected ChildDbMetaData newChildDbMeta(String[] names, int[] indexes) {
 		ChildDbMetaData c = new ChildDbMetaData();
 		c.whereParams = this.getParams(indexes);
 		c.childLinkNames = names;
 		return c;
 	}
-	
-	/*
-	 * organizing db related data and functions into a static class
-	 */
-	protected static class DbMetaData {
-		public String whereClause;
-		public DbParam[] whereParams;
-		public String selectClause;
-		public DbParam[] selectParams;
-		public String insertClause;
-		public DbParam[] insertParams;
-		public String updateClause;
-		public DbParam[] updateParams;
-		public String deleteClause;
-		public boolean keyIsGenerated;
-		public ChildDbMetaData[] childMeta;
-
-		public DbMetaData() {
-			//
-		}
-		public boolean fetch(FormData fd) throws SQLException {
-			if (this.selectClause == null) {
-				return false;
-			}
-			Object[] data = fd.getFieldValues();
-			FormData[][] childData = fd.getChildData();
-			ChildForm[] childForms = fd.getForm().getChildForms();
-			DbMetaData meta = DbMetaData.this;
-			RdbDriver.getDriver().transact(new IDbClient() {
-
-				@Override
-				public boolean transact(DbHandle handle) throws SQLException {
-					handle.readForm(meta.selectClause + meta.whereClause, meta.whereParams, meta.selectParams, data);
-					if (meta.childMeta != null) {
-						int idx = 0;
-						for (ChildDbMetaData cm : meta.childMeta) {
-							if (cm != null) {
-								DbMetaData childDetils = cm.childMeta;
-								Object[][] rows = handle.readChildRows(childDetils.selectClause + cm.whereClause,
-										cm.whereParams, childDetils.selectParams, data, cm.nbrChildFields);
-								childData[idx] = createChildData(rows, childForms[idx].form);
-							}
-							idx++;
-						}
-					}
-					return true;
-				}
-			}, true);
-			return true;
-		}
-
-		protected static FormData[] createChildData(Object[][] rows, Form form) {
-			FormData[] result = new FormData[rows.length];
-			for (int i = 0; i < result.length; i++) {
-				result[i] = new FormData(form, rows[i], null);
-			}
-			return result;
-		}
-
-		public boolean update(FormData fd) throws SQLException {
-			if (this.updateClause == null) {
-				return false;
-			}
-			Object[] data = fd.getFieldValues();
-			FormData[][] childData = fd.getChildData();
-			DbMetaData meta = DbMetaData.this;
-			RdbDriver.getDriver().transact(new IDbClient() {
-
-				@Override
-				public boolean transact(DbHandle handle) throws SQLException {
-					handle.writeForm(meta.updateClause + meta.whereClause, meta.updateParams, data, null);
-					if (meta.childMeta != null) {
-						DbMetaData.this.writeChildren(handle, meta, data, childData);
-					}
-					return true;
-				}
-			}, false);
-			return true;
-		}
-
-		protected void writeChildren(DbHandle handle, DbMetaData meta, Object[] data, FormData[][] childData)
-				throws SQLException {
-			int idx = 0;
-			for (ChildDbMetaData cm : meta.childMeta) {
-				if (cm != null) {
-					DbMetaData childDetils = cm.childMeta;
-					/*
-					 * delete child rows
-					 */
-					handle.writeForm(childDetils.deleteClause + cm.whereClause, cm.whereParams, data, null);
-					/*
-					 * now insert them
-					 */
-					if (childData != null) {
-						handle.formBatch(childDetils.insertClause, childDetils.insertParams, childData[idx]);
-					}
-				}
-				idx++;
-			}
-		}
-
-		public boolean insert(FormData fd) throws SQLException {
-			if (this.insertClause == null) {
-				return false;
-			}
-			DbMetaData meta = DbMetaData.this;
-			Object[] data = fd.getFieldValues();
-			FormData[][] childData = fd.getChildData();
-			final long[] generatedKeys = this.keyIsGenerated ? new long[1] : null;
-			
-			RdbDriver.getDriver().transact(new IDbClient() {
-
-				@Override
-				public boolean transact(DbHandle handle) throws SQLException {
-					handle.writeForm(meta.insertClause, meta.insertParams, data, generatedKeys);
-					if (meta.childMeta != null) {
-						DbMetaData.this.writeChildren(handle, meta, data, childData);
-					}
-					return true;
-				}
-			}, false);
-			return true;
-		}
-
-		public boolean delete(FormData fd) throws SQLException {
-			if (this.deleteClause == null) {
-				return false;
-			}
-			Object[] data = fd.getFieldValues();
-			DbMetaData meta = DbMetaData.this;
-			RdbDriver.getDriver().transact(new IDbClient() {
-
-				@Override
-				public boolean transact(DbHandle handle) throws SQLException {
-					handle.writeForm(meta.deleteClause + meta.whereClause, meta.whereParams, data, null);
-					if (meta.childMeta != null) {
-						DbMetaData.this.writeChildren(handle, meta, data, null);
-					}
-					return true;
-				}
-			}, false);
-			return true;
-		}
-	}
-
-	protected static class ChildDbMetaData {
-		protected String[] childLinkNames;
-		protected String whereClause;
-		protected DbParam[] whereParams;
-		protected DbMetaData childMeta;
-		protected int nbrChildFields;
-	}
 
 	/**
-	 * @param oper
-	 * @return service for this operation on this form
+	 * @return a data structure
 	 */
-	public IService getService(String oper) {
+	public FormData newFormData() {
 		// TODO Auto-generated method stub
-		return null;
+		return new FormData(this, null, null);
 	}
 }

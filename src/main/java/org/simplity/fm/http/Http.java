@@ -58,7 +58,7 @@ public class Http {
 	 * values for the headers
 	 */
 	public static final String[] HDR_TEXTS = { "POST, GET, OPTIONS", "Authorization, content-type, " + SERVICE_HEADER,
-			"1728000", "Keep-Alive", "no-cache, no-store, must-revalidate", "0" };
+			"172800", "Keep-Alive", "no-cache, no-store, must-revalidate", "0" };
 	/**
 	 * http status
 	 */

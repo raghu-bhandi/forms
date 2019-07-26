@@ -4,6 +4,8 @@ import org.simplity.fm.form.Field;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.form.ChildForm;
+import org.simplity.fm.form.DbMetaData;
+import org.simplity.fm.form.ChildDbMetaData;
 import org.simplity.fm.validn.FromToValidation;
 import org.simplity.fm.validn.ExclusiveValidation;
 import org.simplity.fm.validn.InclusiveValidation;
@@ -12,11 +14,11 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 2019-07-16T17:16:38.801 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form1.xlsx
+ * <br /> generated at 2019-07-26T00:29:39.856 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx
  */ 
 public class Form1 extends Form {
-	public static final int customerId = 0;
-	public static final int headerId = 1;
+	public static final int headerId = 0;
+	public static final int customerId = 1;
 	public static final int financialYear = 2;
 	public static final int boolField = 3;
 	public static final int fromDate = 4;
@@ -31,17 +33,17 @@ public class Form1 extends Form {
 	public static final int aadhaar = 13;
 	public static final int pan = 14;
 	public static final int orderLines = 0;
-	private static final String WHERE = " WHERE cust_id=? AND financial_year=?";
-	private static final int[] WHERE_IDX = {0, 2};
-	private static final String SELECT = "SELECT cust_id, header_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_Specific_field, aadhaar, pan FROM test_table";
+	private static final String WHERE = " WHERE header_id=?";
+	private static final int[] WHERE_IDX = {0};
+	private static final String SELECT = "SELECT header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan FROM header";
 	private static final int[] SELECT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
-	private static final  String INSERT = "INSERT INTO test_table(cust_id, header_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_Specific_field, aadhaar, pan) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final  String INSERT = "INSERT INTO header(header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	private static final int[] INSERT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
-	private static final  String UPDATE = "UPDATE test_table SET header_id=?, bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?, ka_Specific_field=?, aadhaar=?, pan=?";
-	private static final  int[] UPDATE_IDX = {1, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 0, 2};
-	private static final String DELETE = "DELETE FROM test_table";
+	private static final  String UPDATE = "UPDATE header SET customer_id=?, financial_year=?, bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?, ka_specific_field=?, aadhaar=?, pan=?";
+	private static final  int[] UPDATE_IDX = {1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 0};
+	private static final String DELETE = "DELETE FROM header";
 
-	private static final String[] FORM2_LINK = {"customerId"};
+	private static final String[] FORM2_LINK = {"headerId"};
 	private static final int[] FORM2_IDX = {0};
 
 	private void setDbMeta(){
@@ -74,9 +76,9 @@ public class Form1 extends Form {
 			this.formProcessors[1] = new example.project.custom.MyPostGet();
 
 		Field[] flds = {
-			new Field("customerId", 0, DefinedDataTypes.customerId, null, null, true, false, false, true, null, "cust_id"), 
-			new Field("headerId", 1, DefinedDataTypes.id, null, null, true, false, false, false, null, "header_id"), 
-			new Field("financialYear", 2, DefinedDataTypes.fy, null, null, true, true, false, true, null, "financial_year"), 
+			new Field("headerId", 0, DefinedDataTypes.id, null, null, true, false, false, true, null, "header_id"), 
+			new Field("customerId", 1, DefinedDataTypes.customerId, null, null, true, false, false, false, null, "customer_id"), 
+			new Field("financialYear", 2, DefinedDataTypes.fy, null, null, true, true, false, false, null, "financial_year"), 
 			new Field("boolField", 3, DefinedDataTypes.trueFalse, null, null, false, true, false, false, null, "bool_field"), 
 			new Field("fromDate", 4, DefinedDataTypes.futureDate, null, null, false, true, false, false, null, "from_date"), 
 			new Field("toDate", 5, DefinedDataTypes.futureDate, null, null, false, true, false, false, null, "to_date"), 
@@ -86,7 +88,7 @@ public class Form1 extends Form {
 			new Field("fyStartDate", 9, DefinedDataTypes.date, null, null, false, false, false, false, null, null), 
 			new Field("state", 10, DefinedDataTypes.state, null, null, true, true, false, false, "states", "state"), 
 			new Field("district", 11, DefinedDataTypes.district, null, null, true, true, false, false, null, "district"), 
-			new Field("kaSpecificField", 12, DefinedDataTypes.text, null, null, false, true, false, false, null, "ka_Specific_field"), 
+			new Field("kaSpecificField", 12, DefinedDataTypes.text, null, null, false, true, false, false, null, "ka_specific_field"), 
 			new Field("aadhaar", 13, DefinedDataTypes.aadhaar, null, null, false, true, false, false, null, "aadhaar"), 
 			new Field("pan", 14, DefinedDataTypes.pan, null, null, false, true, false, false, null, "pan")
 		};

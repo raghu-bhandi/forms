@@ -22,6 +22,8 @@
 
 package org.simplity.fm.form;
 
+import java.sql.SQLException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,10 +84,22 @@ public class HeaderData extends FormData {
 	}
 
 	/**
-	 * 
-	 * @param value
+	 * save this form..
+	 * @throws SQLException 
 	 */
-	public void setIsSubmitted(boolean value) {
-		this.fieldValues[this.indexes.isSubmittedIndex] = value;
+	public void save() throws SQLException {
+		if(this.updateInDb() == false) {
+			this.insertToDb();
+		}
+	}
+
+	/**
+	 * submit this form..
+	 * @throws SQLException 
+	 */
+	public void submit() throws SQLException {
+		if(this.updateInDb() == false) {
+			this.insertToDb();
+		}
 	}
 }

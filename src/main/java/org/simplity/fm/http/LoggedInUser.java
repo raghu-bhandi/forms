@@ -50,7 +50,12 @@ public class LoggedInUser {
 	private final String userToken;
 	// TODO: add other attributes that are needed for service execution
 
-	private LoggedInUser(String id, String token) {
+	/**
+	 * 
+	 * @param id
+	 * @param token
+	 */
+	public LoggedInUser(String id, String token) {
 		this.userId = id;
 		this.userToken = token;
 	}

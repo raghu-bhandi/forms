@@ -46,6 +46,6 @@ public interface IDbClient {
 	 *         auto-commit is used
 	 * @throws SQLException 
 	 */
-	public boolean transact(RdbDriver.DbHandle handle) throws SQLException;
+	public boolean transact(DbHandle handle) throws SQLException;
 
 }

@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.simplity.fm.Forms;
 import org.simplity.fm.form.Form;
+import org.simplity.fm.form.FormOperation;
 
 /**
  * Place holder the serves as a source for service instances
@@ -20,7 +21,7 @@ public class Services {
 	 * name of the standard service that is used for managing all requested
 	 * related to forms
 	 */
-	public static final String FORM_SERVICE = "formService";
+	public static final String MANAGE_FORM = "manageForm";
 	private static final Services instance = new Services();
 
 	/**
@@ -45,12 +46,13 @@ public class Services {
 			return null;
 		}
 
-		String oper = serviceName.substring(0, idx);
-		service = fs.getService(oper);
-		if (service != null) {
-			instance.services.put(serviceName, service);
+		FormOperation opern = null;
+		try {
+			opern = FormOperation.valueOf(serviceName.substring(0, idx).toUpperCase());
+			return FormIo.getInstance(opern, serviceName.substring(idx + 1));
+		} catch (Exception e) {
+			return null;
 		}
-		return service;
 	}
 
 	/**
@@ -68,6 +70,6 @@ public class Services {
 	private Map<String, IService> services = new HashMap<>();
 
 	private Services() {
-		this.services.put(FORM_SERVICE, new FormService());
+		this.services.put(MANAGE_FORM, ManageForm.getInstance());
 	}
 }

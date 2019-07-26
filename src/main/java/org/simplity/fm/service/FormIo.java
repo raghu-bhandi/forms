@@ -20,51 +20,49 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.io;
+package org.simplity.fm.service;
 
-import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
-import java.util.function.Consumer;
+import java.util.Map;
+
+import org.simplity.fm.form.FormOperation;
+import org.simplity.fm.http.LoggedInUser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
+ * service for a form based I/O operation from DB
+ * 
  * @author simplity.org
  *
  */
-public interface IFormStorage {
+public class FormIo implements IService{
+	private static final Logger logger = LoggerFactory.getLogger(FormIo.class);
 
 	/**
-	 * retrieve data and provide it to the consumer
 	 * 
-	 * @param id
-	 *            non-null unique id of the document
-	 * @param consumer
-	 *            to which reader is provided for reading the content
-	 * @return true if all ok. false if file is not located
-	 * @throws IOException
-	 *             in case of any error in persistence process
+	 * @param opern 
+	 * @param formName 
+	 * @return non-null instance
 	 */
-	public abstract boolean retrieve(String id, Consumer<Reader> consumer) throws IOException;
+	public static FormIo getInstance(FormOperation opern, String formName) {
+		
+		return new FormIo(opern, formName);
+	}
 
-	/**
-	 * trash the document
-	 * 
-	 * @param id
-	 *            unique id of the document
-	 * @throws IOException
-	 *             in case of any error in persistence process
-	 */
-	public abstract void trash(String id) throws IOException;
+	private FormIo(FormOperation opern, String formName) {
+		//
+	}
 
-	/**
-	 * store the data from the
-	 * 
-	 * @param id
-	 *            unique id of the document to be stored
-	 * @param consumer
-	 *            to which a writer is supplied to write the data to
-	 * @throws IOException
-	 *             in case of any error in persistence process
-	 */
-	public abstract void store(String id, Consumer<Writer> consumer) throws IOException;
+	@Override
+	public ServiceResult serve(LoggedInUser loggedinUser, ObjectNode payload, Writer writer)
+			throws Exception {
+		return null;
+	}
+	@Override
+	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception {
+		throw new Exception("Form service cannot be invoked with parameters. It requires JSON as request payload");
+	}
 }

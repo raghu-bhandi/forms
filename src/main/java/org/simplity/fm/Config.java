@@ -25,16 +25,14 @@ package org.simplity.fm;
 import java.io.InputStream;
 import java.util.Properties;
 
-import org.simplity.fm.form.IHeaderForm;
 import org.simplity.fm.form.HeaderData;
+import org.simplity.fm.form.HeaderForm;
 import org.simplity.fm.rdb.RdbDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * all parameters used by this app that are loaded from config file
- * TODO: read all these from a properties file. Will read-up best practices as
- * of today and build that functionality
  * 
  * @author simplity.org
  *
@@ -51,7 +49,7 @@ public class Config {
 	private static final String NAME4 = "customCodePackage";
 	private static final String VAL4 = "example.project.custom";
 	private static final String NAME5 = "headerFormClassName";
-	private static final String VAL5 = "HeaderForm";
+	private static final String VAL5 = "CustomHeaderForm";
 	private static final String DATA_SOURCE = "dataSourceJndiName";
 	private static final String CON_STRING = "dbConnectoinString";
 	private static final String DRIVER_NAME = "DbDriverClassName";
@@ -89,9 +87,9 @@ public class Config {
 		config.customCodePackage = getProperty(p, NAME4, VAL4, false);
 		String hdr = getProperty(p, NAME5, VAL5, false);
 		try {
-			config.headerForm = (IHeaderForm)Class.forName(config.customCodePackage + hdr).newInstance();
+			config.headerForm = (HeaderForm)Class.forName(config.customCodePackage + '.' + hdr).newInstance();
 		}catch(Exception e) {
-			logger.error("Unable to set formHeader using class name {} and package {}. Form service will not work.", config.customCodePackage, hdr);
+			logger.error("Unable to set formHeader using class name {} and package {}. Form service will not work. {}", config.customCodePackage, hdr, e.getMessage());
 		}
 		
 		setupDb(p);
@@ -163,7 +161,7 @@ public class Config {
 	private String generatedSourceRoot;
 	private String xlsRootFolder;
 	private String customCodePackage;
-	private IHeaderForm headerForm;
+	private HeaderForm headerForm;
 
 	/**
 	 * @return package name with trailing that all generated classes belong to.

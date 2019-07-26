@@ -59,7 +59,6 @@ class Field {
 	String listName;
 	String listKey;
 	String dbColumnName;
-	boolean isDbKey = false;
 	int index;
 
 	static Field[] fromSheet(Sheet sheet, Field[] commonFields) {
@@ -111,7 +110,7 @@ class Field {
 			return null;
 		}
 		f.label = Util.textValueOf(row.getCell(1));
-		f.label = Util.textValueOf(row.getCell(2));
+		f.altLabel = Util.textValueOf(row.getCell(2));
 		// 3 is description. we are not parsing that.
 		f.placeHolder = Util.textValueOf(row.getCell(4));
 		f.dataType = Util.textValueOf(row.getCell(5));

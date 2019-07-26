@@ -1,16 +1,19 @@
 // tslint:disable: indent
 import { FormData } from './formData';
 import { Message } from './message';
+import { createUrlResolverWithoutPackagePrefix } from '@angular/compiler';
 
 /**
  * manages data persistence. knows how to connect to the server and request services
  * it will be enhanced to manage any future requirement about auto-save, local storage etc..
  */
 export class DataStore {
-	static URL = 'http://localhost:4200/a';
-	static SERVICE = '_s';
-	static MESSAGE: string | number | symbol;
-	static TIMEOUT: number;
+	static URL = 'http://localhost:8080/a';
+	static SERVICE_HEADER = '_s';
+	static AUTH = 'AAA-99-AAA';
+	static YEAR = '2010';
+	static SERVICE_NAME = 'manageForm';
+	static MESSAGE = 'messages';
 
 	formData: FormData;
 
@@ -18,40 +21,23 @@ export class DataStore {
 		this.formData = formData;
 	}
 
-	retrieve() {
-		const data: object = this.formData.extractKeys();
-		console.log('Retrieve request to be invoked with\n' + JSON.stringify(data));
-		// send rquest with these fields as query string.
-		// on return, call form.setAllValues()
+	retrieve(data: object): void {
+		const payload = { header: this.getHeder(this.formData.form.getName(), 'get') }
+		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 
-	save() {
-		const data: object = this.formData.extractAll();
-		console.log('Save request to be invoked with \n' + JSON.stringify(data));
-		// send all values as pay load. on return handle error message/success
+	save(data: object): void {
+		const payload = { header: this.getHeder(this.formData.form.getName(), 'save'), data: data }
+		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 
-	submit() {
-		console.log('Submit called ');
-		const data: object = this.formData.extractAll();
-		console.log('Submit to be invoked with\n' + JSON.stringify(data));
-		// send all values as pay load. on return handle error message/success
+	submit(data: object): void {
+		const payload = { header: this.getHeder(this.formData.form.getName(), 'submit'), data: data }
+		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 
-	private receiveData(data: any) {
-
-		for (const field of this.formData.form.fields) {
-			if (data.hasOwnProperty(field.name)) {
-				this.formData.setValue(field.index, data[field.name]);
-			}
-		}
-		if (this.formData.childData != null) {
-			for (const child of this.formData.form.childForms) {
-				if (data.hasOwnProperty(child.name)) {
-					// this.formData.setValue(field.index, data[field.name]);
-				}
-			}
-		}
+	private receiveData(data: object) {
+		this.formData.setAll(data);
 	}
 	/**
 	 * gets response from server for the service and invokes call-back function
@@ -63,9 +49,21 @@ export class DataStore {
 	 * @param failureFn null if default error handling is expected
 	 */
 	getResponse(serviceName: string, data: any, asPayload: boolean,
-		           successFn?: (data: any, messages: any[]) => void,
-		           failureFn?: (messages: any[]) => void) {
+		successFn?: (data: any, messages: Message[]) => void,
+		failureFn?: (messages: any[]) => void) {
 
+		if (!successFn) {
+			successFn = (data, messages) => {
+				this.receiveData(data);
+			}
+		};
+		if (!failureFn) {
+			failureFn = (messages) => {
+				for (const msg of messages) {
+					console.error(msg.toString());
+				}
+			}
+		};
 		const xhr = new XMLHttpRequest();
 		/*
 		 * attach listners for XHR
@@ -107,28 +105,14 @@ export class DataStore {
 			failureFn([new Message('error', 'timeOut', 'Server did not respond within reaosnable time.')]);
 		};
 
-		let url = DataStore.URL;
-		let method = 'POST';
-		let payload = null;
-		if (asPayload) {
-			payload = JSON.stringify(data);
-			xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
-		} else {
-			method = 'GET';
-			url = this.getUrlWithQry(data);
-		}
-		xhr.setRequestHeader(DataStore.SERVICE, serviceName);
-
+		let url = asPayload ? DataStore.URL : this.getUrlWithQry(data);
 		try {
-			xhr.open(method, url, true);
-			xhr.timeout = DataStore.TIMEOUT;
-			xhr.setRequestHeader('Content-Type',
-				'application/json; charset=utf-8');
-			if (serviceName) {
-				xhr.setRequestHeader(DataStore.SERVICE, serviceName);
-			}
+			xhr.open('POST', url, true);
+			xhr.setRequestHeader(DataStore.SERVICE_HEADER, serviceName);
+			xhr.setRequestHeader('Authorization', DataStore.AUTH);
 			if (asPayload) {
-				xhr.send(data);
+				xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+				xhr.send(JSON.stringify(data));
 			} else {
 				xhr.send();
 			}
@@ -153,15 +137,29 @@ export class DataStore {
 
 	private getUrlWithQry(data: any): string {
 		let url = DataStore.URL;
+		if (!data) {
+			return url;
+		}
 		let con = '?';
 
-		for (const e of Object.entries(data)) {
-			url += con + e[0] + '=' + encodeURIComponent(e[1] as string);
-			con = '&';
+		for (const a in data) {
+			if (data.hasOwnProperty(a)) {
+				url += con + a + '=' + encodeURIComponent(data[a]);
+				con = '&';
+			}
 		}
 		return url;
 	}
 
+	private getHeder(formName: string, operation: string): any {
+		return {
+			operation: operation,
+			formName: formName,
+			customerId: DataStore.AUTH,
+			referenceYear: DataStore.YEAR
+		};
+
+	}
 	public download(data: any, fileName: string) {
 		const json = JSON.stringify(data);
 		const blob = new Blob([json], { type: 'octet/stream' });

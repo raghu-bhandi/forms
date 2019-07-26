@@ -39,22 +39,16 @@ public class HeaderIndexes {
 	 * index for the field that has the form operation
 	 */
 	public final int formOperationIndex;
-	/**
-	 * index for the field that indicates whether the form is submitted or not
-	 */
-	public final int isSubmittedIndex;
 	
 	/**
 	 * create the immutable data structure
 	 * @param formNameIndex
 	 * @param formDataIndex
 	 * @param formOperationIndex
-	 * @param isSubmittedIndex
 	 */
-	public HeaderIndexes(int formNameIndex, int formDataIndex, int formOperationIndex, int isSubmittedIndex) {
+	public HeaderIndexes(int formNameIndex, int formDataIndex, int formOperationIndex) {
 		this.formNameIndex = formNameIndex;
 		this.formDataIndex = formDataIndex;
 		this.formOperationIndex = formOperationIndex;
-		this.isSubmittedIndex = isSubmittedIndex;
 	}
 }

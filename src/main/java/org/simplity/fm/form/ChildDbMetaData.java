@@ -20,25 +20,40 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm;
+package org.simplity.fm.form;
 
-import org.simplity.fm.io.FileSystemStore;
-import org.simplity.fm.io.IFormStorage;
+import org.simplity.fm.rdb.DbParam;
 
 /**
- * temporary class till we decide about the fate of file storage
+ * data structure for meta data for a child form
  * 
  * @author simplity.org
  *
  */
-public class FormStorage {
-	private static final IFormStorage instance = new FileSystemStore();
-
+public class ChildDbMetaData {
 	/**
-	 * 
-	 * @return non-null file storage
+	 * field names from the parent form that form the parent-key for the child
+	 * form
 	 */
-	public static IFormStorage getStore() {
-		return instance;
-	}
+	public String[] childLinkNames;
+	/**
+	 * column names are from the child table, but the values for the parameter
+	 * would come from the parent form
+	 * e.g. where childCol1=? and childCll2=?
+	 */
+	public String whereClause;
+	/**
+	 * db parameters for the where clause
+	 */
+	public DbParam[] whereParams;
+	/**
+	 * db meta data of the child form
+	 */
+	public DbMetaData childMeta;
+	/**
+	 * number of fields in the child form. This is the total of all fields, not
+	 * just the fields that are linked to the DB. This is used to create an
+	 * array of values for the form data
+	 */
+	public int nbrChildFields;
 }

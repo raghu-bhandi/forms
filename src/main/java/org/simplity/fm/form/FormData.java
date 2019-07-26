@@ -33,8 +33,8 @@ import java.util.List;
 import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
-import org.simplity.fm.form.Form.DbMetaData;
 import org.simplity.fm.http.LoggedInUser;
+import org.simplity.fm.rdb.RdbDriver;
 import org.simplity.fm.service.IService;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
@@ -75,19 +75,19 @@ public class FormData implements IFormData {
 	 */
 	public FormData(Form form, Object[] fieldValues, FormData[][] childData) {
 		this.form = form;
-		if(form.fields == null) {
+		if (form.fields == null) {
 			this.fieldValues = null;
-		}else if(fieldValues == null) {
+		} else if (fieldValues == null) {
 			this.fieldValues = new Object[form.fields.length];
-		}else {
+		} else {
 			this.fieldValues = fieldValues;
 		}
-		
+
 		if (form.childForms == null) {
 			this.childData = null;
-		}else if (childData == null) {
+		} else if (childData == null) {
 			this.childData = new FormData[form.childForms.length][];
-		}else {
+		} else {
 			this.childData = childData;
 		}
 	}
@@ -339,81 +339,83 @@ public class FormData implements IFormData {
 	@Override
 	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, List<Message> errors) {
 		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, errors);
+
+		ChildForm[] children = this.form.getChildForms();
+		if (children != null) {
+			for (int i = 0; i < children.length; i++) {
+				this.childData[i] = this.validateChild(children[i], json, allFieldsAreOptional, errors);
+			}
+		}
 		if (!allFieldsAreOptional) {
 			this.validateForm(errors);
 		}
+	}
 
-		ChildForm[] children = this.form.getChildForms();
-		if (children == null) {
-			return;
+	private FormData[] validateChild(ChildForm childForm, ObjectNode json, boolean allFieldsAreOptional,
+			List<Message> errors) {
+		String fieldName = childForm.fieldName;
+		JsonNode child = json.get(fieldName);
+		if (child == null) {
+			if (errors != null && childForm.minRows > 0) {
+				errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+			}
+			return null;
 		}
 
-		for (int i = 0; i < children.length; i++) {
-			ChildForm childForm = children[i];
-			String fieldName = childForm.fieldName;
-			JsonNode child = json.get(fieldName);
-			if (child == null) {
-				if (errors != null && childForm.minRows > 0) {
-					errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
-				}
-				continue;
-			}
-
-			JsonNodeType nt = child.getNodeType();
-			if (childForm.isTabular == false) {
-				if (nt != JsonNodeType.OBJECT) {
-					if (errors != null) {
-						logger.error(
-								"Form {} has a child form named {} and hence an object is expeted. But {} is received as data",
-								this.form.getFormId(), fieldName, nt);
-						continue;
-					}
-				}
-				FormData fd = this.form.newFD();
-				this.childData[i] = new FormData[1];
-				this.childData[i][0] = fd;
-				fd.validateAndLoad((ObjectNode) child, allFieldsAreOptional, errors);
-				continue;
-			}
-
-			ArrayNode node = null;
-			int n = 0;
-			if (nt == JsonNodeType.ARRAY) {
-				node = (ArrayNode) child;
-				n = node.size();
-				if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
-					node = null;
-				}
-			}
-
-			if (node == null) {
+		JsonNodeType nt = child.getNodeType();
+		if (childForm.isTabular == false) {
+			if (nt != JsonNodeType.OBJECT) {
 				if (errors != null) {
-					errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+					logger.error(
+							"Form {} has a child form named {} and hence an object is expeted. But {} is received as data",
+							this.form.getFormId(), fieldName, nt);
+					return null;
 				}
-				continue;
 			}
+			FormData fd = this.form.newFormData();
+			fd.validateAndLoad((ObjectNode) child, allFieldsAreOptional, errors);
+			FormData[] result = { fd };
+			return result;
+		}
 
-			if (n == 0) {
-				continue;
-			}
-			List<FormData> fds = new ArrayList<>();
-			for (int j = 0; j < n; j++) {
-				JsonNode col = node.get(j);
-
-				if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
-					if (errors != null) {
-						errors.add(Message.newError(IService.MSG_INVALID_DATA));
-					}
-					continue;
-				}
-				FormData fd = this.form.newFD();
-				fds.add(fd);
-				fd.validateAndLoad(json, allFieldsAreOptional, errors);
-			}
-			if (fds.size() > 0) {
-				this.childData[i] = fds.toArray(new FormData[0]);
+		ArrayNode node = null;
+		int n = 0;
+		if (nt == JsonNodeType.ARRAY) {
+			node = (ArrayNode) child;
+			n = node.size();
+			if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
+				node = null;
 			}
 		}
+
+		if (node == null) {
+			if (errors != null) {
+				errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+			}
+			return null;
+		}
+
+		if (n == 0) {
+			return null;
+		}
+		List<FormData> fds = new ArrayList<>();
+		for (int j = 0; j < n; j++) {
+			JsonNode col = node.get(j);
+
+			if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
+				if (errors != null) {
+					errors.add(Message.newError(IService.MSG_INVALID_DATA));
+				}
+				continue;
+			}
+			FormData fd = this.form.newFormData();
+			fds.add(fd);
+			fd.validateAndLoad(json, allFieldsAreOptional, errors);
+		}
+		if (fds.size() == 0) {
+			return null;
+		}
+		return fds.toArray(new FormData[0]);
 	}
 
 	private static void setFeilds(ObjectNode json, Form struct, Object[] row, boolean allFieldsAreOptional,
@@ -525,42 +527,22 @@ public class FormData implements IFormData {
 
 	@Override
 	public boolean insertToDb() throws SQLException {
-		DbMetaData meta = this.form.dbMetaData;
-		if (meta == null) {
-			logger.error("Form {} is not designed for insert/add operation..");
-			return false;
-		}
-		return meta.insert(this);
+		return RdbDriver.getDriver().insert(this);
 	}
 
 	@Override
 	public boolean updateInDb() throws SQLException {
-		DbMetaData meta = this.form.dbMetaData;
-		if (meta == null) {
-			logger.error("Form {} is not designed for update operation..");
-			return false;
-		}
-		return meta.update(this);
+		return RdbDriver.getDriver().update(this);
 	}
 
 	@Override
 	public boolean deleteFromDb() throws SQLException {
-		DbMetaData meta = this.form.dbMetaData;
-		if (meta == null) {
-			logger.error("Form {} is not designed for delete operation..");
-			return false;
-		}
-		return meta.delete(this);
+		return RdbDriver.getDriver().delete(this);
 	}
 
 	@Override
 	public boolean fetchFromDb() throws SQLException {
-		DbMetaData meta = this.form.dbMetaData;
-		if (meta == null) {
-			logger.error("Form {} is not designed for db read. Operation not done.");
-			return false;
-		}
-		return meta.fetch(this);
+		return RdbDriver.getDriver().readForm(this);
 	}
 
 	@Override
@@ -591,9 +573,17 @@ public class FormData implements IFormData {
 	public FormData[][] getChildData() {
 		return this.childData;
 	}
-	
+
 	@Override
 	public Form getForm() {
 		return this.form;
+	}
+
+	/**
+	 * pre-fill data into this form
+	 */
+	public void prefill() {
+		logger.info("Going to prefill data into from {}. Dummy as of now...", this.getForm().getFormId());
+		
 	}
 }

@@ -15,7 +15,7 @@ export abstract class Form {
 	/**
 	 * if this form has key fields. null if not.
 	 */
-	keyIndexes: number[];
+	keyFields: Field[];
 
 	public abstract getName(): string;
 }

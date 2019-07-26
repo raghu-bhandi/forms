@@ -20,47 +20,50 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.io;
+package example.project.custom;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import java.sql.SQLException;
+import java.util.UUID;
+
+import org.simplity.fm.form.Form;
+import org.simplity.fm.form.HeaderData;
+import org.simplity.fm.form.HeaderForm;
+import org.simplity.fm.form.HeaderIndexes;
+
+import example.project.gen.form.FormStorage;
 
 /**
  * @author simplity.org
  *
  */
-public class IoUtil {
-	private static final int BUF_SIZE = 0x1000; // 4K
-
+public class CustomHeaderForm extends HeaderForm {
 	/**
-	 * drain input to output
-	 * @param input
-	 * @param output
-	 * @throws IOException
+	 * 
 	 */
-	public static void copy(InputStream input, OutputStream output) throws IOException {
-		byte[] buf = new byte[BUF_SIZE];
-		while (true) {
-			int r = input.read(buf);
-			if (r == -1) {
-				break;
-			}
-			output.write(buf, 0, r);
-		}
+	public CustomHeaderForm() {
+		this.form = new FormStorage();
+		this.indexes = new HeaderIndexes(FormStorage.formName, FormStorage.formData, FormStorage.operation);
 	}
-	/**
-	 * drain input to output
-	 * @param reader
-	 * @param writer
-	 * @throws IOException
-	 */
-	public static void copy(Reader reader, Writer writer) throws IOException {
-		int ch;
-		while ((ch = reader.read()) != -1) {
-			writer.write(ch);
+	
+	@Override
+	public HeaderData newHeaderData() {
+		return new CustomData(this.form, this.indexes);
+	}
+	
+	private static final class CustomData extends HeaderData{
+		/**
+		 * @param form
+		 * @param indexes
+		 */
+		public CustomData(Form form, HeaderIndexes indexes) {
+			super(form, indexes);
 		}
+		
+		@Override
+		public void submit() throws SQLException {
+			this.fieldValues[FormStorage.ackId] = UUID.randomUUID();
+			super.submit();
+		}
+		
 	}
 }

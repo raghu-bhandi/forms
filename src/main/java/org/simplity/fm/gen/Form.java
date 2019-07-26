@@ -23,8 +23,10 @@
 package org.simplity.fm.gen;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -33,6 +35,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.simplity.fm.validn.FromToValidation;
 import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.Config;
+import org.simplity.fm.form.ChildDbMetaData;
+import org.simplity.fm.form.DbMetaData;
 import org.simplity.fm.validn.DependentListValidation;
 import org.simplity.fm.validn.ExclusiveValidation;
 import org.simplity.fm.validn.InclusiveValidation;
@@ -170,6 +174,8 @@ class Form {
 		Util.emitImport(sbf, org.simplity.fm.form.Form.class);
 		Util.emitImport(sbf, IValidation.class);
 		Util.emitImport(sbf, org.simplity.fm.form.ChildForm.class);
+		Util.emitImport(sbf, DbMetaData.class);
+		Util.emitImport(sbf, ChildDbMetaData.class);
 
 		/*
 		 * validation imports on need basis
@@ -233,31 +239,29 @@ class Form {
 
 	private void emitDbStuff(StringBuilder sbf) {
 		String tableName = (String) this.si.settings.get("dbTableName");
-		String[] names = this.si.dbKeyFields;
-		Field[] keys = null;
+		Field[] keys = new Field[0];
 		if (tableName == null) {
 			logger.warn("dbTableName not set. no db related code genrated for this form");
 		} else {
-			names = this.si.dbKeyFields;
-			if (names == null) {
-				logger.error("dbTableName is set to {} but keyFieldNames not set.", tableName);
-			} else {
-				keys = new Field[names.length];
-				for (int i = 0; i < names.length; i++) {
-					Field field = this.fieldMap.get(names[i]);
-					if (field == null) {
-						logger.error(
-								"{} is specified as a key field in sepcial instrucitons, but it is not defined as a field in fields sheet. Db related code wnot generated",
-								names[i]);
-						keys = null;
-						break;
-					}
-					keys[i] = field;
+			List<Field> list = new ArrayList<>();
+			for (Field field : this.fields) {
+				if (field.isKey) {
+					list.add(field);
 				}
+			}
+			int n = list.size();
+			if (n == 0) {
+				logger.error(
+						"dbTable name is set but no field is marked as keyField. db operations require key field definition.");
+			} else {
+				if (this.si.keyIsGenerated && n > 1) {
+					logger.error("keyIsGenerated is set to true, but there are {} key fields!!", n);
+				}
+				keys = list.toArray(keys);
 			}
 		}
 
-		if (tableName == null || names == null || keys == null) {
+		if (tableName == null) {
 			sbf.append("\n\n\tprivate void setDbMeta(){\n\t\t//\n\t}");
 			return;
 		}
@@ -297,14 +301,14 @@ class Form {
 	 * @param sbf
 	 */
 	private void emitChildDbParam(StringBuilder sbf) {
-		if(this.childForms == null) {
+		if (this.childForms == null) {
 			return;
 		}
 		sbf.append("\n\t\tChildDbMetaData[] cm = {");
 		for (ChildForm child : this.childForms) {
 			if (child.linkChildFields == null) {
 				sbf.append("null, ");
-			}else {
+			} else {
 				String f = child.formName.toUpperCase();
 				sbf.append("this.newChildDbMeta(").append(f).append("_LINK, ");
 				sbf.append(f).append("_IDX), ");
@@ -319,7 +323,7 @@ class Form {
 	 * @param sbf
 	 */
 	private void emitChildDbDeclarations(StringBuilder sbf) {
-		if(this.childForms == null) {
+		if (this.childForms == null) {
 			return;
 		}
 		for (ChildForm child : this.childForms) {

@@ -48,7 +48,6 @@ class SpecialInstructions {
 
 	final Map<String, Object> settings = new HashMap<>();
 	boolean addCommonFields = false;
-	String[] dbKeyFields;
 	boolean keyIsGenerated;
 
 	static SpecialInstructions fromSheet(Sheet sheet) {
@@ -72,28 +71,6 @@ class SpecialInstructions {
 				si.addCommonFields = (Boolean) obj;
 			}
 		}
-		obj = si.settings.get("dbKeyFields");
-		if (obj != null) {
-			if (si.settings.containsKey("dbTableName") == false) {
-				logger.error("dbTableName must be specified when dbKeyFields specified");
-			} else if (obj instanceof String) {
-				String[] names = obj.toString().split(",");
-				si.dbKeyFields = new String[names.length];
-				for (int i = 0; i < names.length; i++) {
-					si.dbKeyFields[i] = names[i].trim();
-				}
-				logger.info("Db Key fields{} extracted", obj);
-				obj = si.settings.get("dbKeyIsGenerated");
-				if(obj != null && obj.toString().toUpperCase() == "TRUE") {
-					si.keyIsGenerated = true;
-				}
-			} else {
-				logger.error(
-						"dbKeyFieldNames should be one field name, or a comma separated list of names. value of {} is not accepted, and db related code not geenrated",
-						obj);
-			}
-		}
-
 		return si;
 	}
 

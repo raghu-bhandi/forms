@@ -1,4 +1,4 @@
-import { Form } from './form';
+import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
 
 // tslint:disable: indent
@@ -17,11 +17,16 @@ export abstract class AbstractData {
 	/**
 	 * @returns object contianing all data to be persisted
 	 */
-	public abstract extractAll(): any;
+	public abstract extractAll(): object;
 
 	/**
+	 * set all data from the data source
+	 * @param data :json data
+	 */
+	public abstract setAll(data: object): void;
+	/**
 	 *  set value for a field in this form
-	 * @param fieldName field name
+	 * @param fieldIdx field index
 	 * @param value value to be assigned
 	 */
 	public setValue(fieldIdx: number, value: any): void {
@@ -29,10 +34,27 @@ export abstract class AbstractData {
 	}
 
 	/**
+	 *  set value for a field in this form
+	 * @param field field
+	 * @param value value to be assigned
+	 */
+	public setFieldValue(field: Field, value: any): void {
+		throw new Error('setValue not valid on a tabular data object');
+	}
+
+	/**
 	 * get value of a field
-	 * @param fieldName name
+	 * @param fieldIdx field index
 	 */
 	public getValue(fieldIdx: number): any {
+		throw new Error('geValue not valid on a tabular data object');
+	}
+
+	/**
+	 * get value of a field
+	 * @param field field 
+	 */
+	public getFieldValue(field: Field): any {
 		throw new Error('geValue not valid on a tabular data object');
 	}
 
@@ -44,7 +66,11 @@ export abstract class AbstractData {
 		throw new Error('appendRow not valid on a non-tabular data object');
 	}
 
-	public getChildData(childIdx: number): AbstractData {
+	public getChildDataByIndex(childIdx: number): AbstractData {
+		throw new Error('child data is not vid for a tabular data');
+	}
+
+	public getChildData(child: ChildForm): AbstractData {
 		throw new Error('child data is not vid for a tabular data');
 	}
 }
@@ -70,24 +96,32 @@ export class FormData extends AbstractData {
 	public constructor(f: Form) {
 		super();
 		this.form = f;
-		let n = f.fields ? f.fields.length : 0;
-		this.data = new Array<any>(n);
+		this.data = [];
 
-		n = f.childForms ? f.childForms.length : 0;
-		this.childData = new Array<AbstractData>(n);
-
-		for (let i = 0; i < n; i++) {
-			const child = f.childForms[i];
-			let fd: AbstractData;
-			if (child.isTabular) {
-				fd = new TabularData(child.form);
-			} else {
-				fd = new FormData(child.form);
+		if (f.childForms) {
+			this.childData = [];
+			const n = f.childForms.length;
+			for (let i = 0; i < n; i++) {
+				const child = f.childForms[i];
+				let fd: AbstractData;
+				if (child.isTabular) {
+					fd = new TabularData(child.form);
+				} else {
+					fd = new FormData(child.form);
+				}
+				this.childData[i] = fd;
 			}
-			this.childData[i] = fd;
 		}
 	}
 
+	public setFieldValue(field: Field, value: any) {
+		this.data[field.index] = value;
+	}
+
+
+	public getFieldValue(field: Field) {
+		return this.data[field.index];
+	}
 
 	public setValue(fieldIdx: number, value: any) {
 		if (fieldIdx < this.data.length) {
@@ -99,25 +133,42 @@ export class FormData extends AbstractData {
 		return this.data[fieldIdx];
 	}
 
+	public getChildData(child: ChildForm): AbstractData {
+		return this.childData[child.index];
+	}
 
-	public getChildData(childIdx: number): AbstractData {
+	public getChildDataByIndex(childIdx: number): AbstractData {
 		return this.childData[childIdx];
 	}
 
+	public setAll(data: object) {
+		for (const field of this.form.fields) {
+			if (data.hasOwnProperty(field.name)) {
+				this.data[field.index] = data[field.name];
+			}
+		}
+
+		if (!this.childData) {
+			return;
+		}
+
+		for (const child of this.form.childForms) {
+			if (data.hasOwnProperty(child.name)) {
+				this.childData[child.index].setAll(data[child.name]);
+			}
+		}
+	}
 	/**
 	 * @returns object contianing all data to be persisted
 	 */
 	public extractAll(): any {
 		const d = {};
-		let n = this.data.length;
-		for (let i = 0; i < n; i++) {
-			d[this.form.fields[i].name] = this.data[i];
+		for (const field of this.form.fields) {
+			d[field.name] = this.data[field.index];
 		}
-
-		n = this.childData.length;
-		if (n > 0) {
-			for (let i = 0; i < n; i++) {
-				d[this.form.childForms[i].name] = this.childData[i].extractAll();
+		if (this.childData) {
+			for (const child of this.form.childForms) {
+				d[child.name] = this.childData[child.index].extractAll();
 			}
 		}
 		return d;
@@ -125,39 +176,35 @@ export class FormData extends AbstractData {
 
 	public extractKeys(): any {
 		const d = {};
-		const indexes = this.form.keyIndexes;
-		if (!indexes) {
-			return d;
+		const flds = this.form.keyFields;
+		if (flds) {
+
+			for (const field of flds) {
+				d[field.name] = this.data[field.index];
+			}
 		}
-		const n = indexes.length;
-		for (let i = 0; i < n; i++) {
-			const idx = indexes[i];
-			d[this.form.fields[idx].name] = this.data[idx];
-		}
+		return d;
 	}
 
 	/**
 	 * submit this form
 	 */
 	public submit() {
-		const ds = new DataStore(this);
-		ds.submit();
+		new DataStore(this).submit(this.extractAll());
 	}
 
 	/**
 	 * save this form
 	 */
 	public save() {
-		const ds = new DataStore(this);
-		ds.save();
+		new DataStore(this).save(this.extractAll());
 	}
 
 	/**
 	 * retrieve this form
 	 */
 	public retrieve() {
-		const ds = new DataStore(this);
-		ds.retrieve();
+		new DataStore(this).retrieve(this.extractKeys());
 	}
 }
 
@@ -174,6 +221,16 @@ export class TabularData extends AbstractData {
 		super();
 		this.form = f;
 		this.data = [];
+	}
+
+	public setAll(data: object) {
+		const arr = data as Array<object>;
+		this.data.length = 0;
+		for (const fd of arr) {
+			const childData = new FormData(this.form);
+			this.data.push(childData);
+			childData.setAll(fd);
+		}
 	}
 
 	public extractAll(): any {

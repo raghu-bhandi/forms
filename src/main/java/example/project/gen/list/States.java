@@ -7,7 +7,7 @@ import org.simplity.fm.validn.ValueList;
 
 /**
  * List of valid values for list states
- * <br /> generated at 2019-07-16T17:16:38.217
+ * <br /> generated at 2019-07-26T00:29:39.340
  */ 
 public class States extends ValueList {
 	 private static final Set<String> _values = new HashSet<>(Arrays.asList("KA", "TN", "TS"));

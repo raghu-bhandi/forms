@@ -4,21 +4,42 @@ import org.simplity.fm.form.Field;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.form.ChildForm;
+import org.simplity.fm.form.DbMetaData;
+import org.simplity.fm.form.ChildDbMetaData;
 import org.simplity.fm.validn.DependentListValidation;
 import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 2019-07-16T17:16:39.063 from file C:\Users\raghu\eclipse-workspace\ef\src\main\resources\fm\spec\form\form2.xlsx
+ * <br /> generated at 2019-07-26T00:29:40.207 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
  */ 
 public class Form2 extends Form {
 	public static final int headerId = 0;
 	public static final int productId = 1;
 	public static final int quantity = 2;
 	public static final int color = 3;
+	private static final String WHERE = " WHERE header_id=? AND product_id=?";
+	private static final int[] WHERE_IDX = {0, 1};
+	private static final String SELECT = "SELECT header_id, product_id, quantity, color FROM detail";
+	private static final int[] SELECT_IDX = {0, 1, 2, 3};
+	private static final  String INSERT = "INSERT INTO detail(header_id, product_id, quantity, color) values (?, ?, ?, ?)";
+	private static final int[] INSERT_IDX = {0, 1, 2, 3};
+	private static final  String UPDATE = "UPDATE detail SET quantity=?, color=?";
+	private static final  int[] UPDATE_IDX = {2, 3, 0, 1};
+	private static final String DELETE = "DELETE FROM detail";
 
 	private void setDbMeta(){
-		//
+		DbMetaData m = new DbMetaData();
+		m.whereClause = WHERE;
+		m.whereParams = this.getParams(WHERE_IDX);
+		m.selectClause = SELECT;
+		m.selectParams = this.getParams(SELECT_IDX);
+		m.insertClause = INSERT;
+		m.insertParams = this.getParams(INSERT_IDX);
+		m.updateClause = UPDATE;
+		m.updateParams = this.getParams(UPDATE_IDX);
+		m.deleteClause = DELETE;
+		this.dbMetaData = m;
 	}
 
 	/**
@@ -29,7 +50,7 @@ public class Form2 extends Form {
 			this.partialSaveAllowed = false;
 
 		Field[] flds = {
-			new Field("headerId", 0, DefinedDataTypes.id, null, null, true, false, false, true, null, "customer_id"), 
+			new Field("headerId", 0, DefinedDataTypes.id, null, null, true, false, false, true, null, "header_id"), 
 			new Field("productId", 1, DefinedDataTypes.textId, null, null, true, true, false, true, null, "product_id"), 
 			new Field("quantity", 2, DefinedDataTypes.orderQty, null, null, true, true, false, false, null, "quantity"), 
 			new Field("color", 3, DefinedDataTypes.color, null, null, true, true, false, false, "colors", "color")

@@ -72,13 +72,13 @@ public class Generator {
 		try (InputStream ins = new FileInputStream(f); Workbook book = new XSSFWorkbook(ins)) {
 			int n = book.getNumberOfSheets();
 			if (n == 0) {
-				logger.error("Project Work book {} has no sheets in it. Quitting..", f.getAbsolutePath());
+				logger.error("Project Work book {} has no sheets in it. Quitting..", f.getPath());
 				return;
 			}
 			project = ProjectInfo.fromWorkbook(book);
 
 		} catch (Exception e) {
-			logger.error("Exception while trying to read workbook {}. Error: {}", f.getAbsolutePath(), e.getMessage());
+			logger.error("Exception while trying to read workbook {}. Error: {}", f.getPath(), e.getMessage());
 			e.printStackTrace();
 			return;
 		}
@@ -92,7 +92,7 @@ public class Generator {
 		logger.info("Going to process forms under folder {}", inputRoot);
 		f = new File(inputRoot + "form/");
 		if(f.exists() == false) {
-			logger.error("Forms folder {} not found. No forms are processed", f.getAbsolutePath());
+			logger.error("Forms folder {} not found. No forms are processed", f.getPath());
 			return;
 		}
 		Map<String, DataType> typesMap = project.getTypes();
@@ -107,7 +107,7 @@ public class Generator {
 			File f = new File(root + folder);
 			if (!f.exists()) {
 				if (!f.mkdirs()) {
-					logger.error("Unable to create folder {}. Aborting..." + f.getAbsolutePath());
+					logger.error("Unable to create folder {}. Aborting..." + f.getPath());
 					allOk = false;
 				}
 			}
@@ -134,7 +134,7 @@ public class Generator {
 		}
 		
 		StringBuilder sbf = new StringBuilder();
-		String fileName = xls.getAbsolutePath();
+		String fileName = xls.getPath().replace('\\', '/');
 		form.emitJavaClass(sbf, fileName);
 		String outName = outputRoot + "form/" + Util.toClassName(fn) + ".java";
 		Util.writeOut(outName, sbf);

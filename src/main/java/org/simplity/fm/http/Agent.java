@@ -106,12 +106,10 @@ public class Agent {
 	 */
 	public void serve(HttpServletRequest req, HttpServletResponse resp, boolean inputDataIsInPayload)
 			throws IOException {
+		logger.info("Started serving request {}", req.getPathInfo());
 		LoggedInUser user = this.getUser(req);
-		logger.info("Started serving request {}", req.getPathTranslated());
-		System.out.println("Received a request for context path = " + req.getContextPath() + " and pathInfo = "
-				+ req.getPathInfo());
 		if (user == null) {
-			logger.info("No User. Responding with auth required atatus");
+			logger.info("No User. Responding with auth required status");
 			resp.setStatus(Http.STATUS_AUTH_REQUIRED);
 			return;
 		}
@@ -171,7 +169,7 @@ public class Agent {
 			}
 			if (result.allOk) {
 				logger.info("Service returned with All Ok");
-				this.setHeaders(resp);
+				this.setHeaders(req, resp);
 			} else {
 				for (Message msg : result.messages)
 					logger.error("Message :" + msg);
@@ -232,11 +230,9 @@ public class Agent {
 	 * 
 	 * @param resp
 	 */
-	private void setHeaders(HttpServletResponse resp) {
+	private void setHeaders(HttpServletRequest req,  HttpServletResponse resp) {
 		resp.setStatus(Http.STATUS_ALL_OK);
-		for (int i = 0; i < Http.HDR_NAMES.length; i++) {
-			resp.setHeader(Http.HDR_NAMES[i], Http.HDR_TEXTS[i]);
-		}
+		this.setOptions(req, resp);
 	}
 
 	private Map<String, String> readQueryString(HttpServletRequest req) {
@@ -286,6 +282,7 @@ public class Agent {
 		if (token == null) {
 			return null;
 		}
+		
 		LoggedInUser user = this.activeUsers.get(token);
 		if (user == null) {
 			/*
@@ -293,11 +290,16 @@ public class Agent {
 			 * have to create a user. token is used as userId, there by allowing
 			 * testing with different users
 			 */
-			user = LoggedInUser.newUser(token, token);
-			this.activeUsers.put(token, user);
+			CustomUser cu = new CustomUser(token, token);
+			if(cu.getFirstName() == null) {
+				logger.error("{} is not a valid user of this application.", token);
+				return null;
+			}
+			logger.info("USer {} successfully logged-in", token);
+			this.activeUsers.put(token, cu);
+			user = cu;
 		}
 		return user;
-
 	}
 
 	private String decode(String text) {

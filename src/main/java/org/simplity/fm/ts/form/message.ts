@@ -11,4 +11,8 @@ export class Message {
 		this.id = id;
 		this.text = text;
 	}
+
+	public toString() : string {
+		return this.type + ' : ' + this.text;
+	}
 }

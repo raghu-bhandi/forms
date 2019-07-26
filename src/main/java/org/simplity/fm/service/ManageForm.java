@@ -41,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -50,25 +51,24 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author simplity.org
  *
  */
-public class FormService implements IService{
-	private static final Logger logger = LoggerFactory.getLogger(FormService.class);
-
+public class ManageForm implements IService{
+	private static ManageForm instance = new ManageForm();
+	private static final Logger logger = LoggerFactory.getLogger(ManageForm.class);
 
 	/**
-	 * respond to this request
 	 * 
-	 * @param loggedinUser
-	 *            logged-in user, or a designated user, on whose behalf this
-	 *            request is made
-	 * @param payload
-	 *            pay-load
-	 * @param writer
-	 *            to which the response pay-load may be directly written out
-	 * @return service result
-	 * @throws Exception
+	 * @return non-null instance
 	 */
+	public static ManageForm getInstance() {
+		return instance;
+	}
+
+	private ManageForm() {
+		//
+	}
+
 	@Override
-	public ServiceResult serve(LoggedInUser loggedinUser, ObjectNode payload, Writer writer)
+	public ServiceResult serve(LoggedInUser user, ObjectNode payload, Writer writer)
 			throws Exception {
 		HeaderData headerData = Config.getConfig().newHeaderData();
 		if(headerData == null) {
@@ -86,34 +86,54 @@ public class FormService implements IService{
 
 		headerData.validateAndLoad((ObjectNode) node, false, msgs);
 		if(msgs.size() > 0) {
-			logger.error("Header data is invalid ");
+			logger.error("Header data is invalid");
 			return this.failed(msgs);
 		}
 
+		if(headerData.isOwner(user) == false) {
+			logger.error("Logged in user {} is not authorized to manage this form with {} as userId ", user.getUserId(), headerData.getUserId());
+			return this.failed(IService.MSG_NOT_AUTHORIZED);
+		}
+		
 		String formName = headerData.getFormName();
 		Form form = Forms.getForm(formName);
 		if(form == null) {
 			logger.error("Unable to get form {} ", formName);
-			return this.failed(IService.MSG_INVALID_DATA);
+			msgs.add(Message.newError("invalidFormName"));
+			return this.failed(msgs);
 		}
 
 		FormOperation op = headerData.getFormOperation();
+		if(op == null) {
+			logger.error("Header has an invalid operation. it should be get, save or submit");
+			msgs.add(Message.newError("invalidOperation"));
+			return this.failed(msgs);
+		}
+		
+		/*
+		 * this is the actual form that is being managed (saved/submitted)
+		 */
+		FormData fd = form.newFormData();
 		if(op == FormOperation.GET) {
 			if(headerData.fetchFromDb()) {
-				writer.write(headerData.getFormData());
+				logger.info("Saved form retrieved and sent to the client");
+				node = new ObjectMapper().readTree(headerData.getFormData());
+				fd.load((ObjectNode)node);
 			}else {
-				form.newFD().serializeAsJson(writer);
+				logger.info("New form created and sent to the client");
+				fd.prefill();
 			}
+			//copy profile fields
+			fd.serializeAsJson(writer);
 			return this.succeeded();
 		}
 		
 		node = payload.get(Http.FORM_DATA_TAG);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
-			logger.error("Payload has to have a form data object named {} ", Http.FORM_DATA_TAG);
+			logger.error("Payload has to have a form data object named {}", Http.FORM_DATA_TAG);
 			return this.failed(IService.MSG_INVALID_DATA);
 		}
 		
-		FormData fd = form.newFD();
 		fd.validateAndLoad((ObjectNode)node, op == FormOperation.SAVE, msgs);
 		if(msgs.size() > 0) {
 			logger.error("form has validation errors..");
@@ -123,16 +143,12 @@ public class FormService implements IService{
 		StringWriter riter = new StringWriter();
 		fd.serializeAsJson(riter);
 		headerData.setFormData(riter.toString());
-		headerData.setIsSubmitted(op == FormOperation.SUBMIT);
-		boolean ok = headerData.updateInDb();
-		if(!ok) {
-			ok = headerData.insertToDb();
+		if(op == FormOperation.SUBMIT) {
+			headerData.submit();
+		}else {
+			headerData.submit();
+			headerData.serializeAsJson(writer);
 		}
-		if(!ok) {
-			logger.error("Db update failed for form header.");
-			return this.failed(IService.MSG_INTERNAL_ERROR);
-		}
-		
 		return this.succeeded();
 	}
 

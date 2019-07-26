@@ -26,10 +26,10 @@ package org.simplity.fm.form;
  * @author simplity.org
  *
  */
-public class HeaderForm{
+public class HeaderForm {
 	protected Form form;
 	protected HeaderIndexes indexes;
-	
+
 	/**
 	 * @return the formNameIndex
 	 */
