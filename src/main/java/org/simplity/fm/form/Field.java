@@ -49,10 +49,10 @@ public class Field {
 	 */
 	private final DataType dataType;
 	/**
-	 * default value is used only if this optional and the value is missing. not
+	 * default value is used only if this is  optional and the value is missing. not
 	 * used if the field is mandatory
 	 */
-	private final String defaultValue;
+	private final Object defaultValue;
 	/**
 	 * refers to the message id/code that is used for i18n of messages
 	 */
@@ -145,7 +145,11 @@ public class Field {
 		this.isRequired = isRequired;
 		this.isEditable = isEditable;
 		this.messageId = messageId;
-		this.defaultValue = defaultValue;
+		if(defaultValue == null) {
+			this.defaultValue = null;
+		}else {
+			this.defaultValue = dataType.parse(defaultValue);
+		}
 		this.isDerivedField = isDerivedField;
 		this.dataType = dataType;
 		this.isKeyField = isKeyField;
@@ -170,7 +174,7 @@ public class Field {
 	/**
 	 * @return the defaultValue
 	 */
-	public String getDefaultValue() {
+	public Object getDefaultValue() {
 		return this.defaultValue;
 	}
 

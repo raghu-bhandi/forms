@@ -354,15 +354,15 @@ public class FormData implements IFormData {
 	private FormData[] validateChild(ChildForm childForm, ObjectNode json, boolean allFieldsAreOptional,
 			List<Message> errors) {
 		String fieldName = childForm.fieldName;
-		JsonNode child = json.get(fieldName);
-		if (child == null) {
+		JsonNode childNode = json.get(fieldName);
+		if (childNode == null) {
 			if (errors != null && childForm.minRows > 0) {
 				errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
 			}
 			return null;
 		}
 
-		JsonNodeType nt = child.getNodeType();
+		JsonNodeType nt = childNode.getNodeType();
 		if (childForm.isTabular == false) {
 			if (nt != JsonNodeType.OBJECT) {
 				if (errors != null) {
@@ -372,23 +372,23 @@ public class FormData implements IFormData {
 					return null;
 				}
 			}
-			FormData fd = this.form.newFormData();
-			fd.validateAndLoad((ObjectNode) child, allFieldsAreOptional, errors);
+			FormData fd = childForm.form.newFormData();
+			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, errors);
 			FormData[] result = { fd };
 			return result;
 		}
 
-		ArrayNode node = null;
+		ArrayNode arr = null;
 		int n = 0;
 		if (nt == JsonNodeType.ARRAY) {
-			node = (ArrayNode) child;
-			n = node.size();
+			arr = (ArrayNode) childNode;
+			n = arr.size();
 			if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
-				node = null;
+				arr = null;
 			}
 		}
 
-		if (node == null) {
+		if (arr == null) {
 			if (errors != null) {
 				errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
 			}
@@ -400,7 +400,7 @@ public class FormData implements IFormData {
 		}
 		List<FormData> fds = new ArrayList<>();
 		for (int j = 0; j < n; j++) {
-			JsonNode col = node.get(j);
+			JsonNode col = arr.get(j);
 
 			if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
 				if (errors != null) {
@@ -408,9 +408,9 @@ public class FormData implements IFormData {
 				}
 				continue;
 			}
-			FormData fd = this.form.newFormData();
+			FormData fd = childForm.form.newFormData();
 			fds.add(fd);
-			fd.validateAndLoad(json, allFieldsAreOptional, errors);
+			fd.validateAndLoad((ObjectNode)col, allFieldsAreOptional, errors);
 		}
 		if (fds.size() == 0) {
 			return null;

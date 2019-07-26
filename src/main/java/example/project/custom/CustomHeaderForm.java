@@ -29,6 +29,8 @@ import org.simplity.fm.form.Form;
 import org.simplity.fm.form.HeaderData;
 import org.simplity.fm.form.HeaderForm;
 import org.simplity.fm.form.HeaderIndexes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import example.project.gen.form.FormStorage;
 
@@ -37,6 +39,7 @@ import example.project.gen.form.FormStorage;
  *
  */
 public class CustomHeaderForm extends HeaderForm {
+	protected static final Logger logger = LoggerFactory.getLogger(CustomHeaderForm.class);
 	/**
 	 * 
 	 */
@@ -62,7 +65,15 @@ public class CustomHeaderForm extends HeaderForm {
 		@Override
 		public void submit() throws SQLException {
 			this.fieldValues[FormStorage.ackId] = UUID.randomUUID();
+			this.fieldValues[FormStorage.status] = "A";
 			super.submit();
+		}
+		
+		@Override
+		public void save() throws SQLException {
+			logger.info("Going save form {} with serialzed data = {}", this.fieldValues[FormStorage.formName], this.fieldValues[FormStorage.formData]);
+			this.fieldValues[FormStorage.status] = "S";
+			super.save();
 		}
 		
 	}

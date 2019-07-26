@@ -142,12 +142,16 @@ public class ManageForm implements IService{
 
 		StringWriter riter = new StringWriter();
 		fd.serializeAsJson(riter);
-		headerData.setFormData(riter.toString());
-		if(op == FormOperation.SUBMIT) {
-			headerData.submit();
+		String text = riter.toString();
+		headerData.setFormData(text);
+		logger.info("Going {} form data : {}", op, text);
+		if(op == FormOperation.SAVE) {
+			headerData.save();
+			logger.info("Saved");
 		}else {
 			headerData.submit();
 			headerData.serializeAsJson(writer);
+			logger.info("submitted and writing teh header data back");
 		}
 		return this.succeeded();
 	}

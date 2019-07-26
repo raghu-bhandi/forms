@@ -294,6 +294,7 @@ public class RdbDriver {
 
 	protected static int doWriteForm(Connection con, String sql, DbParam[] params, Object[] formData,
 			long[] generatedKeys) throws SQLException {
+		logger.info("Sql: {}", sql);
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
 			for (DbParam p : params) {
@@ -304,6 +305,7 @@ public class RdbDriver {
 			if (result > 0 && generatedKeys != null) {
 				generatedKeys[0] = getGeneratedKey(ps);
 			}
+			logger.info("Sql: {}\nresult:{}", sql, result);
 			return result;
 		}
 	}

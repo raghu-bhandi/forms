@@ -46,19 +46,23 @@ public class Http {
 	 */
 	public static final String SERVICE_HEADER = "_s";
 	/**
+	 * header name with which token is sent
+	 */
+	public static final String TOKEN_HEADER = "_t";
+	/**
 	 * standard header for auth token
 	 */
 	public static final String AUTH_HEADER = "Authorization";
 	/**
 	 * various headers that we respond back with
 	 */
-	public static final String[] HDR_NAMES = { "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
-			"Access-Control-Max-Age", "Connection", "Cache-Control", "Expires" };
+	public static final String[] HDR_NAMES = {"Access-Control-Allow-Origin", "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
+			"Access-Control-Max-Age", "Connection", "Cache-Control", "Expires", "Accept" };
 	/**
 	 * values for the headers
 	 */
-	public static final String[] HDR_TEXTS = { "POST, GET, OPTIONS", "Authorization, content-type, " + SERVICE_HEADER,
-			"172800", "Keep-Alive", "no-cache, no-store, must-revalidate", "0" };
+	public static final String[] HDR_TEXTS = {"http://localhost:4222", "POST, GET, OPTIONS", "content-type, " + SERVICE_HEADER + ", " + TOKEN_HEADER,
+			"1728", "Keep-Alive", "no-cache, no-store, must-revalidate", "11111110", "application/json" };
 	/**
 	 * http status
 	 */

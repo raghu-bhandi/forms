@@ -386,7 +386,13 @@ public class Form {
 	 * @return a data structure
 	 */
 	public FormData newFormData() {
-		// TODO Auto-generated method stub
-		return new FormData(this, null, null);
+		Object[] row = new Object[this.fields.length];
+		for(Field field: this.fields) {
+			Object val = field.getDefaultValue();
+			if(val != null) {
+				row[field.getIndex()] = val;
+			}
+		}
+		return new FormData(this, row, null);
 	}
 }

@@ -1,5 +1,6 @@
 import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
+import { WebDriverLogger } from 'blocking-proxy/built/lib/webdriver_logger';
 
 // tslint:disable: indent
 /**
@@ -142,8 +143,11 @@ export class FormData extends AbstractData {
 	}
 
 	public setAll(data: object) {
+		console.log('Got data = ' + JSON.stringify(data));
 		for (const field of this.form.fields) {
+			console.log('looking for value for field ' + field.name);
 			if (data.hasOwnProperty(field.name)) {
+				console.log('found data of ' + data[field.name] + ' for field ' + field.name + ' at index ' + field.index);
 				this.data[field.index] = data[field.name];
 			}
 		}
@@ -153,7 +157,9 @@ export class FormData extends AbstractData {
 		}
 
 		for (const child of this.form.childForms) {
+			console.log('looking for value for child ' + child.name);
 			if (data.hasOwnProperty(child.name)) {
+				console.log('found data for ' + child.name);
 				this.childData[child.index].setAll(data[child.name]);
 			}
 		}
@@ -226,10 +232,10 @@ export class TabularData extends AbstractData {
 	public setAll(data: object) {
 		const arr = data as Array<object>;
 		this.data.length = 0;
-		for (const fd of arr) {
+		for (const row of arr) {
 			const childData = new FormData(this.form);
 			this.data.push(childData);
-			childData.setAll(fd);
+			childData.setAll(row);
 		}
 	}
 

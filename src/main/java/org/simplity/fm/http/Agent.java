@@ -88,7 +88,8 @@ public class Agent {
 		 * we have no issue with CORS. We are ready to respond to any client so
 		 * long the auth is taken care of
 		 */
-		resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
+		//resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
+		//resp.setHeader("Access-Control-Allow-Origin", "http://localhost:4200/");
 		resp.setStatus(Http.STATUS_ALL_OK);
 	}
 
@@ -231,8 +232,11 @@ public class Agent {
 	 * @param resp
 	 */
 	private void setHeaders(HttpServletRequest req,  HttpServletResponse resp) {
-		resp.setStatus(Http.STATUS_ALL_OK);
-		this.setOptions(req, resp);
+		logger.info("FInally, setting some header...");
+		//resp.setHeader("Access-Control-Allow-Origin", "http://localhost:4222");
+		//resp.setHeader("Junk", "Junk");
+		//resp.setStatus(Http.STATUS_ALL_OK);
+		//this.setOptions(req, resp);
 	}
 
 	private Map<String, String> readQueryString(HttpServletRequest req) {
@@ -278,7 +282,7 @@ public class Agent {
 	 * @return
 	 */
 	private LoggedInUser getUser(HttpServletRequest req) {
-		String token = req.getHeader(Http.AUTH_HEADER);
+		String token = req.getHeader(Http.TOKEN_HEADER);
 		if (token == null) {
 			return null;
 		}

@@ -22,17 +22,17 @@ export class DataStore {
 	}
 
 	retrieve(data: object): void {
-		const payload = { header: this.getHeder(this.formData.form.getName(), 'get') }
+		const payload = { header: this.getHeader(this.formData.form.getName(), 'get') }
 		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 
 	save(data: object): void {
-		const payload = { header: this.getHeder(this.formData.form.getName(), 'save'), data: data }
+		const payload = { header: this.getHeader(this.formData.form.getName(), 'save'), data: data }
 		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 
 	submit(data: object): void {
-		const payload = { header: this.getHeder(this.formData.form.getName(), 'submit'), data: data }
+		const payload = { header: this.getHeader(this.formData.form.getName(), 'submit'), data: data }
 		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 
@@ -75,9 +75,11 @@ export class DataStore {
 
 			let json = {};
 			let messages: Message[] = null;
-			if (xhr.responseText) {
+			console.log('Response text: ' + xhr.responseText + ' because state = ' + xhr.readyState + ' status=' + xhr.status);
+			if (xhr.response) {
 				try {
 					json = JSON.parse(xhr.responseText);
+					console.log('json = ' + JSON.stringify(json));
 					if (json.hasOwnProperty(DataStore.MESSAGE)) {
 						messages = json[DataStore.MESSAGE];
 					}
@@ -109,9 +111,9 @@ export class DataStore {
 		try {
 			xhr.open('POST', url, true);
 			xhr.setRequestHeader(DataStore.SERVICE_HEADER, serviceName);
-			xhr.setRequestHeader('Authorization', DataStore.AUTH);
+			xhr.setRequestHeader('_t', DataStore.AUTH);
 			if (asPayload) {
-				xhr.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+				xhr.setRequestHeader('Content-Type', 'application/jsonp; charset=utf-8');
 				xhr.send(JSON.stringify(data));
 			} else {
 				xhr.send();
@@ -151,7 +153,7 @@ export class DataStore {
 		return url;
 	}
 
-	private getHeder(formName: string, operation: string): any {
+	private getHeader(formName: string, operation: string): any {
 		return {
 			operation: operation,
 			formName: formName,
