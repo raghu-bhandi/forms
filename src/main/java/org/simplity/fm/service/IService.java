@@ -22,72 +22,28 @@
 
 package org.simplity.fm.service;
 
-import java.io.Writer;
-import java.util.Map;
-
-import org.simplity.fm.http.LoggedInUser;
-
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * Interface for service. The instance is expected to be re-usable, and
  * thread-safe. (immutable). Singleton pattern is suitable or this.
- * <br />
- * <br />
- * serve methods may be added for otehr formats on a need basis
+ *
  * 
  * @author simplity.org
  *
  */
 public interface IService {
 	/**
-	 * message to be used if the user is not authorized for this specific form
-	 * instance
-	 */
-	public static final String MSG_NOT_AUTHORIZED = "notAuthorized";
-	/**
-	 * error to be used in case of any internal error
-	 */
-	public static final String MSG_INTERNAL_ERROR = "internalError";
-
-	/**
-	 * error to be used in case of any internal error
-	 */
-	public static final String MSG_INVALID_DATA = "invalidData";
-	/**
 	 * serve when data is requested in a Map
 	 * 
-	 * @param user
-	 *            logged-in user who has requested this service. This can be
-	 *            used to check whether the user is authorized to deal with the
-	 *            document/form being requested
-	 * @param keyFields
-	 *            fields that are required to uniquely identify the form
-	 * @param writer
-	 *            to which the output can be written to
-	 * @return non-null service result.
+	 * @param ctx
+	 *            service context provides certain data structures and methods.
+	 * @param inputPayload
+	 *            non-null, could be empty if no pay-load was received from the
+	 *            client
 	 * @throws Exception
 	 *             so that the caller can wire exceptions to the right exception
 	 *             handler that is configured for the app
 	 */
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception;
-
-	/**
-	 * serve the request when data is received as a JSON Object
-	 * 
-	 * @param user
-	 *            logged-in user who has requested this service. This can be
-	 *            used to check whether the user is authorized to deal with the
-	 *            document/form being requested
-	 * @param formData
-	 *            fields that are required to uniquely identify the form
-	 * @param writer
-	 *            to which the output can be written to
-	 * @return non-null service result.
-	 * @throws Exception
-	 *             so that the caller can wire exceptions to the right exception
-	 *             handler that is configured for the app
-	 */
-	public ServiceResult serve(LoggedInUser user, ObjectNode formData, Writer writer) throws Exception;
-
+	public void serve(IserviceContext ctx, ObjectNode inputPayload) throws Exception;
 }

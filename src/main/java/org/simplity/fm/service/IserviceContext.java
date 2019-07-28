@@ -22,32 +22,60 @@
 
 package org.simplity.fm.service;
 
+import java.io.Writer;
+import java.util.Map;
+
 import org.simplity.fm.Message;
+import org.simplity.fm.http.LoggedInUser;
 
 /**
- * Data structure used by service to return output data as well as messages
+ * context for a service execution thread. App specific instance is made
+ * available to all components that participate in the service execution path
  * 
  * @author simplity.org
  *
  */
-public class ServiceResult {
+public interface IserviceContext {
+	/**
+	 * 
+	 * @return non-null, possibly empty, map of field-value pairs that are
+	 *         received from the client
+	 */
+	public Map<String, String> getInputFields();
 
 	/**
-	 * null if there are no messages. message can be for success as well...
+	 * 
+	 * @param inputFieldName
+	 * @return value of the input field. null if the value is null, OR if the field is not received from the client
 	 */
-	public final Message[] messages;
-
+	public String getInputValue(String inputFieldName);
+	
 	/**
-	 * if false, there will be at least one error message in messages.
+	 * @return non-null user on whose behalf this service is requested
 	 */
-	public final boolean allOk;
-
+	public LoggedInUser getUser();
+	
 	/**
-	 * @param messages
-	 * @param allOk
+	 * 
+	 * @return non-null writer for sending response to the request. 
 	 */
-	public ServiceResult(Message[] messages, boolean allOk) {
-		this.messages = messages;
-		this.allOk = allOk;
-	}
+	public Writer getResponseWriter();
+	
+	/**
+	 * 
+	 * @return true if all ok. false if at least one error message is added to the context;
+	 */
+	public boolean allOk();
+	
+	/**
+	 * 
+	 * @param message non-null message
+	 */
+	public void AddMessage(Message message);
+	
+	/**
+	 * 
+	 * @return non-null array all messages added so far. empty if no message added so far;
+	 */
+	public Message[] getMessages();
 }

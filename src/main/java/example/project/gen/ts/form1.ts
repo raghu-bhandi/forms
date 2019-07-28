@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-07-26T10:00:12.765
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-07-28T20:24:01.725
  */
 import { Form , Field } from '../form/form';
 import { ChildForm } from '../form/form';
@@ -7,13 +7,13 @@ import { Form2 } from './form2';
 
 export class Form1 extends Form {
 	private static _instance = new Form1();
-	headerId = new Field('headerId', 0, 'internal id', null, 'Header Id', null, true, false, false, true,
+	headerId = new Field('headerId', 0, 'internal id', null, 'Header Id', null, false, false, false, true,
 				1, null, 'invalidId', 1, 13, 1, 9999999999999, null, null, null, null, null);
-	customerId = new Field('customerId', 1, 'customer Id', null, 'Customer Id', 'AAA-99-AA', true, false, false, false,
+	customerId = new Field('customerId', 1, 'customer Id', null, 'Customer Id', 'AAA-99-AAA', true, true, false, false,
 				0, '[A-Z]{3}-[\\d]{2}-[A-Z]{3}', 'invalidCustId', 10, 10, 0, 0, null, null, null, null, null);
 	financialYear = new Field('financialYear', 2, 'Financial Year', null, 'financial year', '2010', true, true, false, false,
 				1, null, 'invalidFy', 4, 4, 1989, 2025, null, null, null, null, null);
-	boolField = new Field('boolField', 3, 'Boolean Field', null, 'boolean field', null, false, true, false, false,
+	boolField = new Field('boolField', 3, 'Boolean Field', null, 'boolean field', 'true', false, true, false, false,
 				3, null, 'invalidTrueFalse', 0, 0, 0, 0, 'True', 'False', null, null, null);
 	fromDate = new Field('fromDate', 4, 'From Date', null, 'from field', '44175', false, true, false, false,
 				4, null, 'invalidFutureDate', 0, 0, 1, 73000, null, null, null, null, null);

@@ -22,7 +22,7 @@
 package org.simplity.fm.http;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
@@ -33,8 +33,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.simplity.fm.Message;
+import org.simplity.fm.service.DefaultContext;
 import org.simplity.fm.service.IService;
-import org.simplity.fm.service.ServiceResult;
+import org.simplity.fm.service.IserviceContext;
 import org.simplity.fm.service.Services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,8 +89,10 @@ public class Agent {
 		 * we have no issue with CORS. We are ready to respond to any client so
 		 * long the auth is taken care of
 		 */
-		//resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
-		//resp.setHeader("Access-Control-Allow-Origin", "http://localhost:4200/");
+		resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
+		/*
+		 * we are optimists!!
+		 */
 		resp.setStatus(Http.STATUS_ALL_OK);
 	}
 
@@ -121,60 +124,30 @@ public class Agent {
 			return;
 		}
 
-		/*
-		 * TODO: we have not yet designed our data strategy for services. Do all
-		 * the data required for a service come from client, or do we save some
-		 * of them in the session-cache on the server?
-		 * 
-		 * As of now, we assume that the data comes from client.
-		 * 
-		 * We will have to re-design our code to populate inData partly from
-		 * client and partly from session-cache
-		 */
-		ObjectNode json = null;
-		Map<String, String> fields = null;
-		if (inputDataIsInPayload) {
-			try (InputStream ins = req.getInputStream()) {
-				/*
-				 * read it as json
-				 */
-				JsonNode node = new ObjectMapper().readTree(ins);
-				if (node.getNodeType() != JsonNodeType.OBJECT) {
-					resp.setStatus(Http.STATUS_INVALID_DATA);
-					return;
-				}
-				json = (ObjectNode) node;
-			} catch (Exception e) {
-				logger.info("Invalid data recd from client {}", e.getMessage());
-				resp.setStatus(Http.STATUS_INVALID_DATA);
-				return;
-			}
-		} else {
-			fields = this.readQueryString(req);
+		ObjectNode json = this.readContent(req);
+		if(json == null) {
+			logger.info("Invalid JSON recd from client ");
+			resp.setStatus(Http.STATUS_INVALID_DATA);
+			return;
 		}
+		Map<String, String> fields = this.readQueryString(req);
 
 		/*
-		 * finally.... call the service
 		 * We allow the service to use output stream, but not input stream. This
 		 * is a safety mechanism against possible measures to be taken when
 		 * receiving payload from an external source
 		 */
 		try (Writer writer = resp.getWriter()) {
-			ServiceResult result = null;
-			if (fields != null) {
-				logger.info("Calling Service {} with {} fields ", service.getClass().getName(), fields.size());
-				result = service.serve(user, fields, writer);
-			} else {
-				logger.info("Calling Service {} with json", service.getClass().getName());
-				result = service.serve(user, json, writer);
-			}
-			if (result.allOk) {
+			IserviceContext ctx = new DefaultContext(fields, user, writer);
+			service.serve(ctx, json);
+			if (ctx.allOk()) {
 				logger.info("Service returned with All Ok");
-				this.setHeaders(req, resp);
 			} else {
-				for (Message msg : result.messages)
+				Message[] msgs =  ctx.getMessages();
+				for (Message msg :msgs) {
 					logger.error("Message :" + msg);
-				this.respondWithError(resp, result.messages, writer);
+				}
+				this.respondWithError(resp, msgs, writer);
 			}
 		} catch (Throwable e) {
 			/*
@@ -186,6 +159,24 @@ public class Agent {
 		}
 	}
 
+	private ObjectNode readContent(HttpServletRequest req) {
+		if(req.getContentLength() == 0) {
+			return new ObjectMapper().createObjectNode();
+		}
+		try (Reader reader = req.getReader()) {
+			/*
+			 * read it as json
+			 */
+			JsonNode node = new ObjectMapper().readTree(reader);
+			if (node.getNodeType() != JsonNodeType.OBJECT) {
+				return null;
+			}
+			return (ObjectNode) node;
+		} catch (Exception e) {
+			logger.error("Invalid data recd from client {}", e.getMessage());
+			return null;
+		}
+	}
 	/**
 	 * 
 	 * @param resp
@@ -225,18 +216,6 @@ public class Agent {
 			//
 		}
 
-	}
-
-	/**
-	 * 
-	 * @param resp
-	 */
-	private void setHeaders(HttpServletRequest req,  HttpServletResponse resp) {
-		logger.info("FInally, setting some header...");
-		//resp.setHeader("Access-Control-Allow-Origin", "http://localhost:4222");
-		//resp.setHeader("Junk", "Junk");
-		//resp.setStatus(Http.STATUS_ALL_OK);
-		//this.setOptions(req, resp);
 	}
 
 	private Map<String, String> readQueryString(HttpServletRequest req) {

@@ -8,7 +8,7 @@ import org.simplity.fm.validn.KeyedValueList;
 
 /**
  * List of valid values for list Areas
- * <br /> generated at 2019-07-26T10:00:12.224
+ * <br /> generated at 2019-07-28T20:24:01.166
  */ 
 public class Areas extends KeyedValueList {
 	private static final String[] _names = {"100001", "560070"};

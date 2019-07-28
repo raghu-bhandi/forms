@@ -24,20 +24,27 @@ package org.simplity.fm.form;
 
 /**
  * various operations that are implemented on a form
+ * 
  * @author simplity.org
  *
  */
-public enum FormOperation { 
+public enum FormOperation {
 	/**
-	 * get/retrieve this form from storage. get a blank form, possibly populated with some default values
+	 * get/retrieve this form from storage. get a blank form, possibly populated
+	 * with some default values
 	 */
-	GET, 
+	GET,
 	/**
-	 * save the form as draft 
+	 * save the form as draft
 	 */
-	SAVE, 
+	SAVE,
 	/**
-	 * submit the form for further processing
+	 * validate and save it as draft
+	 */
+	VALIDATE,
+	/**
+	 * submit the form for further processing, of course after validating and
+	 * saving the draft
 	 */
 	SUBMIT
 }

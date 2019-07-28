@@ -11,7 +11,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 2019-07-26T10:00:13.074 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
+ * <br /> generated at 2019-07-28T20:24:01.931 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
  */ 
 public class Form2 extends Form {
 	public static final int headerId = 0;
@@ -50,7 +50,7 @@ public class Form2 extends Form {
 			this.partialSaveAllowed = false;
 
 		Field[] flds = {
-			new Field("headerId", 0, DefinedDataTypes.id, null, null, true, false, false, true, null, "header_id"), 
+			new Field("headerId", 0, DefinedDataTypes.id, null, null, false, false, false, true, null, "header_id"), 
 			new Field("productId", 1, DefinedDataTypes.textId, null, null, true, true, false, true, null, "product_id"), 
 			new Field("quantity", 2, DefinedDataTypes.orderQty, null, null, true, true, false, false, null, "quantity"), 
 			new Field("color", 3, DefinedDataTypes.color, null, null, true, true, false, false, "colors", "color")

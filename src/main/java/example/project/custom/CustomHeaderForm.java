@@ -64,7 +64,7 @@ public class CustomHeaderForm extends HeaderForm {
 		
 		@Override
 		public void submit() throws SQLException {
-			this.fieldValues[FormStorage.ackId] = UUID.randomUUID();
+			this.fieldValues[FormStorage.ackId] = UUID.randomUUID().toString();
 			this.fieldValues[FormStorage.status] = "A";
 			super.submit();
 		}

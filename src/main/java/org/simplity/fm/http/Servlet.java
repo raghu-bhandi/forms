@@ -42,7 +42,7 @@ import javax.servlet.http.HttpServletResponse;
  * @author simplity.org
  * 
  */
-@WebServlet(name = "s", description = "Sole URL for client to request a service", urlPatterns = { "/s" })
+@WebServlet(value = { "/a" })
 public class Servlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;

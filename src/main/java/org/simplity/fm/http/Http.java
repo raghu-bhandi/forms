@@ -56,12 +56,12 @@ public class Http {
 	/**
 	 * various headers that we respond back with
 	 */
-	public static final String[] HDR_NAMES = {"Access-Control-Allow-Origin", "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
+	public static final String[] HDR_NAMES = {"Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
 			"Access-Control-Max-Age", "Connection", "Cache-Control", "Expires", "Accept" };
 	/**
 	 * values for the headers
 	 */
-	public static final String[] HDR_TEXTS = {"http://localhost:4222", "POST, GET, OPTIONS", "content-type, " + SERVICE_HEADER + ", " + TOKEN_HEADER,
+	public static final String[] HDR_TEXTS = {"POST, GET, OPTIONS", "content-type, " + SERVICE_HEADER + ", " + TOKEN_HEADER,
 			"1728", "Keep-Alive", "no-cache, no-store, must-revalidate", "11111110", "application/json" };
 	/**
 	 * http status

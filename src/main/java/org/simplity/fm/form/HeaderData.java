@@ -101,5 +101,9 @@ public class HeaderData extends FormData {
 		if(this.updateInDb() == false) {
 			this.insertToDb();
 		}
+		/*
+		 * we are not to send back the for serialized data!!
+		 */
+		this.setFormData(null);
 	}
 }

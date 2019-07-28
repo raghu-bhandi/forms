@@ -30,17 +30,17 @@ public enum MessageType {
 	/**
 	 * something positive to be conveyed
 	 */
-	Success, 
+	SUCCESS, 
 	/**
 	 * neutral information (neither positive, not negative)
 	 */
-	Info, 
+	INFO, 
 	/**
 	 * warning or calling attention
 	 */
-	Warning, 
+	WARNING, 
 	/**
 	 * something is not right. the service did not do the intended job
 	 */
-	Error
+	ERROR
 }

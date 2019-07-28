@@ -21,18 +21,14 @@ export class DataStore {
 		this.formData = formData;
 	}
 
-	retrieve(data: object): void {
-		const payload = { header: this.getHeader(this.formData.form.getName(), 'get') }
-		this.getResponse(DataStore.SERVICE_NAME, payload, true);
-	}
-
-	save(data: object): void {
-		const payload = { header: this.getHeader(this.formData.form.getName(), 'save'), data: data }
-		this.getResponse(DataStore.SERVICE_NAME, payload, true);
-	}
-
-	submit(data: object): void {
-		const payload = { header: this.getHeader(this.formData.form.getName(), 'submit'), data: data }
+	public manageForm(operation: string): void {
+		const hdr = this.getHeader(this.formData.form.getName(), operation);
+		let payload: any;
+		if(operation === 'get'){
+			payload = { header: hdr };
+		}else{
+			payload = { header: hdr, data: this.formData.extractAll() }
+		}
 		this.getResponse(DataStore.SERVICE_NAME, payload, true);
 	}
 

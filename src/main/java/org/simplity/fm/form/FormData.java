@@ -35,7 +35,6 @@ import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.rdb.RdbDriver;
-import org.simplity.fm.service.IService;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -404,7 +403,7 @@ public class FormData implements IFormData {
 
 			if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
 				if (errors != null) {
-					errors.add(Message.newError(IService.MSG_INVALID_DATA));
+					errors.add(Message.newError(Message.MSG_INVALID_DATA));
 				}
 				continue;
 			}
@@ -418,9 +417,9 @@ public class FormData implements IFormData {
 		return fds.toArray(new FormData[0]);
 	}
 
-	private static void setFeilds(ObjectNode json, Form struct, Object[] row, boolean allFieldsAreOptional,
+	private static void setFeilds(ObjectNode json, Form form, Object[] row, boolean allFieldsAreOptional,
 			List<Message> errors) {
-		Field[] fields = struct.getFields();
+		Field[] fields = form.getFields();
 		for (int i = 0; i < fields.length; i++) {
 			Field field = fields[i];
 			String value = getChildAsText(json, field.getFieldName());
@@ -430,7 +429,7 @@ public class FormData implements IFormData {
 
 	private static void validateAndSet(Field field, String value, Object[] row, int idx, boolean allFieldsAreOptional,
 			List<Message> errors) {
-		if (value == null) {
+		if (value == null || value.isEmpty()) {
 			if (allFieldsAreOptional) {
 				row[idx] = null;
 				return;
@@ -439,6 +438,7 @@ public class FormData implements IFormData {
 		try {
 			row[idx] = field.parse(value);
 		} catch (InvalidValueException e) {
+			logger.error("{} is not a valid value for {} which is of data-type {} and value type {}", value, field.getFieldName(), field.getDataType().getName(), field.getDataType().getValueType());
 			if (errors != null) {
 				errors.add(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
 			}
@@ -477,19 +477,19 @@ public class FormData implements IFormData {
 	private void serializeChildren(JsonGenerator gen) throws IOException {
 		int i = 0;
 		for (ChildForm cf : this.form.childForms) {
-			FormData[] data = this.childData[i];
-			if (data == null) {
+			FormData[] fd = this.childData[i];
+			if (fd == null) {
 				continue;
 			}
 			gen.writeFieldName(cf.fieldName);
-			if (this.form.childForms[i].isTabular) {
+			if (cf.isTabular) {
 				gen.writeStartArray();
-				for (FormData fd : data) {
-					fd.serialize(gen);
+				for (FormData cd : fd) {
+					cd.serialize(gen);
 				}
 				gen.writeEndArray();
 			} else {
-				data[0].serialize(gen);
+				fd[0].serialize(gen);
 			}
 			i++;
 		}

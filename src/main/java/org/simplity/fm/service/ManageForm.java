@@ -23,10 +23,8 @@
 package org.simplity.fm.service;
 
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.simplity.fm.Config;
 import org.simplity.fm.Forms;
@@ -51,7 +49,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author simplity.org
  *
  */
-public class ManageForm implements IService{
+public class ManageForm implements IService {
 	private static ManageForm instance = new ManageForm();
 	private static final Logger logger = LoggerFactory.getLogger(ManageForm.class);
 
@@ -68,76 +66,86 @@ public class ManageForm implements IService{
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser user, ObjectNode payload, Writer writer)
-			throws Exception {
+	public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
 		HeaderData headerData = Config.getConfig().newHeaderData();
-		if(headerData == null) {
+		if (headerData == null) {
 			logger.error("Header Form is not configured. FormService can not operate.");
-			return this.failed(IService.MSG_INTERNAL_ERROR);
+			ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
+			return;
 		}
-		
+
 		JsonNode node = payload.get(Http.FORM_HEADER_TAG);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
 			logger.error("Payload has to have a header object named {} ", Http.FORM_HEADER_TAG);
-			return this.failed(IService.MSG_INVALID_DATA);
+			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
+			return;
 		}
 
 		List<Message> msgs = new ArrayList<>();
 
 		headerData.validateAndLoad((ObjectNode) node, false, msgs);
-		if(msgs.size() > 0) {
+		if (msgs.size() > 0) {
+			for (Message msg : msgs) {
+				ctx.AddMessage(msg);
+			}
 			logger.error("Header data is invalid");
-			return this.failed(msgs);
+			return;
 		}
 
-		if(headerData.isOwner(user) == false) {
-			logger.error("Logged in user {} is not authorized to manage this form with {} as userId ", user.getUserId(), headerData.getUserId());
-			return this.failed(IService.MSG_NOT_AUTHORIZED);
+		if (headerData.isOwner(ctx.getUser()) == false) {
+			logger.error("Logged in user {} is not authorized to manage this form with {} as userId ",
+					ctx.getUser().getUserId(), headerData.getUserId());
+			ctx.AddMessage(Message.newError(Message.MSG_NOT_AUTHORIZED));
+			return;
 		}
-		
+
 		String formName = headerData.getFormName();
 		Form form = Forms.getForm(formName);
-		if(form == null) {
+		if (form == null) {
 			logger.error("Unable to get form {} ", formName);
-			msgs.add(Message.newError("invalidFormName"));
-			return this.failed(msgs);
+			ctx.AddMessage(Message.newError("invalidFormName"));
+			return;
 		}
 
 		FormOperation op = headerData.getFormOperation();
-		if(op == null) {
+		if (op == null) {
 			logger.error("Header has an invalid operation. it should be get, save or submit");
-			msgs.add(Message.newError("invalidOperation"));
-			return this.failed(msgs);
+			ctx.AddMessage(Message.newError("invalidOperation"));
+			return;
 		}
-		
+
 		/*
 		 * this is the actual form that is being managed (saved/submitted)
 		 */
 		FormData fd = form.newFormData();
-		if(op == FormOperation.GET) {
-			if(headerData.fetchFromDb()) {
+		if (op == FormOperation.GET) {
+			if (headerData.fetchFromDb()) {
 				logger.info("Saved form retrieved and sent to the client");
 				node = new ObjectMapper().readTree(headerData.getFormData());
-				fd.load((ObjectNode)node);
-			}else {
+				fd.load((ObjectNode) node);
+			} else {
 				logger.info("New form created and sent to the client");
 				fd.prefill();
 			}
-			//copy profile fields
-			fd.serializeAsJson(writer);
-			return this.succeeded();
+			// TODO: copy profile fields
+			fd.serializeAsJson(ctx.getResponseWriter());
+			return;
 		}
-		
+
 		node = payload.get(Http.FORM_DATA_TAG);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
 			logger.error("Payload has to have a form data object named {}", Http.FORM_DATA_TAG);
-			return this.failed(IService.MSG_INVALID_DATA);
+			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
+			return;
 		}
-		
-		fd.validateAndLoad((ObjectNode)node, op == FormOperation.SAVE, msgs);
-		if(msgs.size() > 0) {
-			logger.error("form has validation errors..");
-			return this.failed(msgs);
+
+		fd.validateAndLoad((ObjectNode) node, op == FormOperation.SAVE, msgs);
+		if (msgs.size() > 0) {
+			for (Message msg : msgs) {
+				logger.error("{}", msg);
+				ctx.AddMessage(msg);
+			}
+			return;
 		}
 
 		StringWriter riter = new StringWriter();
@@ -145,28 +153,14 @@ public class ManageForm implements IService{
 		String text = riter.toString();
 		headerData.setFormData(text);
 		logger.info("Going {} form data : {}", op, text);
-		if(op == FormOperation.SAVE) {
+		if (op == FormOperation.SUBMIT) {
+			headerData.submit();
+			headerData.serializeAsJson(ctx.getResponseWriter());
+			logger.info("submitted and writing the header data back");
+		} else {
 			headerData.save();
 			logger.info("Saved");
-		}else {
-			headerData.submit();
-			headerData.serializeAsJson(writer);
-			logger.info("submitted and writing teh header data back");
 		}
-		return this.succeeded();
-	}
-
-	protected ServiceResult failed(List<Message> messages) {
-		return new ServiceResult(messages.toArray(new Message[0]), false);
-	}
-
-	protected ServiceResult failed(String messageId) {
-		Message[] msgs = { Message.newError(messageId) };
-		return new ServiceResult(msgs, false);
-	}
-
-	protected ServiceResult succeeded() {
-		return new ServiceResult(null, true);
 	}
 
 	/**
@@ -183,10 +177,5 @@ public class ManageForm implements IService{
 
 	protected void addMessage(String messageId, List<Message> messages) {
 		messages.add(Message.newError(messageId));
-	}
-
-	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception {
-		throw new Exception("Form service cannot be invoked with parameters. It requires JSON as request payload");
 	}
 }

@@ -30,6 +30,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * serves as the main class as well as the handler
@@ -38,28 +40,29 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
  *
  */
 public class JettyHandler extends AbstractHandler {
+	private static final Logger logger = LoggerFactory.getLogger(JettyHandler.class);
 	private static final int STATUS_METHOD_NOT_ALLOWED = 405;
 
-	/*
-	 * TODO : to research about use of baseREquest and request objects
-	 */
 	@Override
 	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 			throws IOException, ServletException {
-		baseRequest.setHandled(true);
-		Agent agent = Agent.getAgent();
-		System.out.println("Received a request for context method = " + baseRequest.getMethod() + " and pathInfo = " + baseRequest.getPathInfo());
 		String method = baseRequest.getMethod().toUpperCase();
-		if(method.equals("POST") || method.equals("GET")) {
-			agent.setOptions(baseRequest, response);
+		logger.info("Request path:{} and method {}", baseRequest.getPathInfo(), method);
+		long start = System.currentTimeMillis();
+		Agent agent = Agent.getAgent();
+		agent.setOptions(baseRequest, response);
+		
+		if (method.equals("POST") || method.equals("GET")) {
 			agent.serve(baseRequest, response, true);
-			return;
+		} else if (method.equals("OPTIONS")) {
+			logger.info("Got a pre-flight request. responding generously.. ");
+		} else {
+			logger.error("Rejected a request with method {}", baseRequest.getMethod());
+			response.setStatus(STATUS_METHOD_NOT_ALLOWED);
 		}
-		if(method.equals("OPTIONS")) {
-			agent.setOptions(baseRequest, response);
-			return;
-		}
-		response.setStatus(STATUS_METHOD_NOT_ALLOWED);
+		
+		logger.info("Responded in {}ms", System.currentTimeMillis() - start);
+		baseRequest.setHandled(true);
 	}
 
 	/**
@@ -79,5 +82,4 @@ public class JettyHandler extends AbstractHandler {
 		server.start();
 		server.join();
 	}
-
 }

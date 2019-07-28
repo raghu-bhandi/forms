@@ -57,7 +57,11 @@ public class DateType extends DataType {
 	@Override
 	public LocalDate parse(String text) {
 		try{
-			return this.validate(LocalDate.parse(text));
+			if(text.length() == 10) {
+				return this.validate(LocalDate.parse(text));
+			}
+			return this.validate(LocalDate.ofEpochDay(Long.parseLong(text)));
+			
 		}catch(Exception e) {
 			return null;
 		}

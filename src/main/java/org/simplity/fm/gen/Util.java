@@ -99,6 +99,9 @@ class Util {
 		if (ct == Cell.CELL_TYPE_NUMERIC) {
 			return "" + (long) cell.getNumericCellValue();
 		}
+		if (ct == Cell.CELL_TYPE_BOOLEAN) {
+			return "" + cell.getBooleanCellValue();
+		}
 		return null;
 	}
 

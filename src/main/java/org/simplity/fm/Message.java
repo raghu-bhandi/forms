@@ -31,13 +31,27 @@ import org.simplity.fm.datatypes.InvalidValueException;
  */
 public class Message {
 	/**
+	 * message to be used if the user is not authorized for this specific form
+	 * instance
+	 */
+	public static final String MSG_NOT_AUTHORIZED = "notAuthorized";
+	/**
+	 * error to be used in case of any internal error
+	 */
+	public static final String MSG_INTERNAL_ERROR = "internalError";
+
+	/**
+	 * error to be used in case of any internal error
+	 */
+	public static final String MSG_INVALID_DATA = "invalidData";
+	/**
 	 * create an error message for a message id
 	 * 
 	 * @param messageId
 	 * @return an error message for this message id
 	 */
 	public static Message newError(String messageId) {
-		return new Message(MessageType.Error, messageId, null, null, null, 0);
+		return new Message(MessageType.ERROR, messageId, null, null, null, 0);
 	}
 
 	/**
@@ -45,7 +59,7 @@ public class Message {
 	 * @return a validation message based on the exception
 	 */
 	public static Message newValidationError(InvalidValueException e) {
-		return new Message(MessageType.Error, e.getMessageId(), e.getFieldName(), e.getParams(), null, 0);
+		return new Message(MessageType.ERROR, e.getMessageId(), e.getFieldName(), e.getParams(), null, 0);
 	}
 
 	/**
@@ -57,7 +71,7 @@ public class Message {
 	 * @return validation error message
 	 */
 	public static Message newFieldError(String fieldName, String messageId, String params) {
-		return new Message(MessageType.Error, messageId, fieldName, params, null, 0);
+		return new Message(MessageType.ERROR, messageId, fieldName, params, null, 0);
 	}
 
 	/**
@@ -76,7 +90,7 @@ public class Message {
 	 */
 	public static Message newColumnError(String tableName, String columnName, String messageId, String params,
 			int rowNumber) {
-		return new Message(MessageType.Error, messageId, tableName, params, columnName, 0);
+		return new Message(MessageType.ERROR, messageId, tableName, params, columnName, 0);
 	}
 
 

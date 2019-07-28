@@ -49,7 +49,7 @@ public class CustomUser extends LoggedInUser {
 		Form form = Forms.getForm("user");
 		if (form == null) {
 			logger.error(
-					"Unable to get instance of form named 'user'. logged in user details not added to teh context");
+					"Unable to get instance of form named 'user'. logged in user details not added to the context");
 			return;
 		}
 		FormData fd = form.newFormData();

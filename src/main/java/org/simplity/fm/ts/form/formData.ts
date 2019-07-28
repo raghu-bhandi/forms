@@ -195,22 +195,18 @@ export class FormData extends AbstractData {
 	/**
 	 * submit this form
 	 */
-	public submit() {
-		new DataStore(this).submit(this.extractAll());
+	public manageForm(operation: string) {
+		if(this.validate()){
+			new DataStore(this).manageForm(operation);
+		}else{
+			console.log('Operation ' + operation + ' aborted because of validation error');
+		}
 	}
-
 	/**
-	 * save this form
+	 * validation is to be implemented
 	 */
-	public save() {
-		new DataStore(this).save(this.extractAll());
-	}
-
-	/**
-	 * retrieve this form
-	 */
-	public retrieve() {
-		new DataStore(this).retrieve(this.extractKeys());
+	public validate() : boolean {
+		return true;
 	}
 }
 

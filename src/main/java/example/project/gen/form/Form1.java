@@ -14,7 +14,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 2019-07-26T10:00:12.762 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx
+ * <br /> generated at 2019-07-28T20:24:01.721 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx
  */ 
 public class Form1 extends Form {
 	public static final int headerId = 0;
@@ -35,13 +35,13 @@ public class Form1 extends Form {
 	public static final int orderLines = 0;
 	private static final String WHERE = " WHERE header_id=?";
 	private static final int[] WHERE_IDX = {0};
-	private static final String SELECT = "SELECT header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan FROM header";
+	private static final String SELECT = "SELECT header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan FROM headerId";
 	private static final int[] SELECT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
-	private static final  String INSERT = "INSERT INTO header(header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+	private static final  String INSERT = "INSERT INTO headerId(header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	private static final int[] INSERT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
-	private static final  String UPDATE = "UPDATE header SET customer_id=?, financial_year=?, bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?, ka_specific_field=?, aadhaar=?, pan=?";
+	private static final  String UPDATE = "UPDATE headerId SET customer_id=?, financial_year=?, bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?, ka_specific_field=?, aadhaar=?, pan=?";
 	private static final  int[] UPDATE_IDX = {1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 0};
-	private static final String DELETE = "DELETE FROM header";
+	private static final String DELETE = "DELETE FROM headerId";
 
 	private static final String[] FORM2_LINK = {"headerId"};
 	private static final int[] FORM2_IDX = {0};
@@ -76,10 +76,10 @@ public class Form1 extends Form {
 			this.formProcessors[1] = new example.project.custom.MyPostGet();
 
 		Field[] flds = {
-			new Field("headerId", 0, DefinedDataTypes.id, null, null, true, false, false, true, null, "header_id"), 
-			new Field("customerId", 1, DefinedDataTypes.customerId, "AAA-99-AA", null, true, false, false, false, null, "customer_id"), 
+			new Field("headerId", 0, DefinedDataTypes.id, null, null, false, false, false, true, null, "header_id"), 
+			new Field("customerId", 1, DefinedDataTypes.customerId, "AAA-99-AAA", null, true, true, false, false, null, "customer_id"), 
 			new Field("financialYear", 2, DefinedDataTypes.fy, "2010", null, true, true, false, false, null, "financial_year"), 
-			new Field("boolField", 3, DefinedDataTypes.trueFalse, null, null, false, true, false, false, null, "bool_field"), 
+			new Field("boolField", 3, DefinedDataTypes.trueFalse, "true", null, false, true, false, false, null, "bool_field"), 
 			new Field("fromDate", 4, DefinedDataTypes.futureDate, "44175", null, false, true, false, false, null, "from_date"), 
 			new Field("toDate", 5, DefinedDataTypes.futureDate, "44896", null, false, true, false, false, null, "to_date"), 
 			new Field("intField1", 6, DefinedDataTypes.qty, "33", null, false, true, false, false, null, "int_field1"), 

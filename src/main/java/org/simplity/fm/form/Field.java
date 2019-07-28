@@ -233,7 +233,7 @@ public class Field {
 	 *             if the value is invalid.
 	 */
 	public Object parse(String inputValue) throws InvalidValueException {
-		if (inputValue == null) {
+		if (inputValue == null || inputValue.isEmpty()) {
 			if (this.isRequired == false) {
 				return null;
 			}

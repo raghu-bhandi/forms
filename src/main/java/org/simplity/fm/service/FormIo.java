@@ -22,11 +22,8 @@
 
 package org.simplity.fm.service;
 
-import java.io.Writer;
-import java.util.Map;
 
 import org.simplity.fm.form.FormOperation;
-import org.simplity.fm.http.LoggedInUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,17 +49,18 @@ public class FormIo implements IService{
 		return new FormIo(opern, formName);
 	}
 
+	/**
+	 * 
+	 * @param opern
+	 * @param formName
+	 */
 	private FormIo(FormOperation opern, String formName) {
 		//
 	}
 
 	@Override
-	public ServiceResult serve(LoggedInUser loggedinUser, ObjectNode payload, Writer writer)
+	public void serve(IserviceContext ctx, ObjectNode payload)
 			throws Exception {
-		return null;
-	}
-	@Override
-	public ServiceResult serve(LoggedInUser user, Map<String, String> keyFields, Writer writer) throws Exception {
-		throw new Exception("Form service cannot be invoked with parameters. It requires JSON as request payload");
+		throw new Exception("Form IO service not yet implemented");
 	}
 }
