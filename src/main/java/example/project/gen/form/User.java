@@ -11,7 +11,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of user
- * <br /> generated at 2019-07-28T20:24:02.255 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/user.xlsx
+ * <br /> generated at 2019-07-30T19:43:51.411 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/user.xlsx
  */ 
 public class User extends Form {
 	public static final int userId = 0;

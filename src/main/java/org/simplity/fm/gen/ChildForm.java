@@ -164,6 +164,7 @@ class ChildForm {
 		sbf.append(C).append(this.index);
 		sbf.append(C).append(Util.escapeTs(this.label));
 		sbf.append(C).append(Util.toClassName(this.formName)).append(".getInstance()");
+		sbf.append(C).append(this.isTabular);
 		sbf.append(C).append(this.minRows);
 		sbf.append(C).append(this.maxRows);
 		sbf.append(C).append(Util.escapeTs(this.errorId)).append(");");

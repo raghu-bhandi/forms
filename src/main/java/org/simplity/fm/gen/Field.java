@@ -149,31 +149,50 @@ class Field {
 		sbf.append(')');
 	}
 
-	void emitTs(StringBuilder sbf, Map<String, DataType> dataTypes, Map<String, ValueList> valueLists,
+	void emitFg(StringBuilder sbf, DataType dt){
+		if (dt == null) {
+			String msg = "Field " + this.name + " has an invalid data type of " + this.dataType + ". Field not added.";
+			logger.error(msg);
+			sbf.append("\n\t//ERROR: ").append(msg);
+			return;
+		}
+		sbf.append(this.name).append(": [''");
+		if(this.isRequired) {
+			sbf.append(C).append("Validators.required");
+		}
+		sbf.append("]");
+		
+	}
+	void emitTs(StringBuilder sbf, DataType dt, Map<String, ValueList> valueLists,
 			Map<String, KeyedValueList> keyedLists) {
+		if (dt == null) {
+			String msg = "Field " + this.name + " has an invalid data type of " + this.dataType + ". Field not added.";
+			logger.error(msg);
+			sbf.append("\n\t//ERROR: ").append(msg);
+			return;
+		}
 		sbf.append("\n\t").append(this.name).append(" = new Field('").append(this.name);
 		sbf.append("', ").append(this.index);
+		sbf.append(C).append(Util.escapeTs(this.defaultValue));
 		sbf.append(C).append(Util.escapeTs(this.label));
 		sbf.append(C).append(Util.escapeTs(this.altLabel));
 		sbf.append(C).append(Util.escapeTs(this.placeHolder));
-		sbf.append(C).append(Util.escapeTs(this.defaultValue));
-		sbf.append(C).append(this.isRequired);
+		sbf.append(C).append(Util.escapeTs(dt.trueLabel));
+		sbf.append(C).append(Util.escapeTs(dt.falseLabel));
 		sbf.append(C).append(this.isEditable);
-		sbf.append(C).append(this.isDerived);
-		sbf.append(C).append(this.isKey);
-		sbf.append(",\n\t\t\t\t");
-		/*
-		 * data types params are inserted here
-		 */
-		DataType dt = dataTypes.get(this.dataType);
-		if (dt == null) {
-			logger.error("DataType {} is not defined.", this.dataType);
-		} else {
-			dt.emitTs(sbf, this.errorId);
+		String eid = this.errorId;
+		if (eid == null || eid.isEmpty()) {
+			eid = dt.errorId;
 		}
-		/*
-		 * drop-down list
-		 */
+		sbf.append(C).append(Util.escapeTs(eid));
+		sbf.append(C).append(this.isRequired);
+		sbf.append(C).append(dt.minLength);
+		sbf.append(C).append(dt.maxLength);
+		sbf.append(C).append(dt.valueType.ordinal());
+		sbf.append(C).append(Util.escapeTs(dt.regex));
+		sbf.append(C).append(dt.minValue);
+		sbf.append(C).append(dt.maxValue);
+		sbf.append(C).append(dt.nbrFractions);
 		sbf.append(C).append(Util.escapeTs(this.listKey));
 		sbf.append(C);
 		if (this.listName == null) {

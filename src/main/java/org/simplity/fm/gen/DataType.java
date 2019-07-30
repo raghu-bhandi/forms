@@ -39,7 +39,7 @@ class DataType {
 	 */
 	String name;
 	ValueType valueType;
-	String messageId;
+	String errorId;
 	String regexDesc;
 	String regex;
 	int minLength;
@@ -48,7 +48,7 @@ class DataType {
 	long maxValue;
 	String trueLabel;
 	String falseLabel;
-	private int nbrFractions;
+	int nbrFractions;
 
 	static DataType fromRow(Row row) {
 		DataType dt = new DataType();
@@ -65,7 +65,7 @@ class DataType {
 			return null;
 		}
 
-		dt.messageId = Util.textValueOf(row.getCell(2));
+		dt.errorId = Util.textValueOf(row.getCell(2));
 		dt.regexDesc = Util.textValueOf(row.getCell(3));
 		dt.regex = Util.textValueOf(row.getCell(4));
 		dt.minLength = (int) Util.longValueOf(row.getCell(5));
@@ -88,7 +88,7 @@ class DataType {
 		sbf.append("\n\tpublic static final ").append(cls).append(" ").append(this.name);
 		sbf.append(" = new ").append(cls).append("(");
 		sbf.append(Util.escape(this.name));
-		sbf.append(C).append(Util.escape(this.messageId));
+		sbf.append(C).append(Util.escape(this.errorId));
 		/*
 		 * append parameters list based on the data type
 		 */
@@ -123,21 +123,4 @@ class DataType {
 			return;
 		}
 	}
-
-	void emitTs(StringBuilder sbf, String errorId) {
-		String eid = errorId;
-		if (eid == null || eid.isEmpty()) {
-			eid = this.messageId;
-		}
-		sbf.append(Util.getValueTypeIdx(this.valueType));
-		sbf.append(C).append(Util.escapeTs(this.regex));
-		sbf.append(C).append(Util.escapeTs(eid));
-		sbf.append(C).append(this.minLength);
-		sbf.append(C).append(this.maxLength);
-		sbf.append(C).append(this.minValue);
-		sbf.append(C).append(this.maxValue);
-		sbf.append(C).append(Util.escapeTs(this.trueLabel));
-		sbf.append(C).append(Util.escapeTs(this.falseLabel));
-	}
-
 }

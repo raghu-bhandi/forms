@@ -338,7 +338,7 @@ class Form {
 			sbf.append("};");
 
 			sbf.append("\n\tprivate static final int[] ").append(child.formName.toUpperCase()).append("_IDX = {");
-			for (String txt : child.linkChildFields) {
+			for (String txt : child.linkParentFields) {
 				Field field = this.fieldMap.get(txt);
 				if (field == null) {
 					logger.error(
@@ -472,7 +472,7 @@ class Form {
 				.append("\n */");
 
 		sbf.append("\nimport { Form , Field } from '../form/form';");
-
+		sbf.append("\nimport { Validators } from '@angular/forms'");
 		/*
 		 * import for child forms being referred
 		 */
@@ -493,7 +493,7 @@ class Form {
 		 */
 		if (this.fields != null && this.fields.length > 0) {
 			for (Field field : this.fields) {
-				field.emitTs(sbf, dataTypes, valueLists, keyedLists);
+				field.emitTs(sbf, dataTypes.get(field.dataType), valueLists, keyedLists);
 			}
 		}
 
@@ -520,33 +520,38 @@ class Form {
 		sbf.append("\n\t\tsuper();");
 
 		/*
-		 * put fields into an array.
+		 * put fields into a map.
 		 */
 		if (this.fields != null && this.fields.length > 0) {
-			sbf.append("\n\t\tthis.fields = [");
+			StringBuilder altSbf = new StringBuilder("\n\t\tthis.controls = {");
+			sbf.append("\n\t\tthis.fields = new Map();");
 			for (Field field : this.fields) {
-				sbf.append("\n\t\t\tthis.").append(field.name).append(',');
+				sbf.append("\n\t\tthis.fields.set('").append(field.name).append("', ").append("this.").append(field.name).append(");");
+				altSbf.append("\n\t\t\t");
+				field.emitFg(altSbf, dataTypes.get(field.dataType));
+				altSbf.append(C);
 			}
-			sbf.setLength(sbf.length() - 1);
-			sbf.append("\n\t\t];");
+
+			altSbf.setLength(altSbf.length() - C.length());
+			sbf.append(altSbf.toString()).append("\n\t\t};");
+
 		}
 
 		/*
 		 * put child forms into an array
 		 */
 		if (this.childForms != null && this.childForms.length != 0) {
-			sbf.append("\n\n\t\tthis.childForms = [");
+			sbf.append("\n\n\t\tthis.childForms = new Map();");
 			for (ChildForm child : this.childForms) {
-				sbf.append("\n\t\t\tthis.").append(child.name).append(',');
+				sbf.append("\n\t\tthis.childForms.set('").append(child.name).append("', ").append("this.").append(child.name).append(");");
 			}
-			sbf.setLength(sbf.length() - 1);
-			sbf.append("\n\t\t];");
 		}
-		sbf.append("\n\t}");
 
 		/*
 		 * end of constructor
 		 */
+		sbf.append("\n\t}");
+
 		sbf.append("\n\n\tpublic getName(): string {");
 		sbf.append("\n\t\t return '").append(this.name).append("';");
 		sbf.append("\n\t}");

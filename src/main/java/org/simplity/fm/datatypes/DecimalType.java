@@ -30,7 +30,7 @@ public class DecimalType extends DataType {
 	private final long minValue;
 	private final long maxValue;
 	/**
-	 * calculated based nbr decimals as a factor to round-off teh value to teh
+	 * calculated based nbr decimals as a factor to round-off the value to the
 	 * right decimal places
 	 */
 	private final long factor;

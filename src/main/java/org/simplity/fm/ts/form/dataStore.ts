@@ -1,7 +1,5 @@
-// tslint:disable: indent
 import { FormData } from './formData';
 import { Message } from './message';
-import { createUrlResolverWithoutPackagePrefix } from '@angular/compiler';
 
 /**
  * manages data persistence. knows how to connect to the server and request services
@@ -15,9 +13,8 @@ export class DataStore {
 	static SERVICE_NAME = 'manageForm';
 	static MESSAGE = 'messages';
 
-	formData: FormData;
 
-	constructor(formData: FormData) {
+	constructor(private formData: FormData) {
 		this.formData = formData;
 	}
 
