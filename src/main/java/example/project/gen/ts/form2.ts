@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx at 2019-07-30T19:43:50.922
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx at 2019-08-04T22:59:20.707
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -23,10 +23,10 @@ export class Form2 extends Form {
 		this.fields.set('quantity', this.quantity);
 		this.fields.set('color', this.color);
 		this.controls = {
-			headerId: [''], 
-			productId: ['', Validators.required], 
-			quantity: ['', Validators.required], 
-			color: ['', Validators.required]
+			headerId: ['',[Validators.max(9999999999999), Validators.min(1), Validators.minLength(1), Validators.maxLength(13)]], 
+			productId: ['',[Validators.required, Validators.pattern('[\\w]*'), Validators.minLength(4), Validators.maxLength(15)]], 
+			quantity: ['',[Validators.required, Validators.max(2000), Validators.min(1), Validators.minLength(1), Validators.maxLength(4)]], 
+			color: ['',[Validators.required, Validators.max(100), Validators.min(0), Validators.minLength(1), Validators.maxLength(5)]]
 		};
 	}
 

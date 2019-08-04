@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-07-30T19:43:50.629
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-04T22:59:20.404
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -70,21 +70,21 @@ export class Form1 extends Form {
 		this.fields.set('aadhaar', this.aadhaar);
 		this.fields.set('pan', this.pan);
 		this.controls = {
-			headerId: [''], 
-			customerId: ['', Validators.required], 
-			financialYear: ['', Validators.required], 
-			boolField: [''], 
-			fromDate: [''], 
-			toDate: [''], 
-			intField1: [''], 
-			intField2: [''], 
-			derivedField: [''], 
-			fyStartDate: [''], 
-			state: ['', Validators.required], 
-			district: ['', Validators.required], 
-			kaSpecificField: [''], 
-			aadhaar: [''], 
-			pan: ['']
+			headerId: ['',[Validators.max(9999999999999), Validators.min(1), Validators.minLength(1), Validators.maxLength(13)]], 
+			customerId: ['AAA-99-AAA',[Validators.required, Validators.pattern('[A-Z]{3}-[\\d]{2}-[A-Z]{3}'), Validators.minLength(10), Validators.maxLength(10)]], 
+			financialYear: ['2010',[Validators.required, Validators.max(2025), Validators.min(1989), Validators.minLength(4), Validators.maxLength(4)]], 
+			boolField: ['true',[]], 
+			fromDate: ['44175',[]], 
+			toDate: ['44896',[]], 
+			intField1: ['33',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
+			intField2: ['45',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
+			derivedField: ['',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
+			fyStartDate: ['',[]], 
+			state: ['KA',[Validators.required, Validators.pattern('[A-Z][A-Z]'), Validators.minLength(2), Validators.maxLength(2)]], 
+			district: ['123',[Validators.required, Validators.max(9999), Validators.min(1)]], 
+			kaSpecificField: ['kannada',[Validators.minLength(2), Validators.maxLength(100)]], 
+			aadhaar: ['111122223333',[Validators.max(999999999999), Validators.min(100000000000), Validators.pattern('12 digits')]], 
+			pan: ['ACTPB3029K',[Validators.pattern('[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]'), Validators.minLength(10), Validators.maxLength(10)]]
 		};
 
 		this.childForms = new Map();

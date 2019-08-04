@@ -1,6 +1,7 @@
 import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
-import { FormGroup, FormBuilder } from '@angular/forms';
+import { FormGroup, FormBuilder, FormArray, FormControl } from '@angular/forms';
+import { WebDriverLogger } from 'blocking-proxy/built/lib/webdriver_logger';
 
 // tslint:disable: indent
 /**
@@ -43,9 +44,13 @@ export class FormData extends AbstractData {
 		this.childData = new Map<string, AbstractData>();
 		f.childForms.forEach((child: ChildForm, key: string) => {
 			if (child.isTabular) {
-				this.childData.set(child.name, new TabularData(child.form, fb));
+				const fd = new TabularData(child.form, fb);
+				this.childData.set(child.name, fd);
+				this.formGroup.addControl(child.name, fd.formArray);
 			} else {
-				this.childData.set(child.name, new FormData(child.form, fb));
+				const fd = new FormData(child.form, fb);
+				this.childData.set(child.name, fd);
+				this.formGroup.addControl(child.name, fd.formGroup);
 			}
 		});
 	}
@@ -55,39 +60,52 @@ export class FormData extends AbstractData {
 	}
 
 	public setFieldValue(name: string, value: any) {
-		this.formGroup.get(name).setValue(value);
+		const f = this.formGroup.get(name);
+		if (f) {
+			f.setValue(value);
+			return;
+		}
+		console.error(name + ' is not a field in this form. value ' + value + ' not set');
 	}
 
 	public getFieldValue(name: string) {
-		return this.formGroup.get(name).value;
+		const f = this.formGroup.get(name);
+		if (f) {
+			return f.value;
+		}
+		console.error(name + ' is not a field in this form. null value returned.');
+		return null;
 	}
 
-	public getChildData(name : string): AbstractData {
+	public getChildData(name: string): AbstractData {
 		return this.childData.get(name);
 	}
 
 	public setAll(data: object) {
-		console.log('Got data = ' + JSON.stringify(data));
-		this.formGroup.setValue(data);
+		this.formGroup.patchValue(data);
 		if (!this.childData) {
 			return;
 		}
 
 		this.form.childForms.forEach((child: ChildForm, key: string) => {
-			let d = data[child.name];
-			const td = this.childData.get(child.name);
+			console.log('Looking at child ' + key)
+			let d = data[key];
 			if (!d) {
 				console.warn('No data received for child ' + child.name);
 			}
+			const td = this.childData.get(key);
 			if (child.isTabular) {
+				console.log('resetting child ' + key + ' to remove all lines..');
 				let arr = [];
-				if (d instanceof Array) {
+				if (d && d instanceof Array) {
 					arr = d as Array<any>;
-				} else {
-					console.error('Data for child ' + child.name + ' is expected as an array, but a non-array is recieved')
+				} else if (d) {
+					console.error('Data for child ' + key + ' is expected as an array, but a non-array is recieved')
 				}
+				console.log('assigning array ' + arr + ' to tabular data ' + td);
 				(td as TabularData).setAll(arr);
 			} else {
+				console.log('assigning object ' + d + ' to form data ' + td);
 				(td as FormData).setAll(d || {});
 			}
 		});
@@ -113,7 +131,7 @@ export class FormData extends AbstractData {
 			this.formGroup.updateValueAndValidity();
 			if (!this.formGroup.valid) {
 				console.error('Form has errors. "' + operation + '" operation aborted.');
-				alert("Form data has some errors. Please fix and them and try again.");
+				alert("Form data has some errors. Please fix and then and try again.");
 				return;
 			}
 			msg += '" after successful validation';
@@ -129,20 +147,16 @@ export class FormData extends AbstractData {
  * represents table/grid data
  */
 export class TabularData extends AbstractData {
-	public isValid(): boolean {
-		if (this.data) {
-			for (const fd of this.data) {
-				if (!fd.isValid) {
-					return false;
-				}
-			}
-		}
-		return true;
-	}
 	data: Array<FormData>;
-	public constructor(f: Form, private formBuilder: FormBuilder) {
+	formArray: FormArray;
+	public constructor(f: Form, private fb: FormBuilder) {
 		super(f);
 		this.data = [];
+		this.formArray = new FormArray([]);
+	}
+
+	public isValid(): boolean {
+		return this.formArray.valid;
 	}
 
 	public setAll(data: Array<object>) {
@@ -150,9 +164,10 @@ export class TabularData extends AbstractData {
 		this.data.length = n;
 		for (let i = 0; i < n; i++) {
 			let fd = this.data[i];
-			if (fd) {
-				fd = new FormData(this.form, this.formBuilder);
+			if (!fd) {
+				fd = new FormData(this.form, this.fb);
 				this.data[i] = fd;
+				this.formArray[i] = fd.formGroup;
 			}
 			fd.setAll(data[i]);
 		}
@@ -161,14 +176,17 @@ export class TabularData extends AbstractData {
 	public extractAll(): any {
 		const arr = [];
 		for (const fd of this.data) {
-			arr.push(fd.extractAll());
+			if (fd) {
+				arr.push(fd.extractAll());
+			}
 		}
 		return arr;
 	}
 
 	public appendRow(): FormData {
-		const fd = new FormData(this.form, this.formBuilder);
+		const fd = new FormData(this.form, this.fb);
 		this.data.push(fd);
+		this.formArray.push(fd.formGroup);
 		return fd;
 	}
 

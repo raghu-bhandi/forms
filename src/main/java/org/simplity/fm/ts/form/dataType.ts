@@ -1,3 +1,7 @@
+/**
+ * THIS IS NOT USED AS OF NOW.
+ * we will use this if we have to validate the field values ourelves rather than handing over to the client-framework
+ */
 export abstract class DataType {
     /**
      * 
@@ -97,7 +101,7 @@ export class DateType extends DataType {
     public validate(value: string) {
         //as of now, we keep it simple parsing..
         let date = Date.parse(value);
-        if(!date){
+        if (!date) {
             return null;
         }
 
@@ -107,31 +111,31 @@ export class DateType extends DataType {
         let d = today.getDate();
         const maxDate = new Date(y, m, d + this.maxValue);
         const minDate = new Date(y, m, d + this.minValue);
-        if(date > maxDate.getTime() || date < minDate.getTime() ){
+        if (date > maxDate.getTime() || date < minDate.getTime()) {
             return null;
         }
-        let parsedDate = new Date(date); 
+        let parsedDate = new Date(date);
         m = parsedDate.getMonth() + 1;
         d = parsedDate.getDate();
         let s = parsedDate.getFullYear + '-';
-        if(m < 10){
+        if (m < 10) {
             s += '0';
         }
         s += m + '-';
-        if(d < 10){
+        if (d < 10) {
             s += '0';
         }
         return s + d;
     }
 }
 
-export class BooleanType extends DataType{
-    public constructor(){
+export class BooleanType extends DataType {
+    public constructor() {
         super();
     }
     public validate(value: string) {
         return value;
     }
 
-} 
+}
 

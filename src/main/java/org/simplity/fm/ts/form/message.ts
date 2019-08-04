@@ -1,3 +1,6 @@
+/**
+ * NOT USED AS OF NOW...
+ */
 export class Message {
 	type: string;
 	id: string;

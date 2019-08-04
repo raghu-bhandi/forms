@@ -1,5 +1,4 @@
 import { FormData } from './formData';
-import { Message } from './message';
 
 /**
  * manages data persistence. knows how to connect to the server and request services
@@ -11,22 +10,43 @@ export class DataStore {
 	static AUTH = 'AAA-99-AAA';
 	static YEAR = '2010';
 	static SERVICE_NAME = 'manageForm';
-	static MESSAGE = 'messages';
+	static TAG_MESSAGES = 'messages';
+	static TAG_ALL_OK = 'allOk';
+	static TAG_HEADER = 'header';
+	static TAG_DATA = 'data';
 
 
 	constructor(private formData: FormData) {
 		this.formData = formData;
 	}
 
+	static showMessages(msgs: Array<any>) {
+		if (!msgs) {
+			console.error('empty messages!!');
+			return;
+		}
+		alert('Server returned with errors: ' + JSON.stringify(msgs));
+	}
+
 	public manageForm(operation: string): void {
 		const hdr = this.getHeader(this.formData.form.getName(), operation);
-		let payload: any;
-		if(operation === 'get'){
-			payload = { header: hdr };
-		}else{
-			payload = { header: hdr, data: this.formData.extractAll() }
+		let payload = {};
+		payload[DataStore.TAG_HEADER] = hdr;
+		if (operation !== 'get') {
+			payload[DataStore.TAG_DATA] = this.formData.extractAll();
 		}
-		this.getResponse(DataStore.SERVICE_NAME, payload, true);
+
+		this.getResponse(DataStore.SERVICE_NAME, payload, true, (data, messages) => {
+			if (data) {
+				if (operation === 'get') {
+					this.formData.setAll(data);
+				} else {
+					console.log('Operation ' + operation + " successful");
+				}
+				return;
+			}
+			DataStore.showMessages(messages);
+		}, (messages) => { DataStore.showMessages(messages) });
 	}
 
 	private receiveData(data: object) {
@@ -42,7 +62,7 @@ export class DataStore {
 	 * @param failureFn null if default error handling is expected
 	 */
 	getResponse(serviceName: string, data: any, asPayload: boolean,
-		successFn?: (data: any, messages: Message[]) => void,
+		successFn?: (data: any, messages: Array<any>) => void,
 		failureFn?: (messages: any[]) => void) {
 
 		if (!successFn) {
@@ -66,38 +86,40 @@ export class DataStore {
 				return;
 			}
 
-			let json = {};
-			let messages: Message[] = null;
-			console.log('Response text: ' + xhr.responseText + ' because state = ' + xhr.readyState + ' status=' + xhr.status);
+			if (xhr.status && xhr.status !== 200) {
+				console.log('Http Status : ' + xhr.status + xhr.responseText);
+				failureFn([{ type: 'error', id: 'serverErrror', text: 'http status ' + xhr.status }]);
+				return;
+			}
+
+			let messages: Array<any> = null;
+			let data = null;
+			let allOk = true;
 			if (xhr.response) {
 				try {
-					json = JSON.parse(xhr.responseText);
-					console.log('json = ' + JSON.stringify(json));
-					if (json.hasOwnProperty(DataStore.MESSAGE)) {
-						messages = json[DataStore.MESSAGE];
-					}
+					const json = JSON.parse(xhr.responseText);
+					allOk = json[DataStore.TAG_ALL_OK];
+					messages = json[DataStore.TAG_MESSAGES];
+					data = json[DataStore.TAG_DATA];
 				} catch (e) {
 					console.log('Response is not json. response text is returned instead of js object....');
-					/*
-					 * utility services may use non-jsons
-					 */
-					json = xhr.responseText;
+					failureFn([{ type: 'error', id: 'serverError', text: 'Server returned an invalid json' }]);
+					return;
 				}
 			}
 			/*
 			 * any issue with our web agent?
 			 */
-			if (xhr.status && xhr.status !== 200) {
-				console.log('Gttp Status : ' + xhr.status + xhr.responseText);
-				failureFn([new Message('error', 'serverErrror', 'Server or the communication infrastructure has failed to respond.')]);
-				return;
+			if (allOk) {
+				successFn(data, messages);
+			} else {
+				failureFn(messages);
 			}
-			successFn(json, messages);
 			return;
 		};
 		xhr.ontimeout = () => {
 			console.error('Http Request timed out');
-			failureFn([new Message('error', 'timeOut', 'Server did not respond within reaosnable time.')]);
+			failureFn([{ type: 'error', id: 'timeOut', text: 'Server did not respond within reaosnable time.' }]);
 		};
 
 		let url = asPayload ? DataStore.URL : this.getUrlWithQry(data);
@@ -113,7 +135,7 @@ export class DataStore {
 			}
 		} catch (e) {
 			console.log('error during xhr : ' + e.message);
-			failureFn([new Message('error', 'exception', 'Unable to connect to server. Error : ' + e.message)]);
+			failureFn([{ type: 'error', id: 'exception', text: 'Unable to connect to server. Error : ' + e.message }]);
 		}
 	}
 

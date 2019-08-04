@@ -34,6 +34,8 @@ import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.http.LoggedInUser;
+import org.simplity.fm.rdb.DbHandle;
+import org.simplity.fm.rdb.IDbClient;
 import org.simplity.fm.rdb.RdbDriver;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
@@ -50,7 +52,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
  * @author simplity.org
  *
  */
-public class FormData implements IFormData {
+public class FormData {
 	private static final Logger logger = LoggerFactory.getLogger(FormData.class);
 	/**
 	 * data structure describes the template for which this object provides
@@ -91,7 +93,56 @@ public class FormData implements IFormData {
 		}
 	}
 
-	@Override
+	/**
+	 * @param user
+	 * @return is this user the owner of this form? If this form has no concept
+	 *         of an owner, then this method returns true for any/all users.
+	 */
+	public boolean isOwner(LoggedInUser user) {
+		int idx = this.form.userIdFieldIdx;
+		if (idx == -1) {
+			logger.warn("Form {} has not set user id field name. isOwner() will always return true",
+					this.form.uniqueName);
+			return true;
+		}
+		return user.getUserId().equals(this.fieldValues[idx]);
+	}
+
+	/**
+	 * @param user
+	 */
+	public void setOwner(LoggedInUser user) {
+		int idx = this.form.userIdFieldIdx;
+		if (idx != -1) {
+			this.fieldValues[idx] = user.getUserId();
+		}
+	}
+
+	/**
+	 * @return field values
+	 */
+	public Object[] getFieldValues() {
+		return this.fieldValues;
+	}
+
+	/**
+	 * 
+	 * @return child data, or null if this form data has no child forms
+	 */
+	public FormData[][] getChildData() {
+		return this.childData;
+	}
+
+	/**
+	 * @return form for which data is carried
+	 */
+	public Form getForm() {
+		return this.form;
+	}
+
+	/**
+	 * @return get user id field, if one exists. null otherwise
+	 */
 	public String getUserId() {
 		int idx = this.form.getUserIdFieldIdx();
 		if (idx == -1) {
@@ -108,7 +159,11 @@ public class FormData implements IFormData {
 		return idx >= 0 && idx < this.fieldValues.length;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param fieldName
+	 * @return Field in this form. null if no such field
+	 */
 	public ValueType getValueType(String fieldName) {
 		Field field = this.form.getField(fieldName);
 		if (field == null) {
@@ -117,7 +172,11 @@ public class FormData implements IFormData {
 		return field.getValueType();
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param fieldName
+	 * @return Field in this form. null if no such field
+	 */
 	public int getFieldIndex(String fieldName) {
 		Field field = this.form.getField(fieldName);
 		if (field != null) {
@@ -126,7 +185,11 @@ public class FormData implements IFormData {
 		return -1;
 	}
 
-	@Override
+	/**
+	 * @param idx
+	 * @return object at the index. null if the index is out of range, or the
+	 *         value at the index is null
+	 */
 	public Object getObject(int idx) {
 		if (this.idxOk(idx)) {
 			return this.fieldValues[idx];
@@ -134,7 +197,17 @@ public class FormData implements IFormData {
 		return null;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 *            value of the right type.
+	 * @return true if value was indeed set. false if the field is not defined,
+	 *         or
+	 *         the type of object was not right for the field
+	 */
 	public boolean setObject(int idx, Object value) {
 		if (this.idxOk(idx)) {
 			this.fieldValues[idx] = value;
@@ -143,7 +216,12 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 * @return get value at this index as long. 0 if the indexis not valid, or
+	 *         the value is not long
+	 */
 	public long getLongValue(int idx) {
 		Object obj = this.getObject(idx);
 		if (obj != null && obj instanceof Number) {
@@ -152,7 +230,16 @@ public class FormData implements IFormData {
 		return 0;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of integer type. false otherwise,
+	 *         and the value is not set
+	 */
 	public boolean setLongValue(int idx, long value) {
 		if (!this.idxOk(idx)) {
 			return false;
@@ -175,7 +262,12 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 * @return value of the field as text. null if no such field, or the field
+	 *         has null value. toString() of object if it is non-string
+	 */
 	public String getStringValue(int idx) {
 		Object obj = this.getObject(idx);
 		if (obj == null) {
@@ -184,7 +276,16 @@ public class FormData implements IFormData {
 		return obj.toString();
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of String type. false otherwise, and
+	 *         the value is not set
+	 */
 	public boolean setStringValue(int idx, String value) {
 		if (!this.idxOk(idx)) {
 			return false;
@@ -202,7 +303,12 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 * @return value of the field as Date. null if the field is not a date
+	 *         field, or it has null value
+	 */
 	public LocalDate getDateValue(int idx) {
 		Object obj = this.getObject(idx);
 		if (obj != null && obj instanceof LocalDate) {
@@ -211,7 +317,16 @@ public class FormData implements IFormData {
 		return null;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of Date type. false otherwise, and
+	 *         the value is not set
+	 */
 	public boolean setDateValue(int idx, LocalDate value) {
 		if (!this.idxOk(idx)) {
 			return false;
@@ -228,7 +343,12 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @return value of the field as boolean. false if no such field, or the
+	 * @param idx
+	 *         field is null,or the field is not boolean.
+	 */
 	public boolean getBoolValue(int idx) {
 		Object obj = this.getObject(idx);
 		if (obj == null) {
@@ -240,7 +360,16 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of boolean type. false otherwise,
+	 *         and the value is not set
+	 */
 	public boolean setBoolValue(int idx, boolean value) {
 		if (!this.idxOk(idx)) {
 			return false;
@@ -257,7 +386,12 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 * @return value of the field if it decimal. 0 index is invalid or the value
+	 *         is not double/decimal.
+	 */
 	public double getDecimalValue(int idx) {
 		Object obj = this.getObject(idx);
 		if (obj == null) {
@@ -269,7 +403,16 @@ public class FormData implements IFormData {
 		return 0;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of double type. false otherwise,
+	 *         and the value is not set
+	 */
 	public boolean setDecimlValue(int idx, double value) {
 		if (!this.idxOk(idx)) {
 			return false;
@@ -290,7 +433,15 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * Note that this is NOT LocalDateTime. It is instant. We do not deal with
+	 * localDateTime as of now.
+	 * 
+	 * @param idx
+	 * @return value of the field as instant of time. null if the field is not
+	 *         an instant.
+	 *         field, or it has null value
+	 */
 	public Instant getTimestamp(int idx) {
 		Object obj = this.getObject(idx);
 		if (obj != null && obj instanceof Instant) {
@@ -299,7 +450,17 @@ public class FormData implements IFormData {
 		return null;
 	}
 
-	@Override
+	/**
+	 * 
+	 * @param idx
+	 *            index of the field. refer to getFieldIndex to get the index by
+	 *            name
+	 * @param value
+	 * 
+	 * @return true if field exists, and is of Instant type. false otherwise,
+	 *         and
+	 *         the value is not set
+	 */
 	public boolean setTimestamp(int idx, Instant value) {
 		if (!this.idxOk(idx)) {
 			return false;
@@ -316,12 +477,24 @@ public class FormData implements IFormData {
 		return false;
 	}
 
-	@Override
+	/**
+	 * load from a JSON node with no validation. To be called when loading from
+	 * a dependable source
+	 * 
+	 * @param json
+	 */
 	public void load(ObjectNode json) {
 		this.validateAndLoad(json, true, null);
 	}
 
-	@Override
+	/**
+	 * load keys from a JSON. input is suspect.
+	 * 
+	 * @param json
+	 *            non-null
+	 * @param errors
+	 *            non-null to which any validation errors are added
+	 */
 	public void loadKeys(ObjectNode json, List<Message> errors) {
 		int[] indexes = this.form.getKeyIndexes();
 		if (indexes == null) {
@@ -335,7 +508,18 @@ public class FormData implements IFormData {
 		}
 	}
 
-	@Override
+	/**
+	 * load from a JSON node that is not dependable. Like input from a client
+	 * 
+	 * @param json
+	 *            non-null
+	 * @param allFieldsAreOptional
+	 *            true if this is for a draft-save operation, where we validate
+	 *            only the fields that the user has opted to type. MUST be
+	 *            called with true value for final submit operation
+	 * @param errors
+	 *            non-null to which any validation errors are added
+	 */
 	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, List<Message> errors) {
 		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, errors);
 
@@ -409,7 +593,7 @@ public class FormData implements IFormData {
 			}
 			FormData fd = childForm.form.newFormData();
 			fds.add(fd);
-			fd.validateAndLoad((ObjectNode)col, allFieldsAreOptional, errors);
+			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, errors);
 		}
 		if (fds.size() == 0) {
 			return null;
@@ -438,7 +622,8 @@ public class FormData implements IFormData {
 		try {
 			row[idx] = field.parse(value);
 		} catch (InvalidValueException e) {
-			logger.error("{} is not a valid value for {} which is of data-type {} and value type {}", value, field.getFieldName(), field.getDataType().getName(), field.getDataType().getValueType());
+			logger.error("{} is not a valid value for {} which is of data-type {} and value type {}", value,
+					field.getFieldName(), field.getDataType().getName(), field.getDataType().getValueType());
 			if (errors != null) {
 				errors.add(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
 			}
@@ -457,7 +642,10 @@ public class FormData implements IFormData {
 		}
 	}
 
-	@Override
+	/**
+	 * @param writer
+	 * @throws IOException
+	 */
 	public void serializeAsJson(Writer writer) throws IOException {
 		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
 			this.serialize(gen);
@@ -466,7 +654,7 @@ public class FormData implements IFormData {
 
 	private void serialize(JsonGenerator gen) throws IOException {
 		gen.writeStartObject();
-		this.writeFields(gen, this.fieldValues, this.form.getFields());
+		writeFields(gen, this.fieldValues, this.form.getFields());
 		if (this.childData != null) {
 			this.serializeChildren(gen);
 		}
@@ -495,22 +683,22 @@ public class FormData implements IFormData {
 		}
 	}
 
-	private void writeFields(JsonGenerator gen, Object[] values, Field[] fields) throws IOException {
+	private static void writeFields(JsonGenerator gen, Object[] values, Field[] fields) throws IOException {
 		for (int j = 0; j < values.length; j++) {
 			Object value = values[j];
 			if (value == null) {
 				continue;
 			}
-			gen.writeFieldName(fields[j].getFieldName());
-			gen.writeObject(jsonQuickFix(value));
+			Field field = fields[j];
+			if(field.isDerivedField()) {
+				continue;
+			}
+			gen.writeFieldName(field.getFieldName());
+			if (value instanceof LocalDate || value instanceof Instant) {
+				value = value.toString();
+			}
+			gen.writeObject(value);
 		}
-	}
-
-	private Object jsonQuickFix(Object value) {
-		if (value instanceof LocalDate || value instanceof Instant) {
-			return value.toString();
-		}
-		return value;
 	}
 
 	private static String getChildAsText(JsonNode json, String fieldName) {
@@ -525,65 +713,91 @@ public class FormData implements IFormData {
 		return node.asText();
 	}
 
-	@Override
+	/**
+	 * insert/create this form data into the db.
+	 * 
+	 * @return true if it is created. false in case it failed because of an an
+	 *         existing form with the same id/key
+	 * @throws SQLException
+	 */
 	public boolean insertToDb() throws SQLException {
-		return RdbDriver.getDriver().insert(this);
-	}
-
-	@Override
-	public boolean updateInDb() throws SQLException {
-		return RdbDriver.getDriver().update(this);
-	}
-
-	@Override
-	public boolean deleteFromDb() throws SQLException {
-		return RdbDriver.getDriver().delete(this);
-	}
-
-	@Override
-	public boolean fetchFromDb() throws SQLException {
-		return RdbDriver.getDriver().readForm(this);
-	}
-
-	@Override
-	public boolean isOwner(LoggedInUser user) {
-		int idx = this.form.userIdFieldIdx;
-		if (idx == -1) {
-			logger.warn("Form {} has not set user id field name. isOwner() will always return true",
-					this.form.uniqueName);
-			return true;
-		}
-		return user.getUserId().equals(this.fieldValues[idx]);
-	}
-
-	@Override
-	public void setOwner(LoggedInUser user) {
-		int idx = this.form.userIdFieldIdx;
-		if (idx != -1) {
-			this.fieldValues[idx] = user.getUserId();
-		}
-	}
-
-	@Override
-	public Object[] getFieldValues() {
-		return this.fieldValues;
-	}
-
-	@Override
-	public FormData[][] getChildData() {
-		return this.childData;
-	}
-
-	@Override
-	public Form getForm() {
-		return this.form;
+		Boolean[] result = new Boolean[1];
+		RdbDriver.getDriver().transact( new IDbClient() {
+			
+			@Override
+			public boolean transact(DbHandle handle) throws SQLException {
+				return result[0] =  handle.insert(FormData.this);
+			}
+		}, false);
+		return result[0];
 	}
 
 	/**
-	 * pre-fill data into this form
+	 * update this form data back into the db.
+	 * 
+	 * @return true if it is indeed updated. false in case there was no row to
+	 *         update
+	 * @throws SQLException
 	 */
-	public void prefill() {
-		logger.info("Going to prefill data into from {}. Dummy as of now...", this.getForm().getFormId());
-		
+	public boolean updateInDb() throws SQLException {
+		Boolean[] result = new Boolean[1];
+		RdbDriver.getDriver().transact( new IDbClient() {
+			
+			@Override
+			public boolean transact(DbHandle handle) throws SQLException {
+				return result[0] =  handle.update(FormData.this);
+			}
+		}, false);
+		return result[0];
+	}
+
+	/**
+	 * remove this form data from the db
+	 * 
+	 * @return true if it is indeed deleted happened. false otherwise
+	 * @throws SQLException
+	 */
+	public boolean deleteFromDb() throws SQLException {
+		Boolean[] result = new Boolean[1];
+		RdbDriver.getDriver().transact( new IDbClient() {
+			
+			@Override
+			public boolean transact(DbHandle handle) throws SQLException {
+				return result[0] =  handle.delete(FormData.this);
+			}
+		}, false);
+		return result[0];
+	}
+
+	/**
+	 * fetch data for this form from a db
+	 * 
+	 * @return true if it is read.false if no dta found for this form (key not
+	 *         found...)
+	 * @throws SQLException
+	 */
+	public boolean fetchFromDb() throws SQLException {
+		Boolean[] result = new Boolean[1];
+		RdbDriver.getDriver().transact( new IDbClient() {
+			
+			@Override
+			public boolean transact(DbHandle handle) throws SQLException {
+				result[0] =  handle.readForm(FormData.this);
+				return true;
+			}
+		}, true);
+		return result[0];
+	}
+
+	/**
+	 * @param whereClause
+	 *            like "where a=? and b=?..."
+	 * @return array of form data, each element representing a row of data from
+	 *         the db
+	 * @throws SQLException
+	 */
+	public FormData[] fetchRowsFromDb(String whereClause) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

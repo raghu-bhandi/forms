@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-07-30T19:43:51.190
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-04T22:59:20.969
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -29,13 +29,13 @@ export class FormStorage extends Form {
 		this.fields.set('formData', this.formData);
 		this.fields.set('operation', this.operation);
 		this.controls = {
-			customerId: ['', Validators.required], 
-			formName: ['', Validators.required], 
-			referenceYear: ['', Validators.required], 
-			ackId: [''], 
-			status: [''], 
-			formData: [''], 
-			operation: ['', Validators.required]
+			customerId: ['',[Validators.required, Validators.pattern('[A-Z]{3}-[\\d]{2}-[A-Z]{3}'), Validators.minLength(10), Validators.maxLength(10)]], 
+			formName: ['',[Validators.required, Validators.minLength(2), Validators.maxLength(100)]], 
+			referenceYear: ['',[Validators.required, Validators.max(2025), Validators.min(1989), Validators.minLength(4), Validators.maxLength(4)]], 
+			ackId: ['',[Validators.minLength(2), Validators.maxLength(100)]], 
+			status: ['',[Validators.minLength(2), Validators.maxLength(100)]], 
+			formData: ['',[Validators.minLength(1), Validators.maxLength(10000)]], 
+			operation: ['',[Validators.required, Validators.minLength(2), Validators.maxLength(100)]]
 		};
 	}
 

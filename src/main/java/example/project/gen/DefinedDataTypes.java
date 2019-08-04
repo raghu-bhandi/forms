@@ -14,7 +14,7 @@ import org.simplity.fm.datatypes.TimestampType;
 
 /**
  * class that has static attributes for all data types defined for this project. It also extends <code>DataTypes</code>
- * <br /> generated at 2019-07-30T19:43:49.986
+ * <br /> generated at 2019-08-04T22:59:19.827
  */ 
 public class DefinedDataTypes implements IDataTypes {
 	public static final TextType customerId = new TextType("customerId", "invalidCustId", 10, 10, "[A-Z]{3}-[\\d]{2}-[A-Z]{3}");

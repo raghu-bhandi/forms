@@ -23,6 +23,7 @@
 package org.simplity.fm.service;
 
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ import org.simplity.fm.http.LoggedInUser;
  */
 public class DefaultContext implements IserviceContext {
 	protected Map<String, String> inputFields = new HashMap<>();
-	protected List<Message> messages;
+	protected List<Message> messages = new ArrayList<>();
 	protected boolean inError;
 	protected Writer responseWriter;
 	protected LoggedInUser loggedInUser;

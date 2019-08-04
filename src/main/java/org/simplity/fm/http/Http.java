@@ -34,14 +34,6 @@ public class Http {
 	}
 
 	/**
-	 * tag/name of form header in the request pay load
-	 */
-	public static final String FORM_HEADER_TAG = "header";
-	/**
-	 * tag/name of form data in the request pay load
-	 */
-	public static final String FORM_DATA_TAG = "data";
-	/**
 	 * header name to specify the service name
 	 */
 	public static final String SERVICE_HEADER = "_s";
@@ -56,13 +48,14 @@ public class Http {
 	/**
 	 * various headers that we respond back with
 	 */
-	public static final String[] HDR_NAMES = {"Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
+	public static final String[] HDR_NAMES = { "Access-Control-Allow-Methods", "Access-Control-Allow-Headers",
 			"Access-Control-Max-Age", "Connection", "Cache-Control", "Expires", "Accept" };
 	/**
 	 * values for the headers
 	 */
-	public static final String[] HDR_TEXTS = {"POST, GET, OPTIONS", "content-type, " + SERVICE_HEADER + ", " + TOKEN_HEADER,
-			"1728", "Keep-Alive", "no-cache, no-store, must-revalidate", "11111110", "application/json" };
+	public static final String[] HDR_TEXTS = { "POST, GET, OPTIONS",
+			"content-type, " + SERVICE_HEADER + ", " + TOKEN_HEADER, "1728", "Keep-Alive",
+			"no-cache, no-store, must-revalidate", "11111110", "application/json" };
 	/**
 	 * http status
 	 */
@@ -87,4 +80,22 @@ public class Http {
 	 * http status
 	 */
 	public static final int STATUS_INTERNAL_ERROR = 500;
+
+	/**
+	 * tag/name of form header in the request pay load
+	 */
+	public static final String TAG_HEADER = "header";
+	/**
+	 * tag/name of form data in the request/response pay load
+	 */
+	public static final String TAG_DATA = "data";
+	/**
+	 * tag/field name in response payload that is set to true/false
+	 */
+	public static final String TAG_ALL_OK = "allOk";
+
+	/**
+	 * tag/field name in response payload that has an array of messages.
+	 */
+	public static final String TAG_MESSAGES = "messages";
 }

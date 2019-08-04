@@ -74,9 +74,9 @@ public class ManageForm implements IService {
 			return;
 		}
 
-		JsonNode node = payload.get(Http.FORM_HEADER_TAG);
+		JsonNode node = payload.get(Http.TAG_HEADER);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
-			logger.error("Payload has to have a header object named {} ", Http.FORM_HEADER_TAG);
+			logger.error("Payload has to have a header object named {} ", Http.TAG_HEADER);
 			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
 			return;
 		}
@@ -125,16 +125,15 @@ public class ManageForm implements IService {
 				fd.load((ObjectNode) node);
 			} else {
 				logger.info("New form created and sent to the client");
-				fd.prefill();
 			}
 			// TODO: copy profile fields
 			fd.serializeAsJson(ctx.getResponseWriter());
 			return;
 		}
 
-		node = payload.get(Http.FORM_DATA_TAG);
+		node = payload.get(Http.TAG_DATA);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
-			logger.error("Payload has to have a form data object named {}", Http.FORM_DATA_TAG);
+			logger.error("Payload has to have a form data object named {}", Http.TAG_DATA);
 			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
 			return;
 		}

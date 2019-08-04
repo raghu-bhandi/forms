@@ -21,6 +21,9 @@
  */
 package org.simplity.fm;
 
+import java.io.IOException;
+import java.io.Writer;
+
 import org.simplity.fm.datatypes.InvalidValueException;
 
 /**
@@ -151,6 +154,36 @@ public class Message {
 	@Override
 	public String toString() {
 		return "type:" + this.messageType + "  id:" + this.messageId + " field:" + this.fieldName;
+	}
+
+	/**
+	 * @param writer
+	 * @throws IOException 
+	 */
+	public void toJson(Writer writer) throws IOException {
+		writer.write("{\"type\":\"");
+		
+		writer.write(this.messageType.toString().toLowerCase());
+		writer.write("\", \"id\":\"");
+		writer.write(this.messageId);
+		if(this.fieldName != null) {
+		writer.write("\", \"fieldName\": ");
+		writer.write(this.fieldName);
+		}
+		if(this.columnName != null) {
+			writer.write("\", \"columnName\": ");
+			writer.write(this.columnName);
+		}
+		if(this.params != null) {
+			writer.write("\", \"params\": ");
+			writer.write(this.params.replaceAll("'", "''"));
+		}
+		writer.write("\"");
+		if(this.rowNumber != 0) {
+			writer.write(", \"rowNumber\": ");
+			writer.write(this.rowNumber);
+		}
+		writer.write("}");
 	}
 
 }

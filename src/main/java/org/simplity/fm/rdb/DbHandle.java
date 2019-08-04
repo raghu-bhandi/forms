@@ -46,6 +46,11 @@ public class DbHandle {
 	private final boolean readOnly;
 	private boolean isDirty = false;
 
+	/**
+	 * to be created by DbDriver ONLY
+	 * @param con
+	 * @param readOnly
+	 */
 	DbHandle(Connection con, boolean readOnly) {
 		this.con = con;
 		this.readOnly = readOnly;
@@ -387,7 +392,7 @@ public class DbHandle {
 		this.isDirty = true;
 		return RdbDriver.doFormBatch(this.con, sql, params, childData);
 	}
-
+	
 	/**
 	 * 
 	 * @return blob object

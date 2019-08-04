@@ -27,6 +27,8 @@ import java.util.Properties;
 
 import org.simplity.fm.form.HeaderData;
 import org.simplity.fm.form.HeaderForm;
+import org.simplity.fm.rdb.DefaultConnectionFactory;
+import org.simplity.fm.rdb.IConnectionFactory;
 import org.simplity.fm.rdb.RdbDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +52,10 @@ public class Config {
 	private static final String VAL4 = "example.project.custom";
 	private static final String NAME5 = "headerFormClassName";
 	private static final String VAL5 = "CustomHeaderForm";
-	private static final String DATA_SOURCE = "dataSourceJndiName";
-	private static final String CON_STRING = "dbConnectoinString";
-	private static final String DRIVER_NAME = "DbDriverClassName";
+	private static final String DB_FACTORY = "dbFactoryClassName";
+	private static final String DB_DATA_SOURCE = "dataSourceJndiName";
+	private static final String DB_CON_STRING = "dbConnectoinString";
+	private static final String DB_DRIVER_NAME = "DbDriverClassName";
 
 	private static final Config instance = load();
 
@@ -87,50 +90,20 @@ public class Config {
 		config.customCodePackage = getProperty(p, NAME4, VAL4, false);
 		String hdr = getProperty(p, NAME5, VAL5, false);
 		try {
-			config.headerForm = (HeaderForm)Class.forName(config.customCodePackage + '.' + hdr).newInstance();
-		}catch(Exception e) {
-			logger.error("Unable to set formHeader using class name {} and package {}. Form service will not work. {}", config.customCodePackage, hdr, e.getMessage());
-		}
-		
-		setupDb(p);
-		return config;
-	}
-
-	private static void setupDb(Properties p) {
-		String ds = p.getProperty(DATA_SOURCE);
-		if (ds != null && ds.isEmpty() == false) {
-			try {
-				RdbDriver.SetDataSource(ds);
-				logger.info("JDBC driver successfully set");
-			} catch (Exception e) {
-				e.printStackTrace();
-				logger.error("JDBC could not be set up with the data source value specified");
-			}
-			return;
-		}
-
-		logger.info("{} is not set for JDBC connection. We will try {}", DATA_SOURCE, CON_STRING);
-		String con = p.getProperty(CON_STRING);
-		if (con == null || con.isEmpty()) {
-			logger.warn("RDBMS is not set up for this project.");
-			return;
-		}
-
-		String driver = p.getProperty(DRIVER_NAME);
-		if (driver == null || driver.isEmpty()) {
-			logger.error("{} specified for db conenction, but {} is not set. JDBC driver cannot be initialized",
-					CON_STRING, DRIVER_NAME);
-			return;
-		}
-
-		try {
-			RdbDriver.SetConnectionString(con, driver);
-			logger.info("JDBC driver successfully set");
+			config.headerForm = (HeaderForm) Class.forName(config.customCodePackage + '.' + hdr).newInstance();
 		} catch (Exception e) {
-			e.printStackTrace();
-			logger.error("JDBC could not be set up with the connection string and driver calss name");
+			logger.error("Unable to set formHeader using class name {} and package {}. Form service will not work. {}",
+					config.customCodePackage, hdr, e.getMessage());
+		}
+		IConnectionFactory f = getFactory(p);
+		if (f == null) {
+			logger.error("Data base operations will not work for this application");
+		} else {
+			RdbDriver.setFactory(f);
+			logger.info("Data base connection factory set to {} ", f.getClass().getName());
 		}
 
+		return config;
 	}
 
 	private static String getProperty(Properties p, String name, String def, boolean isFolder) {
@@ -208,12 +181,49 @@ public class Config {
 
 	/**
 	 * 
-	 * @return new instance of <code>IHeaderData</code> or null if it is not configured
+	 * @return new instance of <code>IHeaderData</code> or null if it is not
+	 *         configured
 	 */
 	public HeaderData newHeaderData() {
 		if (this.headerForm == null) {
 			return null;
 		}
 		return this.headerForm.newHeaderData();
+	}
+
+	@SuppressWarnings("unchecked")
+	private static <T> T getInstance(String className, Class<T> cls) {
+		try {
+			Class<?> c = Class.forName(className);
+			Object obj = c.newInstance();
+			return (T) obj;
+		} catch (Exception e) {
+			String msg = e.getMessage();
+			logger.error("Unable to use class name {} to get an instance of type {}. Error: {}", className,
+					cls.getName(), msg);
+			return null;
+		}
+
+	}
+
+	private static IConnectionFactory getFactory(Properties p) {
+		String text = p.getProperty(DB_FACTORY);
+		if (text != null && text.isEmpty() == false) {
+			return getInstance(text, IConnectionFactory.class);
+		}
+
+		text = p.getProperty(DB_DATA_SOURCE);
+		if (text != null && text.isEmpty() == false) {
+			return DefaultConnectionFactory.getFactory(text);
+		}
+
+		text = p.getProperty(DB_CON_STRING);
+		String driver = p.getProperty(DB_DRIVER_NAME);
+
+		if (text == null || text.isEmpty() || driver == null || driver.isEmpty()) {
+			logger.warn("RDBMS is not set up for this project.");
+			return null;
+		}
+		return DefaultConnectionFactory.getFactory(text, driver);
 	}
 }

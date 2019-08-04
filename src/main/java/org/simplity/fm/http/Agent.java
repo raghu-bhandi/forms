@@ -23,6 +23,7 @@ package org.simplity.fm.http;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.net.URLDecoder;
@@ -40,8 +41,6 @@ import org.simplity.fm.service.Services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
@@ -90,10 +89,6 @@ public class Agent {
 		 * long the auth is taken care of
 		 */
 		resp.setHeader("Access-Control-Allow-Origin", req.getHeader("Origin"));
-		/*
-		 * we are optimists!!
-		 */
-		resp.setStatus(Http.STATUS_ALL_OK);
 	}
 
 	/**
@@ -125,7 +120,7 @@ public class Agent {
 		}
 
 		ObjectNode json = this.readContent(req);
-		if(json == null) {
+		if (json == null) {
 			logger.info("Invalid JSON recd from client ");
 			resp.setStatus(Http.STATUS_INVALID_DATA);
 			return;
@@ -137,30 +132,26 @@ public class Agent {
 		 * is a safety mechanism against possible measures to be taken when
 		 * receiving payload from an external source
 		 */
-		try (Writer writer = resp.getWriter()) {
-			IserviceContext ctx = new DefaultContext(fields, user, writer);
+		Writer writer = new StringWriter();
+		IserviceContext ctx = new DefaultContext(fields, user, writer);
+		try {
 			service.serve(ctx, json);
 			if (ctx.allOk()) {
 				logger.info("Service returned with All Ok");
 			} else {
-				Message[] msgs =  ctx.getMessages();
-				for (Message msg :msgs) {
-					logger.error("Message :" + msg);
-				}
-				this.respondWithError(resp, msgs, writer);
+				logger.error("Service returned with error messages");
 			}
 		} catch (Throwable e) {
-			/*
-			 * TODO : wire this to error handling process provided by the
-			 * configuration
-			 */
-			resp.setStatus(Http.STATUS_INTERNAL_ERROR);
-			return;
+			e.printStackTrace();
+			String msg = e.getMessage();
+			logger.error("Internal Error : {}", msg);
+			ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
 		}
+		respond(resp, ctx, writer.toString());
 	}
 
 	private ObjectNode readContent(HttpServletRequest req) {
-		if(req.getContentLength() == 0) {
+		if (req.getContentLength() == 0) {
 			return new ObjectMapper().createObjectNode();
 		}
 		try (Reader reader = req.getReader()) {
@@ -177,45 +168,59 @@ public class Agent {
 			return null;
 		}
 	}
+
+	private static void respond(HttpServletResponse resp, IserviceContext ctx, String payload) {
+		try (Writer writer = resp.getWriter()) {
+			writer.write("{\"");
+			writer.write(Http.TAG_ALL_OK);
+			writer.write("\":");
+			if (ctx.allOk()) {
+				writer.write("true");
+				if (payload != null && payload.isEmpty() == false) {
+					writer.write(",\"");
+					writer.append(Http.TAG_DATA);
+					writer.write("\":");
+					writer.write(payload);
+				}
+			} else {
+				writer.write("false");
+			}
+			writeMessage(writer, ctx.getMessages());
+			writer.write("}");
+		} catch (Exception e) {
+			try {
+				resp.sendError(500);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+		}
+	}
+
 	/**
-	 * 
-	 * @param resp
-	 * @param messages
 	 * @param writer
+	 * @param messages
+	 * @throws IOException
 	 */
-	private void respondWithError(HttpServletResponse resp, Message[] messages, Writer writer) {
-		resp.setStatus(Http.STATUS_INVALID_DATA);
-		if (messages == null || messages.length == 0) {
+	private static void writeMessage(Writer writer, Message[] msgs) throws IOException {
+		if (msgs == null || msgs.length == 0) {
 			return;
 		}
-		try (JsonGenerator gen = new JsonFactory().createGenerator(writer)) {
-			gen.writeStartObject();
-			gen.writeFieldName("messages");
-			gen.writeStartArray();
-			for (Message msg : messages) {
-				gen.writeStartObject();
-				gen.writeStringField("severity", msg.messageType.name());
-				gen.writeStringField("messageId", msg.messageId);
-				if (msg.fieldName != null) {
-					gen.writeStringField("fieldName", msg.fieldName);
-				}
-				if (msg.columnName != null) {
-					gen.writeStringField("columnName", msg.columnName);
-				}
-				if (msg.params != null) {
-					gen.writeStringField("params", msg.params);
-				}
-				if (msg.rowNumber != 0) {
-					gen.writeNumberField("rowNumber", msg.rowNumber);
-				}
-				gen.writeEndObject();
+		writer.write(",\"");
+		writer.write(Http.TAG_MESSAGES);
+		writer.write("\":[");
+		boolean isFirst = true;
+		for (Message msg : msgs) {
+			if (msg == null) {
+				continue;
 			}
-			gen.writeEndArray();
-			gen.writeEndObject();
-		} catch (Exception e) {
-			//
+			if (isFirst) {
+				isFirst = false;
+			} else {
+				writer.write(",");
+			}
+			msg.toJson(writer);
 		}
-
+		writer.write("]");
 	}
 
 	private Map<String, String> readQueryString(HttpServletRequest req) {
@@ -265,7 +270,7 @@ public class Agent {
 		if (token == null) {
 			return null;
 		}
-		
+
 		LoggedInUser user = this.activeUsers.get(token);
 		if (user == null) {
 			/*
@@ -274,7 +279,7 @@ public class Agent {
 			 * testing with different users
 			 */
 			CustomUser cu = new CustomUser(token, token);
-			if(cu.getFirstName() == null) {
+			if (cu.getFirstName() == null) {
 				logger.error("{} is not a valid user of this application.", token);
 				return null;
 			}

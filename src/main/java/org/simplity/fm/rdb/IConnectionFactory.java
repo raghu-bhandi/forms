@@ -20,27 +20,28 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
+package org.simplity.fm.rdb;
 
-import java.util.List;
-
-import org.simplity.fm.Message;
-import org.simplity.fm.form.FormData;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
- * interface for providing custom logic on a form at any stage of a service 
  * @author simplity.org
  *
  */
-public interface IFormProcessor {
+public interface IConnectionFactory {
 	/**
-	 * carry out custom logic  
-	 * @param formData
-	 * @param ctx
-	 * @return true if it is OK to continue. in such a case, no error message
-	 *         should have been added to the list.
-	 *         false if it is not ok to continue. at least one error message
-	 *         should have been added to the list
+	 * 
+	 * @return non-sql connection for default schema or this application. 
+	 * @throws SQLException if no driver is set-up, or there is some problem in getting a connection
 	 */
-	public boolean process(FormData formData, IserviceContext ctx);
+	Connection getConnection() throws SQLException;
+	
+	/**
+	 * to be used to get a connection to a schema that is not the default for the application 
+	 * @param schema non-null schema name.
+	 * @return non-sql connection for default schema or this application. 
+	 * @throws SQLException if no driver is set-up, or there is some problem in getting a connection
+	 */
+	Connection getConnection(String schema) throws SQLException;
 }

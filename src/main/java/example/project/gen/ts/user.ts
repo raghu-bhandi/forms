@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/user.xlsx at 2019-07-30T19:43:51.413
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/user.xlsx at 2019-08-04T22:59:21.171
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -21,9 +21,9 @@ export class User extends Form {
 		this.fields.set('firstName', this.firstName);
 		this.fields.set('lastName', this.lastName);
 		this.controls = {
-			userId: ['', Validators.required], 
-			firstName: ['', Validators.required], 
-			lastName: ['', Validators.required]
+			userId: ['',[Validators.required, Validators.pattern('[A-Z]{3}-[\\d]{2}-[A-Z]{3}'), Validators.minLength(10), Validators.maxLength(10)]], 
+			firstName: ['',[Validators.required, Validators.minLength(2), Validators.maxLength(100)]], 
+			lastName: ['',[Validators.required, Validators.minLength(2), Validators.maxLength(100)]]
 		};
 	}
 

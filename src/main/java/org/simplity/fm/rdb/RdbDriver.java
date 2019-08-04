@@ -23,16 +23,11 @@
 package org.simplity.fm.rdb;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.sql.DataSource;
 
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.form.FormData;
@@ -50,65 +45,10 @@ import org.slf4j.LoggerFactory;
  */
 public class RdbDriver {
 	protected static final Logger logger = LoggerFactory.getLogger(RdbDriver.class);
-
-	/*
-	 * connection factory
-	 */
-	private interface IFactory {
-		Connection getConnection() throws SQLException;
-	}
-
 	/*
 	 * factory..
 	 */
-	private static IFactory factory = null;
-
-	/**
-	 * invoked by initialization/boot-strap to set up the driver using
-	 * DataSource
-	 * 
-	 * @param jndiName
-	 *            jndi name for dataSource.
-	 * @throws NamingException
-	 * @throws SQLException
-	 */
-	public static void SetDataSource(String jndiName) throws NamingException, SQLException {
-		DataSource ds = (DataSource) new InitialContext().lookup(jndiName);
-		/*
-		 * test it..
-		 */
-		ds.getConnection().close();
-		factory = new IFactory() {
-			@Override
-			public Connection getConnection() throws SQLException {
-				return ds.getConnection();
-			}
-		};
-		logger.info("DB driver set based on JNDI name");
-	}
-
-	/**
-	 * invoked by initialization/boot-strap to set up the driver using
-	 * connection string
-	 * 
-	 * @param conString
-	 * @param driverClassName
-	 * @throws Exception
-	 */
-	public static void SetConnectionString(String conString, String driverClassName) throws Exception {
-		Class.forName(driverClassName);
-		/*
-		 * test it
-		 */
-		DriverManager.getConnection(conString).close();
-		factory = new IFactory() {
-			@Override
-			public Connection getConnection() throws SQLException {
-				return DriverManager.getConnection(conString);
-			}
-		};
-		logger.info("DB driver set based on connection string");
-	}
+	private static IConnectionFactory factory = null;
 
 	/**
 	 * 
@@ -328,7 +268,8 @@ public class RdbDriver {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			for (FormData fd : childData) {
 				/*
-				 * we do not have mechanism to persist grand children as of now..
+				 * we do not have mechanism to persist grand children as of
+				 * now..
 				 */
 				Object[] row = fd.getFieldValues();
 				ps.addBatch();
@@ -342,15 +283,6 @@ public class RdbDriver {
 		}
 	}
 
-	static void warn(String sql, DbParam[] params, Object[] vals) {
-		StringBuilder sbf = new StringBuilder();
-		sbf.append("RDBMS is not set up. Sql = ").append(sql);
-		for (DbParam p : params) {
-			sbf.append('(').append(p.valueType).append(", ").append(vals[p.idx]).append(") ");
-		}
-		logger.warn(sbf.toString());
-	}
-
 	static void warn(String sql, ValueType[] types, Object[] vals) {
 		StringBuilder sbf = new StringBuilder();
 		sbf.append("RDBMS is not set up. Sql = ").append(sql);
@@ -359,10 +291,11 @@ public class RdbDriver {
 		}
 		logger.warn(sbf.toString());
 	}
-	
+
 	static void warn(String sql) {
 		logger.error("RDBMS is not set up. Sql = ", sql);
 	}
+
 	/**
 	 * To be used for a one-off read operation, not part of any transaction.
 	 * Most flexible way to read from db. Caller has full control of what and
@@ -375,7 +308,7 @@ public class RdbDriver {
 	 * 
 	 */
 	public int read(IDbReader reader) throws SQLException {
-		if(factory == null) {
+		if (factory == null) {
 			warn(reader.getPreparedStatement());
 			return 0;
 		}
@@ -407,7 +340,7 @@ public class RdbDriver {
 	 */
 	public Object[] read(String sql, ValueType[] whereTypes, Object[] whereData, ValueType[] resultTypes)
 			throws SQLException {
-		if(factory == null) {
+		if (factory == null) {
 			warn(sql, whereTypes, whereData);
 			return null;
 		}
@@ -416,84 +349,6 @@ public class RdbDriver {
 		}
 	}
 
-	/**
-	 * 
-	 * @param formData
-	 * @return true if data is read. false otherwise
-	 * @throws SQLException
-	 */
-	public boolean readForm(FormData formData) throws SQLException {
-		final Boolean[] result = new Boolean[1];
-		this.transact(new IDbClient() {
-			
-			@Override
-			public boolean transact(DbHandle handle) throws SQLException {
-				boolean ok =  handle.readForm(formData);
-				result[0] = ok;
-				return ok;
-			}
-		}, true);
-		return result[0];
-	}
-	
-	/**
-	 * 
-	 * @param formData
-	 * @return true if the data is update. false otherwise
-	 * @throws SQLException
-	 */
-	public boolean update(FormData formData) throws SQLException {
-		final Boolean[] result = new Boolean[1];
-		this.transact(new IDbClient() {
-			
-			@Override
-			public boolean transact(DbHandle handle) throws SQLException {
-				boolean ok =  handle.update(formData);
-				result[0] = ok;
-				return ok;
-			}
-		}, true);
-		return result[0];
-	}
-	
-	/**
-	 * 
-	 * @param formData
-	 * @return true if insert succeeded. false if no rows got inserted
-	 * @throws SQLException
-	 */
-	public boolean insert(FormData formData) throws SQLException {
-		final Boolean[] result = new Boolean[1];
-		this.transact(new IDbClient() {
-			
-			@Override
-			public boolean transact(DbHandle handle) throws SQLException {
-				boolean ok =  handle.insert(formData);
-				result[0] = ok;
-				return ok;
-			}
-		}, true);
-		return result[0];
-	}
-	/**
-	 * 
-	 * @param formData
-	 * @return true if the row got deleted. false otherwise
-	 * @throws SQLException
-	 */
-	public boolean delete(FormData formData) throws SQLException {
-		final Boolean[] result = new Boolean[1];
-		this.transact(new IDbClient() {
-			
-			@Override
-			public boolean transact(DbHandle handle) throws SQLException {
-				boolean ok =  handle.delete(formData);
-				result[0] = ok;
-				return ok;
-			}
-		}, true);
-		return result[0];
-	}
 	/**
 	 * lower level API that is very close to the JDBC API for reading all
 	 * rows from the result of a select query
@@ -517,79 +372,12 @@ public class RdbDriver {
 	 */
 	public Object[][] readRows(String sql, ValueType[] whereTypes, Object[] whereData, ValueType[] resultTypes)
 			throws SQLException {
-		if(factory == null) {
+		if (factory == null) {
 			warn(sql, whereTypes, whereData);
 			return null;
 		}
 		try (Connection con = factory.getConnection()) {
 			return doReadRows(con, sql, whereTypes, whereData, resultTypes);
-		}
-	}
-
-	/**
-	 * @param writer
-	 * @return number of affected rows.
-	 * @throws SQLException
-	 */
-	public int write(IDbWriter writer) throws SQLException {
-		if(factory == null) {
-			warn(writer.getPreparedStatement());
-			return 0;
-		}
-		try (Connection con = factory.getConnection()) {
-			return doWrite(writer, con);
-		}
-	}
-
-	/**
-	 * API that is close to the JDBC API for updating/inserting/deleting
-	 * 
-	 * @param sql
-	 *            a prepared statement that manipulates data.
-	 * @param paramTypes
-	 *            type of parameters to be set the prepared statement
-	 * @param params
-	 *            values to be set to the prepared statement
-	 * @param generatedKeys
-	 *            null, unless the sql execution is expected to result in a
-	 *            generated key by the RDBMS. first element is populated with
-	 *            the generated key. SqlException is thrown if the driver fails
-	 *            to get the generated key. the caller expects a
-	 * @return number of affected rows. -1 if the driver was unable to
-	 *         determine it
-	 * @throws SQLException
-	 */
-	public int write(String sql, ValueType[] paramTypes, Object[] params, long[] generatedKeys) throws SQLException {
-		if(factory == null) {
-			warn(sql, paramTypes, params);
-			return 0;
-		}
-		try (Connection con = factory.getConnection()) {
-			return doWrite(con, sql, paramTypes, params, generatedKeys);
-		}
-	}
-
-	/**
-	 * API that is close to the JDBC API for updating/inserting/deleting
-	 * 
-	 * @param sql
-	 *            a prepared statement that manipulates data.
-	 * @param paramTypes
-	 *            type of parameters to be set the prepared statement
-	 * @param params
-	 *            values to be set to the prepared statement. these will be
-	 *            executed in a batch
-	 * @return number of affected rows, on element per batch. -1 implies
-	 *         that the driver was unable to determine it
-	 * @throws SQLException
-	 */
-	public int[] writeBatch(String sql, ValueType[] paramTypes, Object[][] params) throws SQLException {
-		if(factory == null) {
-			warn(sql, paramTypes, params);
-			return new int[params.length];
-		}
-		try (Connection con = factory.getConnection()) {
-			return doWriteBatch(con, sql, paramTypes, params);
 		}
 	}
 
@@ -603,7 +391,7 @@ public class RdbDriver {
 	 * 
 	 */
 	public void transact(IDbClient transactor, boolean readOnly) throws SQLException {
-		if(factory == null) {
+		if (factory == null) {
 			String msg = "A dummy handle is returned as RDBMS is not set up";
 			logger.error(msg);
 			throw new SQLException(msg);
@@ -620,5 +408,46 @@ public class RdbDriver {
 				throw new SQLException(e.getMessage());
 			}
 		}
+	}
+
+	/**
+	 * do transaction on a schema that is not the default schema used by this
+	 * application. Use this ONLY id the schema is different from the default
+	 * 
+	 * @param transactor
+	 * @param readOnly
+	 *            true if the caller is not going to modify any data.
+	 * @param schemaName
+	 *            non-null schema name that is different from the default schema
+	 * @throws SQLException
+	 *             if update is attempted after setting readOnly=true, or any
+	 *             other SqlException
+	 * 
+	 */
+	public void transactUsingSchema(IDbClient transactor, boolean readOnly, String schemaName) throws SQLException {
+		if (factory == null) {
+			String msg = "A dummy handle is returned as RDBMS is not set up";
+			logger.error(msg);
+			throw new SQLException(msg);
+		}
+		try (Connection con = factory.getConnection(schemaName)) {
+			DbHandle handle = new DbHandle(con, readOnly);
+			try {
+				boolean ok = transactor.transact(handle);
+				handle.done(ok);
+
+			} catch (Exception e) {
+				logger.error("Exception occurred in the middle of a transaction: {}", e.getMessage());
+				handle.done(false);
+				throw new SQLException(e.getMessage());
+			}
+		}
+	}
+
+	/**
+	 * @param conFactory non-null factory to be used to get  db-connection
+	 */
+	public static void setFactory(IConnectionFactory conFactory) {
+		factory = conFactory;
 	}
 }

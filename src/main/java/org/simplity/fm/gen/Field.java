@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.simplity.fm.datatypes.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,20 +150,58 @@ class Field {
 		sbf.append(')');
 	}
 
-	void emitFg(StringBuilder sbf, DataType dt){
+	void emitFg(StringBuilder sbf, DataType dt) {
 		if (dt == null) {
 			String msg = "Field " + this.name + " has an invalid data type of " + this.dataType + ". Field not added.";
 			logger.error(msg);
 			sbf.append("\n\t//ERROR: ").append(msg);
 			return;
 		}
-		sbf.append(this.name).append(": [''");
-		if(this.isRequired) {
-			sbf.append(C).append("Validators.required");
+		/*
+		 * default value
+		 */
+		sbf.append(this.name).append(": ['");
+		if (this.defaultValue != null) {
+			sbf.append(this.defaultValue);
 		}
-		sbf.append("]");
+		sbf.append("',[");
+		/*
+		 * validators
+		 */
+		List<String> vals = new ArrayList<>();
+		if (this.isRequired) {
+			vals.add("Validators.required");
+		}
 		
+		if (dt.name.equalsIgnoreCase("email")) {
+			vals.add("Validators.email");
+		} else {
+			if (dt.valueType == ValueType.DECIMAL || dt.valueType == ValueType.INTEGER) {
+				vals.add("Validators.max(" + dt.maxValue + ")");
+				vals.add("Validators.min(" + dt.minValue + ")");
+			}
+			if (dt.regex != null && dt.regex.isEmpty() == false) {
+				vals.add("Validators.pattern(" + Util.escapeTs(dt.regex) + ")");
+			}
+			if(dt.minLength != 0) {
+				vals.add("Validators.minLength(" + dt.minLength + ")");
+			}
+			if(dt.maxLength != 0) {
+				vals.add("Validators.maxLength(" + dt.maxLength + ")");
+			}
+		}
+		boolean isFirst = true;
+		for(String s: vals) {
+			if(isFirst) {
+				isFirst = false;
+			}else {
+				sbf.append(C);
+			}
+			sbf.append(s);
+		}
+		sbf.append("]]");
 	}
+
 	void emitTs(StringBuilder sbf, DataType dt, Map<String, ValueList> valueLists,
 			Map<String, KeyedValueList> keyedLists) {
 		if (dt == null) {
