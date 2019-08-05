@@ -33,6 +33,7 @@ import org.simplity.fm.form.ChildForm;
 import org.simplity.fm.form.DbMetaData;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.form.FormData;
+import org.simplity.fm.form.FormDbParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,7 +185,7 @@ public class DbHandle {
 	 * @return true if a row is read. False otherwise
 	 * @throws SQLException
 	 */
-	public Object[][] readChildRows(String sql, DbParam[] whereParams, DbParam[] selectParams, Object[] formData,
+	public Object[][] readChildRows(String sql, FormDbParam[] whereParams, FormDbParam[] selectParams, Object[] formData,
 			int nbrChildFields) throws SQLException {
 		return RdbDriver.doReadChildRows(this.con, sql, whereParams, selectParams, formData, nbrChildFields);
 	}
@@ -343,7 +344,7 @@ public class DbHandle {
 	 * @return number of rows affected.
 	 * @throws SQLException
 	 */
-	public int writeForm(String sql, DbParam[] params, Object[] formData, long[] generatedKey) throws SQLException {
+	public int writeForm(String sql, FormDbParam[] params, Object[] formData, long[] generatedKey) throws SQLException {
 		if (this.readOnly) {
 			throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
 		}
@@ -385,7 +386,7 @@ public class DbHandle {
 	 * @return array of number of affected rows for each child row
 	 * @throws SQLException
 	 */
-	public int[] formBatch(String sql, DbParam[] params, FormData[] childData) throws SQLException {
+	public int[] formBatch(String sql, FormDbParam[] params, FormData[] childData) throws SQLException {
 		if (this.readOnly) {
 			throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
 		}

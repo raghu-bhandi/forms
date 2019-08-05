@@ -1,6 +1,6 @@
 import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
-import { FormGroup, FormBuilder, FormArray, FormControl } from '@angular/forms';
+import { FormGroup, FormBuilder, FormArray, FormControl, ValidationErrors } from '@angular/forms';
 import { WebDriverLogger } from 'blocking-proxy/built/lib/webdriver_logger';
 
 // tslint:disable: indent
@@ -129,6 +129,7 @@ export class FormData extends AbstractData {
 		let msg = 'requesting operation "' + operation;
 		if (operation === 'validate' || operation === 'submit') {
 			this.formGroup.updateValueAndValidity();
+			this.validateForm();
 			if (!this.formGroup.valid) {
 				console.error('Form has errors. "' + operation + '" operation aborted.');
 				alert("Form data has some errors. Please fix and then and try again.");
@@ -140,6 +141,98 @@ export class FormData extends AbstractData {
 		}
 		console.log(msg);
 		new DataStore(this).manageForm(operation);
+	}
+
+
+	public validateForm(): boolean {
+		const vals = this.form.validations;
+		if (!vals) {
+			return true;
+		}
+
+		let allOk = true;
+		for (const v of this.form.validations) {
+			const c1 = this.formGroup.get(v.f1) as FormControl;
+			const c2 = this.formGroup.get(v.f2) as FormControl;
+			const t = v.type;
+			let ok: boolean;
+			if (t === 'range') {
+				ok = this.validateRange(c1.value, c2.value, v.isStrict);
+			} else if (t === 'incl') {
+				ok = this.validateInclPair(c1.value, c2.value, v.value);
+			} else if (t === 'excl') {
+				ok = this.validateExclPair(c1.value, c2.value, v.stLeastOne);
+			} else {
+				console.error('Form validation type ' + t + ' is not valid. validation ignored');
+				ok = true;
+			}
+			if (!ok) {
+				const err = { interfield: t, errorId: v.errorId }
+				c1.setErrors(err);
+				c2.setErrors(err);
+				allOk = false;
+
+			}
+		}
+		return allOk;
+	}
+	/**
+	 * check if v1 to v2 us a range
+	 * @param v1 
+	 * @param v2 
+	 * @param useStrict if true, v2 must be > v2, v1 == v2 woudn't cut
+	 */
+	private validateRange(v1: string, v2: string, equalOk: boolean): boolean {
+		const n1 = Number.parseFloat(v1);
+		const n2 = Number.parseFloat(v2);
+		if (n1 === NaN || n2 === NaN || n2 > n1) {
+			return true;
+		}
+		if (n1 > n2) {
+			return false;
+		}
+		//equal. is it ok?
+		return equalOk;
+	}
+
+	/**
+	 * if v1 is specified, v2 is to be specified. 
+	 * Hoever, if value is specified, this conditio applies only if v1 == value
+	 * @param v1 
+	 * @param v2 
+	 * @param value 
+	 */
+	private validateInclPair(v1: string, v2: string, value: string): boolean {
+		if (!v1 || v2) {
+			return true;
+		}
+		//v1 specieid, but not v1.
+		if (value && value != v1) {
+			//Lucky, the rule is not applicable 
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * 
+	 * @param errorId v1 and v2 are exclusive
+	 * @param primaryField 
+	 * @param otherField 
+	 * @param atLeastOne if true, exactly one of teh twoto be specified
+	 */
+	private validateExclPair(v1: string, v2: string, noneOk: boolean): boolean {
+		if (v1) {
+			if (v2) {
+				return false;
+			}
+			return true;
+		}
+		if (v2) {
+			return true;
+		}
+		//none specifield, is it ok?
+		return noneOk;
 	}
 }
 

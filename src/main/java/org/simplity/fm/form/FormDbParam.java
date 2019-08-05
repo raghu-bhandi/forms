@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.rdb;
+package org.simplity.fm.form;
 
 import org.simplity.fm.datatypes.ValueType;
 
@@ -28,7 +28,7 @@ import org.simplity.fm.datatypes.ValueType;
  * @author simplity.org
  *
  */
-public class DbParam {
+public class FormDbParam {
 	/**
 	 * 0-based index in the form-fields that this parameter corresponds to (for getting/setting value in form data array)
 	 */
@@ -45,7 +45,7 @@ public class DbParam {
 	 * @param idx
 	 * @param valueType
 	 */
-	public DbParam(int idx, ValueType valueType) {
+	public FormDbParam(int idx, ValueType valueType) {
 		this.idx = idx;
 		this.valueType = valueType;
 	}

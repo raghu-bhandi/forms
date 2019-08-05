@@ -11,7 +11,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of formStorage
- * <br /> generated at 2019-08-04T22:59:20.965 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx
+ * <br /> generated at 2019-08-05T21:20:45.538 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx
  */ 
 public class FormStorage extends Form {
 	public static final int customerId = 0;

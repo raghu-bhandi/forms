@@ -8,7 +8,7 @@ import org.simplity.fm.validn.KeyedValueList;
 
 /**
  * List of valid values for list districts
- * <br /> generated at 2019-08-04T22:59:19.835
+ * <br /> generated at 2019-08-05T21:20:44.660
  */ 
 public class Districts extends KeyedValueList {
 	private static final String[] _names = {"KA", "TN", "TS"};

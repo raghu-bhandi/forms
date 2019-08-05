@@ -40,6 +40,8 @@ class InclusivePair {
 	private static final String C = ", ";
 	private static final int NBR_CELLS = 4;
 
+	String field1;
+	String field2;
 	int index1;
 	int index2;
 	String value1;
@@ -95,7 +97,8 @@ class InclusivePair {
 
 		p.value1 = Util.textValueOf(row.getCell(2));
 		p.errorId = Util.textValueOf(row.getCell(3));
-
+		p.field1 = s1;
+		p.field2 = s2;
 		p.fieldName = s1;
 		return p;
 	}
@@ -107,5 +110,16 @@ class InclusivePair {
 		sbf.append(C).append(Util.escape(this.fieldName));
 		sbf.append(C).append(Util.escape(this.errorId));
 		sbf.append(")");
+	}
+	/**
+	 * @param sbf
+	 */
+	public void emitTs(StringBuilder sbf) {
+		sbf.append("{type: 'incl', errorId: '").append(this.errorId).append("', f1: '").append(this.field1);
+		sbf.append("', f2: '").append(this.field2).append("'");
+		if(this.value1 != null && this.value1.isEmpty() == false) {
+			sbf.append(", value:").append(Util.escapeTs(this.value1));
+		}
+		sbf.append("}");
 	}
 }

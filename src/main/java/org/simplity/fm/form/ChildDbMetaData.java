@@ -22,8 +22,6 @@
 
 package org.simplity.fm.form;
 
-import org.simplity.fm.rdb.DbParam;
-
 /**
  * data structure for meta data for a child form
  * 
@@ -45,7 +43,7 @@ public class ChildDbMetaData {
 	/**
 	 * db parameters for the where clause
 	 */
-	public DbParam[] whereParams;
+	public FormDbParam[] whereParams;
 	/**
 	 * db meta data of the child form
 	 */

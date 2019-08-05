@@ -347,7 +347,7 @@ public class FormData {
 	 * 
 	 * @return value of the field as boolean. false if no such field, or the
 	 * @param idx
-	 *         field is null,or the field is not boolean.
+	 *            field is null,or the field is not boolean.
 	 */
 	public boolean getBoolValue(int idx) {
 		Object obj = this.getObject(idx);
@@ -690,7 +690,7 @@ public class FormData {
 				continue;
 			}
 			Field field = fields[j];
-			if(field.isDerivedField()) {
+			if (field.isDerivedField()) {
 				continue;
 			}
 			gen.writeFieldName(field.getFieldName());
@@ -722,11 +722,11 @@ public class FormData {
 	 */
 	public boolean insertToDb() throws SQLException {
 		Boolean[] result = new Boolean[1];
-		RdbDriver.getDriver().transact( new IDbClient() {
-			
+		RdbDriver.getDriver().transact(new IDbClient() {
+
 			@Override
 			public boolean transact(DbHandle handle) throws SQLException {
-				return result[0] =  handle.insert(FormData.this);
+				return result[0] = handle.insert(FormData.this);
 			}
 		}, false);
 		return result[0];
@@ -741,11 +741,11 @@ public class FormData {
 	 */
 	public boolean updateInDb() throws SQLException {
 		Boolean[] result = new Boolean[1];
-		RdbDriver.getDriver().transact( new IDbClient() {
-			
+		RdbDriver.getDriver().transact(new IDbClient() {
+
 			@Override
 			public boolean transact(DbHandle handle) throws SQLException {
-				return result[0] =  handle.update(FormData.this);
+				return result[0] = handle.update(FormData.this);
 			}
 		}, false);
 		return result[0];
@@ -759,11 +759,11 @@ public class FormData {
 	 */
 	public boolean deleteFromDb() throws SQLException {
 		Boolean[] result = new Boolean[1];
-		RdbDriver.getDriver().transact( new IDbClient() {
-			
+		RdbDriver.getDriver().transact(new IDbClient() {
+
 			@Override
 			public boolean transact(DbHandle handle) throws SQLException {
-				return result[0] =  handle.delete(FormData.this);
+				return result[0] = handle.delete(FormData.this);
 			}
 		}, false);
 		return result[0];
@@ -778,26 +778,14 @@ public class FormData {
 	 */
 	public boolean fetchFromDb() throws SQLException {
 		Boolean[] result = new Boolean[1];
-		RdbDriver.getDriver().transact( new IDbClient() {
-			
+		RdbDriver.getDriver().transact(new IDbClient() {
+
 			@Override
 			public boolean transact(DbHandle handle) throws SQLException {
-				result[0] =  handle.readForm(FormData.this);
+				result[0] = handle.readForm(FormData.this);
 				return true;
 			}
 		}, true);
 		return result[0];
-	}
-
-	/**
-	 * @param whereClause
-	 *            like "where a=? and b=?..."
-	 * @return array of form data, each element representing a row of data from
-	 *         the db
-	 * @throws SQLException
-	 */
-	public FormData[] fetchRowsFromDb(String whereClause) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
 	}
 }

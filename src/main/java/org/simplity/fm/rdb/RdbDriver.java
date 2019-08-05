@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.form.FormData;
+import org.simplity.fm.form.FormDbParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,11 +116,11 @@ public class RdbDriver {
 		}
 	}
 
-	protected static boolean doReadForm(Connection con, String sql, DbParam[] whereParams, DbParam[] selectParams,
+	protected static boolean doReadForm(Connection con, String sql, FormDbParam[] whereParams, FormDbParam[] selectParams,
 			Object[] formData) throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
-			for (DbParam p : whereParams) {
+			for (FormDbParam p : whereParams) {
 				posn++;
 				p.valueType.setPsParam(ps, posn, formData[p.idx]);
 			}
@@ -129,7 +130,7 @@ public class RdbDriver {
 					return false;
 				}
 				posn = 0;
-				for (DbParam p : selectParams) {
+				for (FormDbParam p : selectParams) {
 					posn++;
 					formData[p.idx] = p.valueType.getFromRs(rs, posn);
 				}
@@ -164,11 +165,11 @@ public class RdbDriver {
 		}
 	}
 
-	protected static Object[][] doReadChildRows(Connection con, String sql, DbParam[] whereParams,
-			DbParam[] selectParams, Object[] formData, int nbrChildFields) throws SQLException {
+	protected static Object[][] doReadChildRows(Connection con, String sql, FormDbParam[] whereParams,
+			FormDbParam[] selectParams, Object[] formData, int nbrChildFields) throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
-			for (DbParam p : whereParams) {
+			for (FormDbParam p : whereParams) {
 				posn++;
 				p.valueType.setPsParam(ps, posn, formData[p.idx]);
 			}
@@ -179,7 +180,7 @@ public class RdbDriver {
 					Object[] row = new Object[nbrChildFields];
 					result.add(row);
 					posn = 0;
-					for (DbParam p : selectParams) {
+					for (FormDbParam p : selectParams) {
 						posn++;
 						row[p.idx] = p.valueType.getFromRs(rs, posn);
 					}
@@ -232,12 +233,12 @@ public class RdbDriver {
 		}
 	}
 
-	protected static int doWriteForm(Connection con, String sql, DbParam[] params, Object[] formData,
+	protected static int doWriteForm(Connection con, String sql, FormDbParam[] params, Object[] formData,
 			long[] generatedKeys) throws SQLException {
 		logger.info("Sql: {}", sql);
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
-			for (DbParam p : params) {
+			for (FormDbParam p : params) {
 				posn++;
 				p.valueType.setPsParam(ps, posn, formData[p.idx]);
 			}
@@ -263,7 +264,7 @@ public class RdbDriver {
 		}
 	}
 
-	protected static int[] doFormBatch(Connection con, String sql, DbParam[] params, FormData[] childData)
+	protected static int[] doFormBatch(Connection con, String sql, FormDbParam[] params, FormData[] childData)
 			throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			for (FormData fd : childData) {
@@ -274,7 +275,7 @@ public class RdbDriver {
 				Object[] row = fd.getFieldValues();
 				ps.addBatch();
 				int posn = 0;
-				for (DbParam p : params) {
+				for (FormDbParam p : params) {
 					posn++;
 					p.valueType.setPsParam(ps, posn, row[p.idx]);
 				}

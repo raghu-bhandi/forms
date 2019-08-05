@@ -22,8 +22,6 @@
 
 package org.simplity.fm.form;
 
-import org.simplity.fm.rdb.DbParam;
-
 /**
  * @author simplity.org
  *
@@ -36,7 +34,7 @@ public class DbMetaData {
 	/**
 	 * db parameters to be used for the where clause
 	 */
-	public DbParam[] whereParams;
+	public FormDbParam[] whereParams;
 	/**
 	 * e.g. select a,b,c from t
 	 */
@@ -44,7 +42,7 @@ public class DbMetaData {
 	/**
 	 * db parameters to be used to receive data from the result set of the slect query
 	 */
-	public DbParam[] selectParams;
+	public FormDbParam[] selectParams;
 	/**
 	 * e.g insert a,b,c,d into table1 values(?,?,?,?) 
 	 */
@@ -52,7 +50,7 @@ public class DbMetaData {
 	/**
 	 * db parameters for the insert sql 
 	 */
-	public DbParam[] insertParams;
+	public FormDbParam[] insertParams;
 	
 	/**
 	 * e.g. update table1 set a=?, b=?, c=?
@@ -61,7 +59,7 @@ public class DbMetaData {
 	/**
 	 * db parameters for the update sql
 	 */
-	public DbParam[] updateParams;
+	public FormDbParam[] updateParams;
 	
 	/**
 	 * e.g. delete from table1. Note that where is not part of this.

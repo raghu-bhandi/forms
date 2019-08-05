@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.rdb.DbParam;
 import org.simplity.fm.service.IFormProcessor;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
@@ -353,11 +352,11 @@ public class Form {
 		return this.dbMetaData.deleteClause + this.dbMetaData.whereClause;
 	}
 
-	protected DbParam[] getParams(int[] indexes) {
-		DbParam[] params = new DbParam[indexes.length];
+	protected FormDbParam[] getParams(int[] indexes) {
+		FormDbParam[] params = new FormDbParam[indexes.length];
 		for (int i = 0; i < params.length; i++) {
 			int idx = indexes[i];
-			params[i] = new DbParam(idx, this.fields[idx].getValueType());
+			params[i] = new FormDbParam(idx, this.fields[idx].getValueType());
 		}
 		return params;
 	}

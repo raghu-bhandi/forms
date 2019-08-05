@@ -1,5 +1,4 @@
-import { FormGroup, FormBuilder, FormArray } from '@angular/forms';
-import { fcall } from 'q';
+import { FormBuilder } from '@angular/forms';
 import { FormData } from './formData';
 
 /**
@@ -16,6 +15,8 @@ export abstract class Form {
 	public childForms:  Map<string, ChildForm>;
 
 	public controls: {[key: string]: any;};
+
+	public validations: Array<{[key: string]: any}>;
 
 	public abstract getName(): string;
 

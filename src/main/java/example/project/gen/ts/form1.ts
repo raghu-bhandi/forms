@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-04T22:59:20.404
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-05T21:20:45.099
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -89,6 +89,7 @@ export class Form1 extends Form {
 
 		this.childForms = new Map();
 		this.childForms.set('orderLines', this.orderLines);
+		this.validations = [{type: 'range', errorId: 'invalidDateRange', f1: 'fromDate', f2: 'toDate', equalOk: false}, {type: 'excl', errorId: 'panOrAadhaar', f1: 'aadhaar', f2: 'pan', atLeastOne: true}, {type: 'incl', errorId: 'intfield1INtField2AreTogether', f1: 'intField1', f2: 'intField2'}, {type: 'incl', errorId: 'requiredOnKa', f1: 'state', f2: 'kaSpecificField', value:'KA'}];
 	}
 
 	public getName(): string {

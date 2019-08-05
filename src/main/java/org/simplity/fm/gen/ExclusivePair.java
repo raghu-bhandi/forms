@@ -40,6 +40,8 @@ class ExclusivePair {
 	private static final String C = ", ";
 	private static final int NBR_CELLS = 4;
 
+	String field1;
+	String field2;
 	int index1;
 	int index2;
 	String fieldName;
@@ -98,6 +100,8 @@ class ExclusivePair {
 		p.isRequired = Util.boolValueOf(row.getCell(2));
 		p.fieldName = s1;
 		p.errorId = Util.textValueOf(row.getCell(3));
+		p.field1 = s1;
+		p.field2 = s2;
 		return p;
 	}
 
@@ -109,6 +113,13 @@ class ExclusivePair {
 		sbf.append(C).append(Util.escape(this.fieldName));
 		sbf.append(C).append(Util.escape(this.errorId));
 		sbf.append(")");
+	}
+	/**
+	 * @param sbf
+	 */
+	public void emitTs(StringBuilder sbf) {
+		sbf.append("{type: 'excl', errorId: '").append(this.errorId).append("', f1: '").append(this.field1);
+		sbf.append("', f2: '").append(this.field2).append("', atLeastOne: ").append(this.isRequired).append("}");
 	}
 }
 

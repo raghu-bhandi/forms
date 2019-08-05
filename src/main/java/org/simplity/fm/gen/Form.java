@@ -548,6 +548,40 @@ class Form {
 		}
 
 		/*
+		 * inter field validations
+		 */
+		StringBuilder valBuf = new StringBuilder();
+		if (this.fromToPairs != null) {
+			for (FromToPair pair : this.fromToPairs) {
+				if(valBuf.length() > 0) {
+					valBuf.append(C);
+				}
+				pair.emitTs(valBuf);
+			}
+		}
+
+		if (this.exclusivePairs != null) {
+			for (ExclusivePair pair : this.exclusivePairs) {
+				if(valBuf.length() > 0) {
+					valBuf.append(C);
+				}
+				pair.emitTs(valBuf);
+			}
+		}
+
+		if (this.inclusivePairs != null) {
+			for (InclusivePair pair : this.inclusivePairs) {
+				if(valBuf.length() > 0) {
+					valBuf.append(C);
+				}
+				pair.emitTs(valBuf);
+			}
+		}
+
+		if(valBuf.length() > 0) {
+			sbf.append("\n\t\tthis.validations = [").append(valBuf).append("];");
+		}
+		/*
 		 * end of constructor
 		 */
 		sbf.append("\n\t}");
