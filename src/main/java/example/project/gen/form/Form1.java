@@ -14,7 +14,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form1
- * <br /> generated at 2019-08-05T21:20:45.096 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx
+ * <br /> generated at 2019-08-09T13:36:30.559 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx
  */ 
 public class Form1 extends Form {
 	public static final int headerId = 0;
@@ -33,12 +33,12 @@ public class Form1 extends Form {
 	public static final int aadhaar = 13;
 	public static final int pan = 14;
 	public static final int orderLines = 0;
-	private static final String WHERE = " WHERE header_id=?";
-	private static final int[] WHERE_IDX = {0};
 	private static final String SELECT = "SELECT header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan FROM headerId";
 	private static final int[] SELECT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
 	private static final  String INSERT = "INSERT INTO headerId(header_id, customer_id, financial_year, bool_field, from_date, to_date, int_field1, int_field2, state, district, ka_specific_field, aadhaar, pan) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 	private static final int[] INSERT_IDX = {0, 1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14};
+	private static final String WHERE = " WHERE header_id=?";
+	private static final int[] WHERE_IDX = {0};
 	private static final  String UPDATE = "UPDATE headerId SET customer_id=?, financial_year=?, bool_field=?, from_date=?, to_date=?, int_field1=?, int_field2=?, state=?, district=?, ka_specific_field=?, aadhaar=?, pan=?";
 	private static final  int[] UPDATE_IDX = {1, 2, 3, 4, 5, 6, 7, 10, 11, 12, 13, 14, 0};
 	private static final String DELETE = "DELETE FROM headerId";
@@ -48,12 +48,12 @@ public class Form1 extends Form {
 
 	private void setDbMeta(){
 		DbMetaData m = new DbMetaData();
-		m.whereClause = WHERE;
-		m.whereParams = this.getParams(WHERE_IDX);
 		m.selectClause = SELECT;
 		m.selectParams = this.getParams(SELECT_IDX);
 		m.insertClause = INSERT;
 		m.insertParams = this.getParams(INSERT_IDX);
+		m.whereClause = WHERE;
+		m.whereParams = this.getParams(WHERE_IDX);
 		m.updateClause = UPDATE;
 		m.updateParams = this.getParams(UPDATE_IDX);
 		m.deleteClause = DELETE;
@@ -67,13 +67,7 @@ public class Form1 extends Form {
 	 */
 	public Form1() {
 		this.uniqueName = "form1";
-			this.userIdFieldName = "customerId";
-			this.createGetService = true;
-			this.createSaveService = true;
-			this.createSubmitService = true;
-			this.partialSaveAllowed = true;
-			this.formProcessors[0] = new example.project.custom.MyPreGet();
-			this.formProcessors[1] = new example.project.custom.MyPostGet();
+		this.userIdFieldName = "customerId";
 
 		Field[] flds = {
 			new Field("headerId", 0, DefinedDataTypes.id, null, null, false, false, false, true, null, "header_id"), 

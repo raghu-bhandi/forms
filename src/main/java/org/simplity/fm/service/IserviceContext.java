@@ -23,6 +23,7 @@
 package org.simplity.fm.service;
 
 import java.io.Writer;
+import java.util.Collection;
 import java.util.Map;
 
 import org.simplity.fm.Message;
@@ -43,13 +44,6 @@ public interface IserviceContext {
 	 */
 	public Map<String, String> getInputFields();
 
-	/**
-	 * 
-	 * @param inputFieldName
-	 * @return value of the input field. null if the value is null, OR if the field is not received from the client
-	 */
-	public String getInputValue(String inputFieldName);
-	
 	/**
 	 * @return non-null user on whose behalf this service is requested
 	 */
@@ -72,6 +66,12 @@ public interface IserviceContext {
 	 * @param message non-null message
 	 */
 	public void AddMessage(Message message);
+	
+	/**
+	 * 
+	 * @param messages non-null messages
+	 */
+	public void AddMessages(Collection<Message> messages);
 	
 	/**
 	 * 

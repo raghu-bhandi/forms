@@ -22,7 +22,6 @@
 
 package org.simplity.fm.gen;
 
-import org.apache.poi.ss.usermodel.Row;
 import org.simplity.fm.datatypes.ValueType;
 
 /**
@@ -33,7 +32,6 @@ import org.simplity.fm.datatypes.ValueType;
  */
 class DataType {
 	private static final String C = ", ";
-	static final int NBR_CELLS = 12;
 	/*
 	 * all columns in the fields sheet
 	 */
@@ -49,34 +47,6 @@ class DataType {
 	String trueLabel;
 	String falseLabel;
 	int nbrFractions;
-
-	static DataType fromRow(Row row) {
-		DataType dt = new DataType();
-		dt.name = Util.textValueOf(row.getCell(0));
-		if (dt.name == null) {
-			ProjectInfo.logger.error("Field name is empty. row {} skipped", row.getRowNum());
-			return null;
-		}
-		String s = Util.textValueOf(row.getCell(1)).toUpperCase();
-		try {
-			dt.valueType = ValueType.valueOf(s);
-		} catch (Exception e) {
-			ProjectInfo.logger.error("{} is not a valid data type. row {} skipped", s, row.getRowNum());
-			return null;
-		}
-
-		dt.errorId = Util.textValueOf(row.getCell(2));
-		dt.regexDesc = Util.textValueOf(row.getCell(3));
-		dt.regex = Util.textValueOf(row.getCell(4));
-		dt.minLength = (int) Util.longValueOf(row.getCell(5));
-		dt.maxLength = (int) Util.longValueOf(row.getCell(6));
-		dt.minValue = Util.longValueOf(row.getCell(7));
-		dt.maxValue = Util.longValueOf(row.getCell(8));
-		dt.trueLabel = Util.textValueOf(row.getCell(9));
-		dt.falseLabel = Util.textValueOf(row.getCell(10));
-		dt.nbrFractions = (int)Util.longValueOf(row.getCell(11));
-		return dt;
-	}
 
 	void emitJava(StringBuilder sbf) {
 		String cls = Util.getDataTypeClass(this.valueType).getSimpleName();

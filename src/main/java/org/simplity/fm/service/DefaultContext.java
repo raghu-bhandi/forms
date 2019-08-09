@@ -24,6 +24,7 @@ package org.simplity.fm.service;
 
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,11 +65,6 @@ public class DefaultContext implements IserviceContext {
 	}
 
 	@Override
-	public String getInputValue(String inputFieldName) {
-		return this.inputFields.get(inputFieldName);
-	}
-
-	@Override
 	public LoggedInUser getUser() {
 		return this.loggedInUser;
 	}
@@ -97,5 +93,11 @@ public class DefaultContext implements IserviceContext {
 	@Override
 	public Message[] getMessages() {
 		return this.messages.toArray(new Message[0]);
+	}
+	@Override
+	public void AddMessages(Collection<Message> msgs) {
+		for(Message msg : msgs) {
+			this.AddMessage(msg);
+		}
 	}
 }

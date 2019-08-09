@@ -74,6 +74,11 @@ public class DbMetaData {
 	 * meta data for the child form. null if 
 	 */
 	public ChildDbMetaData[] childMeta;
+	
+	/**
+	 * array index corresponds to DbOperation.orinal(). true if that operation is allowed
+	 */
+	public boolean[] dbOperationOk = new boolean[DbOperation.values().length];
 }
 
 

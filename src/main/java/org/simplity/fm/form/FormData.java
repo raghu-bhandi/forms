@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.InvalidValueException;
@@ -478,13 +479,33 @@ public class FormData {
 	}
 
 	/**
+	 * parse and set value for a field.
+	 * 
+	 * @param idx
+	 *            valid index for this form
+	 * @param value
+	 *            string value to be parsed for this field
+	 * @param errors
+	 *            to which an error message is added =in case of validation
+	 *            failure
+	 */
+	public void parseField(int idx, String value, List<Message> errors) {
+		if (!this.idxOk(idx)) {
+			errors.add(Message.newError(idx + " is not valid index for form " + this.form.getFormId()));
+			return;
+		}
+		Field f = this.form.getFields()[idx];
+		validateAndSet(f, value, this.fieldValues, idx, false, false, errors);
+	}
+
+	/**
 	 * load from a JSON node with no validation. To be called when loading from
 	 * a dependable source
 	 * 
 	 * @param json
 	 */
 	public void load(ObjectNode json) {
-		this.validateAndLoad(json, true, null);
+		this.validateAndLoad(json, true, true, null);
 	}
 
 	/**
@@ -503,8 +524,29 @@ public class FormData {
 		Field[] fields = this.form.getFields();
 		for (int idx : indexes) {
 			Field f = fields[idx];
-			String value = getChildAsText(json, f.getFieldName());
-			validateAndSet(f, value, this.fieldValues, idx, false, errors);
+			String value = getTextAttribute(json, f.getFieldName());
+			validateAndSet(f, value, this.fieldValues, idx, false, false, errors);
+		}
+	}
+
+	/**
+	 * load keys from a JSON. input is suspect.
+	 * 
+	 * @param inputValues
+	 *            non-null collection of field values
+	 * @param errors
+	 *            non-null to which any validation errors are added
+	 */
+	public void loadKeys(Map<String, String> inputValues, List<Message> errors) {
+		int[] indexes = this.form.getKeyIndexes();
+		if (indexes == null) {
+			return;
+		}
+		Field[] fields = this.form.getFields();
+		for (int idx : indexes) {
+			Field f = fields[idx];
+			String value = inputValues.get(f.getFieldName());
+			validateAndSet(f, value, this.fieldValues, idx, false, false, errors);
 		}
 	}
 
@@ -517,16 +559,25 @@ public class FormData {
 	 *            true if this is for a draft-save operation, where we validate
 	 *            only the fields that the user has opted to type. MUST be
 	 *            called with true value for final submit operation
+	 * @param forInsert
+	 *            true if this data is meant to create a new row (insert
+	 *            operation). In this case, primary key is skipped if it is to
+	 *            be generated
 	 * @param errors
 	 *            non-null to which any validation errors are added
 	 */
-	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, List<Message> errors) {
-		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, errors);
+	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert,
+			List<Message> errors) {
+		boolean keyIsOptional= false;
+		if(forInsert) {
+			keyIsOptional = this.form.getDbMetaData().keyIsGenerated;
+		}
+		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, errors);
 
 		ChildForm[] children = this.form.getChildForms();
 		if (children != null) {
 			for (int i = 0; i < children.length; i++) {
-				this.childData[i] = this.validateChild(children[i], json, allFieldsAreOptional, errors);
+				this.childData[i] = this.validateChild(children[i], json, allFieldsAreOptional, keyIsOptional, errors);
 			}
 		}
 		if (!allFieldsAreOptional) {
@@ -535,7 +586,7 @@ public class FormData {
 	}
 
 	private FormData[] validateChild(ChildForm childForm, ObjectNode json, boolean allFieldsAreOptional,
-			List<Message> errors) {
+			boolean forInsert, List<Message> errors) {
 		String fieldName = childForm.fieldName;
 		JsonNode childNode = json.get(fieldName);
 		if (childNode == null) {
@@ -556,7 +607,7 @@ public class FormData {
 				}
 			}
 			FormData fd = childForm.form.newFormData();
-			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, errors);
+			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, forInsert, errors);
 			FormData[] result = { fd };
 			return result;
 		}
@@ -593,7 +644,7 @@ public class FormData {
 			}
 			FormData fd = childForm.form.newFormData();
 			fds.add(fd);
-			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, errors);
+			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, forInsert, errors);
 		}
 		if (fds.size() == 0) {
 			return null;
@@ -602,19 +653,19 @@ public class FormData {
 	}
 
 	private static void setFeilds(ObjectNode json, Form form, Object[] row, boolean allFieldsAreOptional,
-			List<Message> errors) {
+			boolean keyIsOptional, List<Message> errors) {
 		Field[] fields = form.getFields();
 		for (int i = 0; i < fields.length; i++) {
 			Field field = fields[i];
-			String value = getChildAsText(json, field.getFieldName());
-			validateAndSet(field, value, row, i, allFieldsAreOptional, errors);
+			String value = getTextAttribute(json, field.getFieldName());
+			validateAndSet(field, value, row, i, allFieldsAreOptional, keyIsOptional, errors);
 		}
 	}
 
 	private static void validateAndSet(Field field, String value, Object[] row, int idx, boolean allFieldsAreOptional,
-			List<Message> errors) {
+			boolean keyIsOptional, List<Message> errors) {
 		if (value == null || value.isEmpty()) {
-			if (allFieldsAreOptional) {
+			if (allFieldsAreOptional || (keyIsOptional && field.isKeyField())) {
 				row[idx] = null;
 				return;
 			}
@@ -701,7 +752,7 @@ public class FormData {
 		}
 	}
 
-	private static String getChildAsText(JsonNode json, String fieldName) {
+	private static String getTextAttribute(JsonNode json, String fieldName) {
 		JsonNode node = json.get(fieldName);
 		if (node == null) {
 			return null;

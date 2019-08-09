@@ -24,15 +24,8 @@ package org.simplity.fm.gen;
 
 import java.io.File;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.simplity.fm.Config;
 import org.simplity.fm.datatypes.ValueType;
 import org.slf4j.Logger;
@@ -42,9 +35,8 @@ import org.slf4j.LoggerFactory;
  * @author simplity.org
  *
  */
-class ProjectInfo {
-	static final Logger logger = LoggerFactory.getLogger(ProjectInfo.class);
-	private static final String[] SHEET_NAMES = { "dataTypes", "valueLists", "keyedValueLists", "commonFields" };
+class AppComps {
+	static final Logger logger = LoggerFactory.getLogger(AppComps.class);
 	private static final String C = ", ";
 
 	DataType[] dataTypes;
@@ -53,108 +45,6 @@ class ProjectInfo {
 	Field[] commonFields;
 
 
-	static ProjectInfo fromWorkbook(Workbook book) {
-		Sheet[] sheets = Util.readSheets(book, SHEET_NAMES);
-		ProjectInfo dt = new ProjectInfo();
-		dt.dataTypes = loadTypes(sheets[0]);
-		dt.lists = loadLists(sheets[1]);
-		dt.keyedLists = loadKeyedLists(sheets[2]);
-		dt.commonFields= loadCommonFields(sheets[3]);
-		return dt;
-	}
-
-	private static DataType[] loadTypes(Sheet sheet) {
-		logger.info("Started parsing for data types from sheet {} with {} rows ", sheet.getSheetName(),
-				(sheet.getLastRowNum() - sheet.getFirstRowNum() + 1));
-		List<DataType> typeList = new ArrayList<>();
-		Util.consumeRows(sheet, DataType.NBR_CELLS, new Consumer<Row>() {
-
-			@Override
-			public void accept(Row row) {
-				DataType dt = DataType.fromRow(row);
-				if (dt != null) {
-					typeList.add(dt);
-				}
-			}
-		});
-
-		int n = typeList.size();
-		if (n == 0) {
-			logger.error("No valid data type parsed!!");
-			return null;
-		}
-		logger.info("{} data types parsed.", n);
-		return typeList.toArray(new DataType[0]);
-	}
-
-	private static Map<String, ValueList> loadLists(Sheet sheet) {
-		// we iterate up to a non-existing row to trigger build
-		int n = sheet.getLastRowNum() + 1;
-		logger.info("Started parsing for values lists. ");
-		ValueList.Builder builder = ValueList.getBuilder();
-		Util.consumeRows(sheet, ValueList.NBR_CELLS, new Consumer<Row>() {
-			
-			@Override
-			public void accept(Row row) {
-				builder.addRow(row);
-			}
-		});
-		/**
-		 * signal to the builder to build teh last one that was still being built
-		 */
-		Map<String, ValueList> map =builder.done();
-		n = map.size();
-		if (n == 0) {
-			logger.info("No value lists added.");
-			return null;
-		}
-		logger.info("{} value lists added.", n);
-		return map;
-	}
-
-	private static Map<String, KeyedValueList> loadKeyedLists(Sheet sheet) {
-		// we iterate up to a non-existing row to trigger build
-		int n = sheet.getLastRowNum() + 1;
-		logger.info("Started parsing keyed lists ");
-		KeyedValueList.Builder builder = KeyedValueList.getBuilder();
-		Util.consumeRows(sheet, KeyedValueList.NBR_CELLS, new Consumer<Row>() {
-			
-			@Override
-			public void accept(Row row) {
-				builder.addRow(row);
-			}
-		});
-		Map<String, KeyedValueList> map = builder.done();
-		n = map.size();
-		if (n == 0) {
-			logger.info("No keyed value lists added.");
-			return null;
-		}
-		logger.info("{} keyed value lists added.", n);
-		return map;
-	}
-
-	private static Field[] loadCommonFields(Sheet sheet) {
-		List<Field> fields = new ArrayList<Field>();
-		logger.info("Started parsing common fields");
-		Util.consumeRows(sheet, Field.NBR_CELLS, new Consumer<Row>() {
-
-			@Override
-			public void accept(Row row) {
-				Field field = Field.fromRow(row);
-				if (field != null) {
-					fields.add(field);
-				}
-			}
-		});
-		int n =fields.size();
-		if(n == 0) {
-			logger.warn("No common fields parsed..");
-			return null;
-		}
-		logger.info("{} common fields parsed. These fields canbe included in any form with a directive.", n);
-		return fields.toArray(new Field[0]);
-	}
 
 	void emitJava(String rootFolder, String packageName, String dataTypesFileName) {
 		/*

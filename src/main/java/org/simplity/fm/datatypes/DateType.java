@@ -56,36 +56,36 @@ public class DateType extends DataType {
 
 	@Override
 	public LocalDate parse(String text) {
-		try{
-			if(text.length() == 10) {
+		try {
+			if (text.length() == 10) {
 				return this.validate(LocalDate.parse(text));
 			}
 			return this.validate(LocalDate.ofEpochDay(Long.parseLong(text)));
-			
-		}catch(Exception e) {
+
+		} catch (Exception e) {
 			return null;
 		}
-		
+
 	}
-	
+
 	@Override
 	public LocalDate parse(Object object) {
-		if(object instanceof LocalDate) {
-			return this.validate((LocalDate)object);
+		if (object instanceof LocalDate) {
+			return this.validate((LocalDate) object);
 		}
-		
-		if(object instanceof String) {
-			return this.parse((String)object);
+
+		if (object instanceof String) {
+			return this.parse((String) object);
 		}
 		return null;
 	}
-	
+
 	private LocalDate validate(LocalDate date) {
 		LocalDate today = LocalDate.now();
-		if(today.plusDays(this.minValue).isAfter(date)) {
+		if (today.plusDays(this.minValue).isAfter(date)) {
 			return null;
 		}
-		if(today.plusDays(this.maxValue).isBefore(date)) {
+		if (today.plusDays(this.maxValue).isBefore(date)) {
 			return null;
 		}
 		return date;

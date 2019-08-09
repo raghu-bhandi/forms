@@ -37,43 +37,44 @@ public class Field {
 	 * advised that the same name is used in different forms if they actually
 	 * refer to the same data element
 	 */
-	private final String fieldName;
+	private String fieldName;
 
 	/**
 	 * 0-based index of the field in the parent form;
 	 */
-	private final int index;
+	private int index;
 	/**
 	 * data type describes the type of value and restrictions (validations) on
 	 * the value
 	 */
-	private final DataType dataType;
+	private DataType dataType;
 	/**
-	 * default value is used only if this is  optional and the value is missing. not
+	 * default value is used only if this is optional and the value is missing.
+	 * not
 	 * used if the field is mandatory
 	 */
-	private final Object defaultValue;
+	private Object defaultValue;
 	/**
 	 * refers to the message id/code that is used for i18n of messages
 	 */
-	private final String messageId;
+	private String messageId;
 	/**
 	 * required/mandatory. If set to true, text value of empty string and 0 for
 	 * integral are assumed to be not valid. Relevant only for editable fields.
 	 */
-	private final boolean isRequired;
+	private boolean isRequired;
 	/**
 	 * Is this field editable by the client. If false, then this can be either a
 	 * "reference field" that is used for display or validation purposes. It is
 	 * typically not sent back from client.
 	 */
-	private final boolean isEditable;
+	private boolean isEditable;
 	/**
 	 * if true, this field value is calculated based on other fields. Typically
 	 * not received from client, but some designs may receive and keep it for
 	 * logging/legal purposes. Not relevant if the field is editable.
 	 */
-	private final boolean isDerivedField;
+	private boolean isDerivedField;
 	/**
 	 * is this part of the conceptual key (document-id) of the form.
 	 */
@@ -88,7 +89,7 @@ public class Field {
 	 * <code>ValueLists</code> Otherwise this value list is fetched at run time
 	 * TODO: as of now, only design-time known list is supported
 	 */
-	private final String valueListName;
+	private String valueListName;
 
 	/**
 	 * cached value list for
@@ -98,7 +99,7 @@ public class Field {
 	/**
 	 * db column name
 	 */
-	private final String dbColumnName;
+	private String dbColumnName;
 
 	/**
 	 * this is generally invoked by the generated code for a Data Structure
@@ -145,9 +146,9 @@ public class Field {
 		this.isRequired = isRequired;
 		this.isEditable = isEditable;
 		this.messageId = messageId;
-		if(defaultValue == null) {
+		if (defaultValue == null) {
 			this.defaultValue = null;
-		}else {
+		} else {
 			this.defaultValue = dataType.parse(defaultValue);
 		}
 		this.isDerivedField = isDerivedField;
@@ -162,6 +163,22 @@ public class Field {
 		}
 		this.dbColumnName = dbColumnName;
 
+	}
+
+	/**
+	 * a field that has no validation/client related meta data
+	 * @param fieldName
+	 * @param index
+	 * @param isKeyField
+	 * @param valueType
+	 * @param dbColumnName
+	 */
+	public Field(String fieldName, int index, boolean isKeyField, ValueType valueType, String dbColumnName) {
+		this.fieldName = fieldName;
+		this.index = index;
+		this.isKeyField = isKeyField;
+		this.dataType = DataType.getDefaultType(valueType);
+		this.dbColumnName = dbColumnName;
 	}
 
 	/**
@@ -215,6 +232,7 @@ public class Field {
 	public String getDbColumnName() {
 		return this.dbColumnName;
 	}
+
 	/**
 	 * parse into the desired type, validate and return the value. caller should
 	 * check for exception for validation failure and not returned value as
@@ -239,7 +257,6 @@ public class Field {
 			}
 			this.throwMessage();
 		}
-
 		Object obj = this.dataType.parse(inputValue);
 		if (obj == null) {
 			this.throwMessage();

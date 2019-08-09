@@ -22,14 +22,6 @@
 
 package org.simplity.fm.gen;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-
 /**
  * represents form level validation (across fields) in a form.
  * 
@@ -38,7 +30,6 @@ import org.apache.poi.ss.usermodel.Sheet;
  */
 class ExclusivePair {
 	private static final String C = ", ";
-	private static final int NBR_CELLS = 4;
 
 	String field1;
 	String field2;
@@ -47,64 +38,6 @@ class ExclusivePair {
 	String fieldName;
 	boolean isRequired;
 	String errorId;
-
-	static ExclusivePair[] fromSheet(Sheet sheet, Map<String, Field> fields) {
-		List<ExclusivePair> list = new ArrayList<>();
-		Util.consumeRows(sheet, NBR_CELLS, new Consumer<Row>() {
-			
-			@Override
-			public void accept(Row row) {
-				ExclusivePair pair = ExclusivePair.fromRow(row, fields);
-				if (pair != null) {
-					list.add(pair);
-				} 
-			}
-		});
-		
-		int n = list.size();
-		if (n == 0) {
-			Form.logger.info("No either-or inter-field validaiton defined");
-			return null;
-		}
-		Form.logger.info("{}  either-or inter-field validaiton defined", n);
-		return list.toArray(new ExclusivePair[0]);
-	}
-
-	/**
-	 * @param row
-	 * @param fields
-	 * @return
-	 */
-	protected static ExclusivePair fromRow(Row row, Map<String, Field> fields) {
-		ExclusivePair p = new ExclusivePair();
-		String s1  = Util.textValueOf(row.getCell(0));
-		String s2 = Util.textValueOf(row.getCell(1));
-		if(s1 == null || s2 == null) {
-			Form.logger.error("Row {} has missing column value/s. Skipped", row.getRowNum());
-			return null;
-		}
-		Field f1 = fields.get(s1);
-		if(f1 == null) {
-			Form.logger.error("{} is not a field name in this form. row {} skipped", s1, row.getRowNum());
-			return null;
-		}
-		p.index1 = f1.index;
-
-		Field f2 = fields.get(s2);
-		if(f2 == null) {
-			Form.logger.error("{} is not a field name in this form. row {} skipped", s2, row.getRowNum());
-			return null;
-		}
-		p.index2 = f2.index;
-
-		p.isRequired = Util.boolValueOf(row.getCell(2));
-		p.fieldName = s1;
-		p.errorId = Util.textValueOf(row.getCell(3));
-		p.field1 = s1;
-		p.field2 = s2;
-		return p;
-	}
-
 
 	void emitJavaCode(StringBuilder sbf) {
 		sbf.append("new ExclusiveValidation(").append(this.index1);

@@ -11,31 +11,31 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 2019-08-05T21:20:45.351 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
+ * <br /> generated at 2019-08-09T13:36:30.770 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
  */ 
 public class Form2 extends Form {
 	public static final int headerId = 0;
 	public static final int productId = 1;
 	public static final int quantity = 2;
 	public static final int color = 3;
-	private static final String WHERE = " WHERE header_id=? AND product_id=?";
-	private static final int[] WHERE_IDX = {0, 1};
 	private static final String SELECT = "SELECT header_id, product_id, quantity, color FROM detail";
 	private static final int[] SELECT_IDX = {0, 1, 2, 3};
 	private static final  String INSERT = "INSERT INTO detail(header_id, product_id, quantity, color) values (?, ?, ?, ?)";
 	private static final int[] INSERT_IDX = {0, 1, 2, 3};
+	private static final String WHERE = " WHERE header_id=? AND product_id=?";
+	private static final int[] WHERE_IDX = {0, 1};
 	private static final  String UPDATE = "UPDATE detail SET quantity=?, color=?";
 	private static final  int[] UPDATE_IDX = {2, 3, 0, 1};
 	private static final String DELETE = "DELETE FROM detail";
 
 	private void setDbMeta(){
 		DbMetaData m = new DbMetaData();
-		m.whereClause = WHERE;
-		m.whereParams = this.getParams(WHERE_IDX);
 		m.selectClause = SELECT;
 		m.selectParams = this.getParams(SELECT_IDX);
 		m.insertClause = INSERT;
 		m.insertParams = this.getParams(INSERT_IDX);
+		m.whereClause = WHERE;
+		m.whereParams = this.getParams(WHERE_IDX);
 		m.updateClause = UPDATE;
 		m.updateParams = this.getParams(UPDATE_IDX);
 		m.deleteClause = DELETE;
@@ -47,7 +47,6 @@ public class Form2 extends Form {
 	 */
 	public Form2() {
 		this.uniqueName = "form2";
-			this.partialSaveAllowed = false;
 
 		Field[] flds = {
 			new Field("headerId", 0, DefinedDataTypes.id, null, null, false, false, false, true, null, "header_id"), 

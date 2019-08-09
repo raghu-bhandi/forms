@@ -30,13 +30,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.simplity.fm.validn.FromToValidation;
 import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.Config;
+import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.form.ChildDbMetaData;
 import org.simplity.fm.form.DbMetaData;
+import org.simplity.fm.form.DbOperation;
 import org.simplity.fm.validn.DependentListValidation;
 import org.simplity.fm.validn.ExclusiveValidation;
 import org.simplity.fm.validn.InclusiveValidation;
@@ -55,18 +55,13 @@ class Form {
 	 * the right stream of logs to look for any issue in the workbook
 	 */
 	static final Logger logger = LoggerFactory.getLogger("Form");
-	private static final String[] SHEET_NAMES = { "specialInstructions", "fields", "childForms", "fromToPairs",
-			"mutuallyExclusivePairs", "mutuallyInclusivepairs", "customValidations" };
 
-	private static final String[] SHEET_DESC = { "service or processing ", "fields", "child Forms (tables, sub-forms)",
-			"from-To inter-field validations", "either-or type of inter-field validaitons",
-			"if-a-then-b type of inter-field validaitons", "custom validations" };
 	private static final String C = ", ";
 	private static final String EQ = " = ";
 	private static final String P = "\n\tprivate static final ";
 
 	String name;
-	SpecialInstructions si;
+	final Map<String, Object> params = new HashMap<>();
 	Field[] fields;
 	Map<String, Field> fieldMap;
 	ChildForm[] childForms;
@@ -74,73 +69,9 @@ class Form {
 	ExclusivePair[] exclusivePairs;
 	InclusivePair[] inclusivePairs;
 	boolean hasCustomValidations;
+	boolean isForDbOnly;
 
-	static Form fromBook(Workbook book, String formName, Field[] commonFields) {
-		logger.info("Started parsing work book " + formName);
-		Form form = new Form();
-		form.name = formName;
-		Sheet[] sheets = new Sheet[SHEET_NAMES.length];
-		Sheet sheet;
-		for (int i = 0; i < sheets.length; i++) {
-			sheet = book.getSheet(SHEET_NAMES[i]);
-			if (sheet == null) {
-				logger.error("Sheet {} is missing. Mo {} will be parsed.", SHEET_NAMES[i], SHEET_DESC[i]);
-			} else {
-				sheets[i] = sheet;
-			}
-		}
-
-		sheet = sheets[0];
-		if (sheet != null) {
-			form.si = SpecialInstructions.fromSheet(sheet);
-		}
-
-		sheet = sheets[1];
-		if (sheet != null) {
-			if (form.si.addCommonFields) {
-				form.fields = Field.fromSheet(sheet, commonFields);
-			} else {
-				form.fields = Field.fromSheet(sheet, null);
-			}
-		}
-
-		Set<String> names = form.getNameSet();
-		sheet = sheets[2];
-		if (sheet != null) {
-			form.childForms = ChildForm.fromSheet(sheet, names);
-		}
-
-		form.buildFieldMap();
-		sheet = sheets[3];
-		if (sheet != null) {
-			form.fromToPairs = FromToPair.fromSheet(sheet, form.fieldMap);
-		}
-
-		sheet = sheets[4];
-		if (sheet != null) {
-			form.exclusivePairs = ExclusivePair.fromSheet(sheet, form.fieldMap);
-		}
-
-		sheet = sheets[5];
-		if (sheet != null) {
-			form.inclusivePairs = InclusivePair.fromSheet(sheet, form.fieldMap);
-		}
-
-		sheet = sheets[6];
-		if (sheet != null) {
-			if (Util.hasContent(sheet.getRow(1), 2)) {
-				form.hasCustomValidations = true;
-				logger.info("custom validiton added. Ensure that you write the desired java class for this.");
-			} else {
-				logger.info("No custom validaitons added.");
-			}
-		}
-
-		logger.info("Done parsing form " + formName);
-		return form;
-	}
-
-	private void buildFieldMap() {
+	void buildFieldMap() {
 		this.fieldMap = new HashMap<>();
 		if (this.fields != null) {
 			for (Field field : this.fields) {
@@ -149,7 +80,7 @@ class Form {
 		}
 	}
 
-	private Set<String> getNameSet() {
+	Set<String> getNameSet() {
 		Set<String> names = new HashSet<>();
 		if (this.fields != null) {
 			for (Field field : this.fields) {
@@ -193,9 +124,12 @@ class Form {
 		 * importing anyways (avoiding a loop thru all fields to see if any one
 		 * has)
 		 */
-		Util.emitImport(sbf, DependentListValidation.class);
-		sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
-
+		if (this.isForDbOnly) {
+			Util.emitImport(sbf, ValueType.class);
+		}else {
+			Util.emitImport(sbf, DependentListValidation.class);
+			sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
+		}
 		/*
 		 * class definition
 		 */
@@ -218,8 +152,35 @@ class Form {
 		sbf.append("\n\n\t/**\n\t *\n\t */");
 		sbf.append("\n\tpublic ").append(cls).append("() {");
 		sbf.append("\n\t\tthis.uniqueName = \"").append(this.name).append("\";");
-
-		this.si.emitJavaAttrs(sbf, customPackage);
+		/*
+		 * userIdFieldName
+		 */
+		Object obj = this.params.get("userIdFieldName");
+		if (obj != null) {
+			String t = obj.toString().trim();
+			if (!t.isEmpty()) {
+				sbf.append("\n\t\tthis.userIdFieldName = \"").append(t).append("\";");
+			}
+		}
+		/*
+		 * form processors
+		 */
+		obj = this.params.get("prefillProcessor");
+		if (obj != null) {
+			String t = obj.toString().trim();
+			if (!t.isEmpty()) {
+				sbf.append("\n\t\tthis.prefillProcessor = new ").append(customPackage).append('.').append(t)
+						.append("();");
+			}
+		}
+		obj = this.params.get("refillProcessor");
+		if (obj != null) {
+			String t = obj.toString().trim();
+			if (!t.isEmpty()) {
+				sbf.append("\n\t\tthis.refillProcessor = new ").append(customPackage).append('.').append(t)
+						.append("();");
+			}
+		}
 
 		if (this.fields != null) {
 			this.emitJavaFields(sbf, typesName);
@@ -229,7 +190,9 @@ class Form {
 			this.emitJavaChildren(sbf);
 		}
 
-		this.emitJavaValidations(sbf, customPackage);
+		if (this.isForDbOnly == false) {
+			this.emitJavaValidations(sbf, customPackage);
+		}
 
 		sbf.append("\n\n\t\tthis.setDbMeta();");
 		sbf.append("\n\t\tthis.initialize();");
@@ -238,60 +201,86 @@ class Form {
 	}
 
 	private void emitDbStuff(StringBuilder sbf) {
-		String tableName = (String) this.si.settings.get("dbTableName");
-		Field[] keys = new Field[0];
+		String tableName = (String) this.params.get("dbTableName");
+		Field[] keys = null;
 		if (tableName == null) {
-			logger.warn("dbTableName not set. no db related code genrated for this form");
-		} else {
-			List<Field> list = new ArrayList<>();
-			for (Field field : this.fields) {
-				if (field.isKey) {
-					list.add(field);
-				}
-			}
-			int n = list.size();
-			if (n == 0) {
-				logger.error(
-						"dbTable name is set but no field is marked as keyField. db operations require key field definition.");
-			} else {
-				if (this.si.keyIsGenerated && n > 1) {
-					logger.error("keyIsGenerated is set to true, but there are {} key fields!!", n);
-				}
-				keys = list.toArray(keys);
-			}
-		}
-
-		if (tableName == null) {
+			logger.warn("dbTableName not set. no db related code generated for this form");
 			sbf.append("\n\n\tprivate void setDbMeta(){\n\t\t//\n\t}");
 			return;
 		}
 
-		String whereIndexes = this.emitWhere(sbf, keys);
+		List<Field> list = new ArrayList<>();
+		for (Field field : this.fields) {
+			if (field.isKey) {
+				list.add(field);
+			}
+		}
+
+		boolean keyIsGenerated = false;
+		Object obj = this.params.get("keyIsGenerated");
+		if (obj != null && obj instanceof Boolean) {
+			keyIsGenerated = (Boolean) obj;
+		}
+		int n = list.size();
+		if (n == 0) {
+			logger.error(
+					"dbTable name is set but no field is marked as keyField. db operations require key field definition.");
+		} else {
+			if (n > 1 && keyIsGenerated) {
+				logger.error("keyIsGenerated is set to true, but there are {} key fields!!", n);
+			}
+
+			keys = list.toArray(new Field[0]);
+		}
 
 		this.emitSelect(sbf, tableName);
 		this.emitInsert(sbf, tableName);
-		this.emitUpdate(sbf, whereIndexes, tableName, keys);
-		sbf.append(P).append("String DELETE = \"DELETE FROM ").append(tableName).append("\";");
+
+		if (keys != null) {
+			String whereIndexes = this.emitWhere(sbf, keys);
+			this.emitUpdate(sbf, whereIndexes, tableName, keys);
+			sbf.append(P).append("String DELETE = \"DELETE FROM ").append(tableName).append("\";");
+		}
 
 		this.emitChildDbDeclarations(sbf);
 
 		sbf.append("\n\n\tprivate void setDbMeta(){");
 		String t = "\n\t\tm.";
 		sbf.append("\n\t\tDbMetaData m = new DbMetaData();");
-		sbf.append(t).append("whereClause = WHERE;");
-		sbf.append(t).append("whereParams = this.getParams(WHERE_IDX);");
+		/*
+		 * set dbOperationOk[] to true for auto-service
+		 */
+		obj = this.params.get("allowDbOperations");
+		if (obj != null) {
+			for (String op : obj.toString().split(",")) {
+				try {
+					DbOperation opn = DbOperation.valueOf(op.trim().toUpperCase());
+					sbf.append(t).append("dbOperationOk[").append(opn.ordinal()).append("] = true;");
+				} catch (Exception e) {
+					logger.error("{} is not a valid dbOperation. directive in allowDbOperations ignored");
+				}
+			}
+		}
+
 		sbf.append(t).append("selectClause = SELECT;");
 		sbf.append(t).append("selectParams = this.getParams(SELECT_IDX);");
 		sbf.append(t).append("insertClause = INSERT;");
 		sbf.append(t).append("insertParams = this.getParams(INSERT_IDX);");
-		sbf.append(t).append("updateClause = UPDATE;");
-		sbf.append(t).append("updateParams = this.getParams(UPDATE_IDX);");
-		sbf.append(t).append("deleteClause = DELETE;");
-		if (this.si.keyIsGenerated) {
-			sbf.append(t).append("keyIsGenerated = true;");
+
+		if (keys != null) {
+			sbf.append(t).append("whereClause = WHERE;");
+			sbf.append(t).append("whereParams = this.getParams(WHERE_IDX);");
+			sbf.append(t).append("updateClause = UPDATE;");
+			sbf.append(t).append("updateParams = this.getParams(UPDATE_IDX);");
+			sbf.append(t).append("deleteClause = DELETE;");
+			if (keyIsGenerated) {
+				sbf.append(t).append("keyIsGenerated = true;");
+			}
 		}
 
-		this.emitChildDbParam(sbf);
+		if(this.childForms != null && this.childForms.length > 0) {
+			this.emitChildDbParam(sbf);
+		}
 
 		sbf.append("\n\t\tthis.dbMetaData = m;");
 		sbf.append("\n\t}");
@@ -384,7 +373,11 @@ class Form {
 			} else {
 				sbf.append(C);
 			}
-			field.emitJavaCode(sbf, dataTypesName);
+			if (this.isForDbOnly) {
+				field.emitJavaCode(sbf);
+			} else {
+				field.emitJavaCode(sbf, dataTypesName);
+			}
 		}
 		sbf.append("\n\t\t};\n\t\tthis.fields = flds;");
 	}
@@ -526,7 +519,8 @@ class Form {
 			StringBuilder altSbf = new StringBuilder("\n\t\tthis.controls = {");
 			sbf.append("\n\t\tthis.fields = new Map();");
 			for (Field field : this.fields) {
-				sbf.append("\n\t\tthis.fields.set('").append(field.name).append("', ").append("this.").append(field.name).append(");");
+				sbf.append("\n\t\tthis.fields.set('").append(field.name).append("', ").append("this.")
+						.append(field.name).append(");");
 				altSbf.append("\n\t\t\t");
 				field.emitFg(altSbf, dataTypes.get(field.dataType));
 				altSbf.append(C);
@@ -543,7 +537,8 @@ class Form {
 		if (this.childForms != null && this.childForms.length != 0) {
 			sbf.append("\n\n\t\tthis.childForms = new Map();");
 			for (ChildForm child : this.childForms) {
-				sbf.append("\n\t\tthis.childForms.set('").append(child.name).append("', ").append("this.").append(child.name).append(");");
+				sbf.append("\n\t\tthis.childForms.set('").append(child.name).append("', ").append("this.")
+						.append(child.name).append(");");
 			}
 		}
 
@@ -553,7 +548,7 @@ class Form {
 		StringBuilder valBuf = new StringBuilder();
 		if (this.fromToPairs != null) {
 			for (FromToPair pair : this.fromToPairs) {
-				if(valBuf.length() > 0) {
+				if (valBuf.length() > 0) {
 					valBuf.append(C);
 				}
 				pair.emitTs(valBuf);
@@ -562,7 +557,7 @@ class Form {
 
 		if (this.exclusivePairs != null) {
 			for (ExclusivePair pair : this.exclusivePairs) {
-				if(valBuf.length() > 0) {
+				if (valBuf.length() > 0) {
 					valBuf.append(C);
 				}
 				pair.emitTs(valBuf);
@@ -571,14 +566,14 @@ class Form {
 
 		if (this.inclusivePairs != null) {
 			for (InclusivePair pair : this.inclusivePairs) {
-				if(valBuf.length() > 0) {
+				if (valBuf.length() > 0) {
 					valBuf.append(C);
 				}
 				pair.emitTs(valBuf);
 			}
 		}
 
-		if(valBuf.length() > 0) {
+		if (valBuf.length() > 0) {
 			sbf.append("\n\t\tthis.validations = [").append(valBuf).append("];");
 		}
 		/*

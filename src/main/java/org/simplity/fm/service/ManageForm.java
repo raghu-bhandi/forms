@@ -83,7 +83,7 @@ public class ManageForm implements IService {
 
 		List<Message> msgs = new ArrayList<>();
 
-		headerData.validateAndLoad((ObjectNode) node, false, msgs);
+		headerData.validateAndLoad((ObjectNode) node, false, true, msgs);
 		if (msgs.size() > 0) {
 			for (Message msg : msgs) {
 				ctx.AddMessage(msg);
@@ -124,9 +124,27 @@ public class ManageForm implements IService {
 				node = new ObjectMapper().readTree(headerData.getFormData());
 				fd.load((ObjectNode) node);
 			} else {
+				IFormProcessor proc = form.getPrefillProcessor();
+				if(proc != null) {
+					if(proc.process(fd, ctx)) {
+						logger.info("Form successfully pre-filled");
+					}else {
+						logger.error("FOrm prefill processer returned false indicating some trouble. Service execution stopped");
+						return;
+					}
+				}
 				logger.info("New form created and sent to the client");
 			}
-			// TODO: copy profile fields
+			
+			IFormProcessor proc = form.getRefillProcessor();
+			if(proc != null) {
+				if(proc.process(fd, ctx)) {
+					logger.info("Form successfully re-filled");
+				}else {
+					logger.error("Form refill processer returned false indicating some trouble. Service execution stopped");
+					return;
+				}
+			}
 			fd.serializeAsJson(ctx.getResponseWriter());
 			return;
 		}
@@ -138,7 +156,7 @@ public class ManageForm implements IService {
 			return;
 		}
 
-		fd.validateAndLoad((ObjectNode) node, op == FormOperation.SAVE, msgs);
+		fd.validateAndLoad((ObjectNode) node, op == FormOperation.SAVE, true, msgs);
 		if (msgs.size() > 0) {
 			for (Message msg : msgs) {
 				logger.error("{}", msg);

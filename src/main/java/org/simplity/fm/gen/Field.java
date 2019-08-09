@@ -23,14 +23,9 @@
 package org.simplity.fm.gen;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
 
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.simplity.fm.datatypes.ValueType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +39,6 @@ import org.slf4j.LoggerFactory;
 class Field {
 	protected static final Logger logger = LoggerFactory.getLogger(Field.class);
 	private static final String C = ", ";
-	static final int NBR_CELLS = 15;
 
 	String name;
 	String label;
@@ -61,72 +55,7 @@ class Field {
 	String listKey;
 	String dbColumnName;
 	int index;
-
-	static Field[] fromSheet(Sheet sheet, Field[] commonFields) {
-		List<Field> list = new ArrayList<>();
-		Set<String> fieldNames = new HashSet<>();
-		if (commonFields != null) {
-			for (Field field : commonFields) {
-				list.add(field);
-				fieldNames.add(field.name);
-			}
-			logger.info("{} common fields added to the form", commonFields.length);
-		}
-		Util.consumeRows(sheet, NBR_CELLS, new Consumer<Row>() {
-
-			@Override
-			public void accept(Row row) {
-				Field field = fromRow(row);
-				if (field == null) {
-					return;
-				}
-				if (fieldNames.add(field.name)) {
-					list.add(field);
-				} else {
-					logger.error("Field name {} is duplicate at row {}. skipped", field.name, row.getRowNum());
-				}
-			}
-		});
-
-		int n = list.size();
-		if (n == 0) {
-			logger.warn("No fields for this form!!");
-			return null;
-		}
-		logger.info("{} fields added..", n);
-		Field[] arr = new Field[n];
-		for (int i = 0; i < arr.length; i++) {
-			Field field = list.get(i);
-			field.index = i;
-			arr[i] = field;
-		}
-		return arr;
-	}
-
-	static Field fromRow(Row row) {
-		Field f = new Field();
-		f.name = Util.textValueOf(row.getCell(0));
-		if (f.name == null) {
-			logger.error("Name is null in row {}. Row is skipped", row.getRowNum());
-			return null;
-		}
-		f.label = Util.textValueOf(row.getCell(1));
-		f.altLabel = Util.textValueOf(row.getCell(2));
-		// 3 is description. we are not parsing that.
-		f.placeHolder = Util.textValueOf(row.getCell(4));
-		f.dataType = Util.textValueOf(row.getCell(5));
-		f.defaultValue = Util.textValueOf(row.getCell(6));
-		f.errorId = Util.textValueOf(row.getCell(7));
-		f.isRequired = Util.boolValueOf(row.getCell(8));
-		f.isEditable = Util.boolValueOf(row.getCell(9));
-		f.isDerived = Util.boolValueOf(row.getCell(10));
-		f.isKey = Util.boolValueOf(row.getCell(11));
-		f.listName = Util.textValueOf(row.getCell(12));
-		f.listKey = Util.textValueOf(row.getCell(13));
-		f.dbColumnName = Util.textValueOf(row.getCell(14));
-
-		return f;
-	}
+	ValueType valueType;
 
 	void emitJavaCode(StringBuilder sbf, String dataTypesName) {
 		sbf.append("\n\t\t\tnew Field(\"").append(this.name).append('"');
@@ -146,6 +75,15 @@ class Field {
 		} else {
 			sbf.append(C).append("null");
 		}
+		sbf.append(C).append(Util.escape(this.dbColumnName));
+		sbf.append(')');
+	}
+
+	void emitJavaCode(StringBuilder sbf) {
+		sbf.append("\n\t\t\tnew Field(\"").append(this.name).append('"');
+		sbf.append(C).append(this.index);
+		sbf.append(C).append(this.isKey);
+		sbf.append(C).append("ValueType.").append(this.valueType);
 		sbf.append(C).append(Util.escape(this.dbColumnName));
 		sbf.append(')');
 	}

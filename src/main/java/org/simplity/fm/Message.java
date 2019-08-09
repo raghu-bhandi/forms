@@ -48,6 +48,10 @@ public class Message {
 	 */
 	public static final String MSG_INVALID_DATA = "invalidData";
 	/**
+	 * error to be used to indicate that value is required for an input field 
+	 */
+	public static final String FIELD_REQUIRED = "valueRequired";
+	/**
 	 * create an error message for a message id
 	 * 
 	 * @param messageId

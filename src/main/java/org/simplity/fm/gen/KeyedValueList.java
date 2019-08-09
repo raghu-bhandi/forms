@@ -23,15 +23,11 @@
 package org.simplity.fm.gen;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.poi.ss.usermodel.Row;
 
 /**
  * @author simplity.org
@@ -39,13 +35,8 @@ import org.apache.poi.ss.usermodel.Row;
  */
 class KeyedValueList {
 	private static final String C = ", ";
-	public static final int NBR_CELLS = 4;
 	final String name;
 	final Map<String, Pair[]> lists;
-
-	static Builder getBuilder() {
-		return new Builder();
-	}
 
 	KeyedValueList(String name, Map<String, Pair[]> lists) {
 		this.name = name;
@@ -53,7 +44,7 @@ class KeyedValueList {
 	}
 
 	void emitJava(StringBuilder sbf, String packageName) {
-		ProjectInfo.logger.info("Started generating java for keyed list {} with {} keys", this.name, this.lists.size());
+		AppComps.logger.info("Started generating java for keyed list {} with {} keys", this.name, this.lists.size());
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
 
@@ -131,89 +122,6 @@ class KeyedValueList {
 				sbf.append(C).append(Util.escapeTs(p.value)).append("]");
 			}
 			sbf.append(indent).append(']');
-		}
-	}
-
-	/**
-	 * using a builder to accumulate rows for a list and then create a list
-	 * 
-	 */
-	static class Builder {
-		Map<String, KeyedValueList> klists = new HashMap<>();
-		private String name = null;
-		private String keyName = null;
-		private Map<String, Pair[]> lists = new HashMap<>();
-		private List<Pair> pairs = new ArrayList<>();
-
-		protected Builder() {
-			//
-		}
-
-		Map<String, KeyedValueList> done() {
-			this.build();
-			Map<String, KeyedValueList> result = this.klists;
-			this.newList(null, null);
-			this.klists = new HashMap<>();
-			return result;
-		}
-
-		/**
-		 * add row to the builder.
-		 * 
-		 * @param row
-		 */
-		void addRow(Row row) {
-			String newName = Util.textValueOf(row.getCell(0));
-			String newKey = Util.textValueOf(row.getCell(1));
-			String val = Util.textValueOf(row.getCell(2));
-			String label = Util.textValueOf(row.getCell(3));
-			if (this.name == null) {
-				/*
-				 * this is the very first row being read.
-				 */
-				if (newName == null) {
-					ProjectInfo.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
-					return;
-				}
-				this.newList(newName, newKey);
-			} else if (newName != null && newName.equals(this.name) == false) {
-				/*
-				 * this row is for the next list. build the previous one.
-				 */
-				this.build();
-				this.newList(newName, newKey);
-			} else if (newKey != null && newKey.contentEquals(this.keyName) == false) {
-				this.addList(newKey);
-			}
-
-			this.pairs.add(new Pair(label, val));
-		}
-
-		private void newList(String newName, String newKey) {
-			this.pairs.clear();
-			this.lists = new HashMap<>();
-			this.keyName = newKey;
-			this.name = newName;
-		}
-
-		private void addList(String newKey) {
-			if (this.keyName == null || this.pairs.size() == 0) {
-				ProjectInfo.logger.error("empty line in lists??, valueList not created.");
-			} else {
-				this.lists.put(this.keyName, this.pairs.toArray(new Pair[0]));
-				this.pairs.clear();
-			}
-			this.keyName = newKey;
-		}
-
-		private void build() {
-			if (this.name == null) {
-				ProjectInfo.logger.error("empty line in lists??, valueList not created.");
-				return;
-			}
-			this.addList(null);
-			this.klists.put(this.name, new KeyedValueList(this.name, this.lists));
-			ProjectInfo.logger.info("Keyed value list {} parsed and added with {} keys.", this.name, this.lists.size());
 		}
 	}
 }

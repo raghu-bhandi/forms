@@ -23,15 +23,9 @@
 package org.simplity.fm.gen;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-import org.apache.poi.ss.usermodel.Row;
 
 /**
  * @author simplity.org
@@ -39,13 +33,8 @@ import org.apache.poi.ss.usermodel.Row;
  */
 class ValueList {
 	private static final String C = ", ";
-	static final int NBR_CELLS = 3;
 	final String name;
 	final Pair[] pairs;
-
-	static Builder getBuilder() {
-		return new Builder();
-	}
 
 	ValueList(String name, Pair[] pairs) {
 		this.name = name;
@@ -96,70 +85,4 @@ class ValueList {
 		}
 	}
 
-	/**
-	 * using a builder to accumulate rows for a list and then create a list
-	 * 
-	 */
-	static class Builder {
-		private Map<String, ValueList> lists = new HashMap<>();
-		private String name = null;
-		private List<Pair> pairs = new ArrayList<>();
-
-		protected Builder() {
-			//
-		}
-
-		public Map<String, ValueList> done() {
-			this.build();
-			 Map<String, ValueList> result = this.lists;
-			 this.lists = new HashMap<>();
-			 return result;
-		}
-
-		/**
-		 * add row to the builder.
-		 * 
-		 * @param row
-		 */
-		void addRow(Row row) {
-			String newName = Util.textValueOf(row.getCell(0));
-			String val = Util.textValueOf(row.getCell(1));
-			String label = Util.textValueOf(row.getCell(2));
-			if (this.name == null) {
-				/*
-				 * this is the very first row being read.
-				 */
-				if (newName == null) {
-					ProjectInfo.logger.error("name of the list not mentioned? row {} skipped...", row.getRowNum());
-					return;
-				}
-				this.newList(newName);
-			} else if (newName != null && newName.equals(this.name) == false) {
-				/*
-				 * this row is for the next list. build the previous one.
-				 */
-				this.build();
-				this.newList(newName);
-			}
-
-			this.pairs.add(new Pair(label, val));
-		}
-
-		private void newList(String newName) {
-			this.pairs.clear();
-			this.name = newName;
-			if (newName != null) {
-				ProjectInfo.logger.info("New valueList initiated for {} ", this.name);
-			}
-		}
-
-		private void build() {
-			if (this.name == null) {
-				ProjectInfo.logger.error("empty line in lists??, Your list may be all mixed-up!!.");
-				return;
-			}
-			this.lists.put(this.name, new ValueList(this.name, this.pairs.toArray(new Pair[0])));
-			ProjectInfo.logger.info("Value list {} pared and added to the map", this.name);
-		}
-	}
 }

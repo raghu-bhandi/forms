@@ -37,32 +37,6 @@ import org.slf4j.LoggerFactory;
 public class Form {
 	private static final Logger logger = LoggerFactory.getLogger(Form.class);
 	/**
-	 * array index for pre get form processors
-	 */
-	public static final int PRE_GET = 0;
-	/**
-	 * array index for post get form processors
-	 */
-	public static final int POST_GET = 1;
-	/**
-	 * array index for pre save form processors
-	 */
-	public static final int PRE_SAVE = 2;
-	/**
-	 * array index for post save form processors
-	 */
-	public static final int POST_SAVE = 3;
-	/**
-	 * array index for pre submit form processors
-	 */
-	public static final int PRE_SUBMIT = 4;
-	/**
-	 * array index for post submit form processors
-	 */
-	public static final int POST_SUBMIT = 5;
-
-	private static final int NBR_PROCESSORS = 6;
-	/**
 	 * get operation
 	 */
 	public static final String SERVICE_TYPE_GET = "get";
@@ -105,31 +79,14 @@ public class Form {
 	protected IValidation[] validations;
 
 	/**
-	 * is a auto-service to get this form ok?
+	 * pre-fill fields when the form is requested for the first time.
 	 */
-	protected boolean createGetService;
+	protected IFormProcessor prefillProcessor;
 
 	/**
-	 * is a auto-service to save this form ok?
+	 * refill-fields each time the form is to be sent to client for editing.
 	 */
-	protected boolean createSaveService;
-
-	/**
-	 * is a auto-service to submit this form ok?
-	 */
-	protected boolean createSubmitService;
-
-	/**
-	 * is a auto-service to submit this form ok?
-	 */
-	protected boolean partialSaveAllowed;
-
-	/*
-	 * following fields are derived from others. Defined for improving
-	 * performance of some methods
-	 */
-
-	protected IFormProcessor[] formProcessors = new IFormProcessor[NBR_PROCESSORS];
+	protected IFormProcessor refillProcessor;
 
 	/**
 	 * index to the values array for the key fields. this is derived based on
@@ -244,30 +201,19 @@ public class Form {
 		}
 	}
 
+
 	/**
-	 * set/attach a pre-slotted for processor for standard services based on
-	 * this form
-	 * 
-	 * @param processorType
-	 * @param processor
+	 * @return the refillProcessor for this form
 	 */
-	public void setFormProcessor(int processorType, IFormProcessor processor) {
-		if (processorType >= NBR_PROCESSORS) {
-			return;
-		}
-		this.formProcessors[processorType] = processor;
+	public IFormProcessor getRefillProcessor() {
+		return this.refillProcessor;
 	}
 
 	/**
-	 * @param processorType
-	 * @return pre-slotted for processor for standard services based on this
-	 *         form
+	 * @return the prefillProcessor for this form
 	 */
-	public IFormProcessor getFormProcessor(int processorType) {
-		if (processorType >= NBR_PROCESSORS) {
-			return null;
-		}
-		return this.formProcessors[processorType];
+	public IFormProcessor getPrefillProcessor() {
+		return this.prefillProcessor;
 	}
 
 	/**
@@ -344,14 +290,6 @@ public class Form {
 		return this.dbMetaData;
 	}
 
-	/**
-	 * 
-	 * @return prepared statement to delete this form data from the DB
-	 */
-	public String getDeleeSql() {
-		return this.dbMetaData.deleteClause + this.dbMetaData.whereClause;
-	}
-
 	protected FormDbParam[] getParams(int[] indexes) {
 		FormDbParam[] params = new FormDbParam[indexes.length];
 		for (int i = 0; i < params.length; i++) {
@@ -386,9 +324,9 @@ public class Form {
 	 */
 	public FormData newFormData() {
 		Object[] row = new Object[this.fields.length];
-		for(Field field: this.fields) {
+		for (Field field : this.fields) {
 			Object val = field.getDefaultValue();
-			if(val != null) {
+			if (val != null) {
 				row[field.getIndex()] = val;
 			}
 		}

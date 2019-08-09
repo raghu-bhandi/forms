@@ -20,24 +20,33 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
-
-import org.simplity.fm.form.FormData;
+package org.simplity.fm.form;
 
 /**
- * interface for providing custom logic on a form at any stage of a service 
+ * db operation
+ * 
  * @author simplity.org
  *
  */
-public interface IFormProcessor {
+public enum DbOperation {
 	/**
-	 * carry out custom logic  
-	 * @param formData
-	 * @param ctx
-	 * @return true if it is OK to continue. in such a case, no error message
-	 *         should have been added to the list.
-	 *         false if it is not ok to continue. at least one error message
-	 *         should have been added to the list
+	 * read/fetch/get  one row for the primary key 
 	 */
-	public boolean process(FormData formData, IserviceContext ctx);
+	GET,
+	/**
+	 * insert/new/create one row
+	 */
+	CREATE,
+	/**
+	 * edit/update/save/submit one row based identified by primary key
+	 */
+	UPDATE,
+	/**
+	 * delete/remove/archive one row based on primary key
+	 */
+	DELETE,
+	/**
+	 * filter rows based on filter criterion
+	 */
+	FILTER
 }

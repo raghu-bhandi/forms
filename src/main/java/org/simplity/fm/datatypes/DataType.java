@@ -21,6 +21,7 @@
  */
 package org.simplity.fm.datatypes;
 
+
 /**
  * class that restricts possible valid values that a field can have. Used for
  * parsing and validating a field value coming from a non-reliable source
@@ -29,6 +30,28 @@ package org.simplity.fm.datatypes;
  *
  */
 public abstract class DataType {
+	private static final DataType[] DEFAULT_TYPES = new DataType[ValueType.values().length];
+	static {
+		DEFAULT_TYPES[ValueType.TEXT.ordinal()] = new TextType("_defaultText", null, 0, 99999, null);
+		DEFAULT_TYPES[ValueType.INTEGER.ordinal()] = new IntegerType("_defaultInteger", null, -999999999999L,
+				999999999999L);
+		DEFAULT_TYPES[ValueType.DECIMAL.ordinal()] = new DecimalType("_defaultDecimal", null, -999999999999L,
+				999999999999L, 4);
+		DEFAULT_TYPES[ValueType.BOOLEAN.ordinal()] = new BooleanType("_defaultBoolean", null);
+		DEFAULT_TYPES[ValueType.DATE.ordinal()] = new DateType("_defaultDate", null, -99999, 99999);
+		DEFAULT_TYPES[ValueType.TIMESTAMP.ordinal()] = new TimestampType("_defaultTimeStamp", null);
+	}
+
+	/**
+	 * get a default data type for a value type
+	 * 
+	 * @param valueType non-null 
+	 * @return non-null default data type
+	 */
+	public static DataType getDefaultType(ValueType valueType) {
+		return DEFAULT_TYPES[valueType.ordinal()];
+	}
+
 	protected String name;
 	protected String messageId;
 	protected int minLength;

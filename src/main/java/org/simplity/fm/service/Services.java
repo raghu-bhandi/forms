@@ -5,8 +5,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.simplity.fm.Forms;
+import org.simplity.fm.form.DbOperation;
 import org.simplity.fm.form.Form;
-import org.simplity.fm.form.FormOperation;
 
 /**
  * Place holder the serves as a source for service instances
@@ -46,9 +46,9 @@ public class Services {
 			return null;
 		}
 
-		FormOperation opern = null;
+		DbOperation opern = null;
 		try {
-			opern = FormOperation.valueOf(serviceName.substring(0, idx).toUpperCase());
+			opern = DbOperation.valueOf(serviceName.substring(0, idx).toUpperCase());
 			return FormIo.getInstance(opern, serviceName.substring(idx + 1));
 		} catch (Exception e) {
 			return null;
