@@ -14,12 +14,30 @@ export abstract class Form {
 	 */
 	public childForms:  Map<string, ChildForm>;
 
+	/**
+	 * meta-data for all controls that can be used to create a formGroup using formBuilder.group()
+	 */
 	public controls: {[key: string]: any;};
 
+	/**
+	 * inter-field validations
+	 */
 	public validations: Array<{[key: string]: any}>;
 
+	/**
+	 * field names that have enumeratedlist of values. That is,fields that are to be rendered as drop-downs
+	 */
+	public listFields: Array<string>;
+
+	/**
+	 * name of this form. 
+	 */
 	public abstract getName(): string;
 
+	/**
+	 * create a model (data-holder) for this form
+	 * @param builder 
+	 */
 	public newFormData(builder: FormBuilder): FormData{
 		return new FormData(this, builder);
 	}
@@ -54,9 +72,10 @@ export class Field {
 		public minValue: number,
 		public maxValue: number,
 		public nbrDecimals: number,
+		public listName: string,
 		public valueListKey: string,
-		public valueList: [string, string][],
-		public keyedList: any) {
+		public valueList: Array<[any, string]>,
+		public keyedList: {[key:string]:  Array<[any, string]>}) {
 	}
 }
 

@@ -24,8 +24,8 @@ package org.simplity.fm.validn;
 
 import java.util.List;
 
-import org.simplity.fm.KeyedValueLists;
 import org.simplity.fm.Message;
+import org.simplity.fm.ValueLists;
 import org.simplity.fm.form.FormData;
 
 /**
@@ -35,7 +35,7 @@ import org.simplity.fm.form.FormData;
  * @author simplity.org
  */
 public class DependentListValidation implements IValidation {
-	private final KeyedValueList validValues;
+	private final IValueList validValues;
 	private final int fieldIndex;
 	private final int parentFieldIndex;
 	private final String fieldName;
@@ -54,7 +54,7 @@ public class DependentListValidation implements IValidation {
 	public DependentListValidation(int fieldIndex, int parentFieldIndex, String listName, String fieldName, String messageId ) {
 		this.fieldIndex = fieldIndex;
 		this.parentFieldIndex = parentFieldIndex;
-		this.validValues = KeyedValueLists.getList(listName);
+		this.validValues = ValueLists.getList(listName);
 		this.fieldName = fieldName;
 		this.messaageId = messageId;
 	}
@@ -62,16 +62,16 @@ public class DependentListValidation implements IValidation {
 
 	@Override
 	public boolean isValid(FormData data, List<Message> mesages) {
-		String value = data.getStringValue(this.fieldIndex);
-		if(value == null) {
+		Object fieldValue = data.getStringValue(this.fieldIndex);
+		if(fieldValue == null) {
 			return true;
 		}
-		String keyValue = data.getStringValue(this.parentFieldIndex);
+		Object keyValue = data.getObject(this.parentFieldIndex);
 		if(keyValue == null) {
 			return true;
 		}
 		
-		if(this.validValues.isValid(keyValue, value)) {
+		if(this.validValues.isValid(fieldValue, keyValue)) {
 			return true;
 		}
 		mesages.add(Message.newFieldError(this.fieldName, this.messaageId, null));

@@ -48,7 +48,8 @@ import org.slf4j.LoggerFactory;
  */
 public class Generator {
 	protected static final Logger logger = LoggerFactory.getLogger(Generator.class);
-	private static final String[] PROJECT_SHEET_NAMES = { "dataTypes", "valueLists", "keyedValueLists", "commonFields" };
+	private static final String[] PROJECT_SHEET_NAMES = { "dataTypes", "valueLists", "keyedValueLists", "runtimeLists", 
+			"commonFields" };
 	private static final String[] SHEET_NAMES = { "specialInstructions", "fields", "childForms", "fromToPairs",
 			"mutuallyExclusivePairs", "mutuallyInclusivepairs", "customValidations" };
 	private static final String[] SHEET_DESC = { "service or processing ", "fields", "child Forms (tables, sub-forms)",
@@ -64,6 +65,7 @@ public class Generator {
 	private static final int NBR_CELLS_LIST = 3;
 	private static final int NBR_CELLS_KEYED_LIST = 4;
 	private static final int NBR_CELLS_DATA_TYPES = 12;
+	private static final int NBR_CELLS_RUNTIME_LIST = 6;
 
 	/**
 	 * 
@@ -160,7 +162,7 @@ public class Generator {
 		String outName = outputRoot + "form/" + Util.toClassName(fn) + ".java";
 		Util.writeOut(outName, sbf);
 
-		if(form.isForDbOnly) {
+		if (form.isForDbOnly) {
 			return;
 		}
 
@@ -179,7 +181,8 @@ public class Generator {
 		dt.dataTypes = parseTypes(sheets[0]);
 		dt.lists = parseLists(sheets[1]);
 		dt.keyedLists = parseKeyedLists(sheets[2]);
-		dt.commonFields = parseCommonFields(sheets[3]);
+		dt.runtimeLists = parseRuntimeLists(sheets[3]);
+		dt.commonFields = parseCommonFields(sheets[4]);
 		return dt;
 	}
 
@@ -253,6 +256,32 @@ public class Generator {
 		}
 		logger.info("{} keyed value lists added.", n);
 		return map;
+	}
+
+	private static Map<String, RuntimeList> parseRuntimeLists(Sheet sheet) {
+		Map<String, RuntimeList> list = new HashMap<>();
+		logger.info("Started parsing runtime lists");
+		XlsUtil.consumeRows(sheet, NBR_CELLS_RUNTIME_LIST, new Consumer<Row>() {
+
+			@Override
+			public void accept(Row row) {
+				RuntimeList rl = new RuntimeList();
+				rl.name = XlsUtil.textValueOf(row.getCell(0));
+				rl.table = XlsUtil.textValueOf(row.getCell(1));
+				rl.col1 = XlsUtil.textValueOf(row.getCell(2));
+				rl.col2 = XlsUtil.textValueOf(row.getCell(3));
+				rl.key = XlsUtil.textValueOf(row.getCell(4));
+				rl.keyIsNumeric = XlsUtil.boolValueOf(row.getCell(5));
+				list.put(rl.name, rl);
+			}
+		});
+		int n = list.size();
+		if (n == 0) {
+			logger.warn("No runtime lists parsed..");
+			return null;
+		}
+		logger.info("{} runtime list parsed. ", n);
+		return list;
 	}
 
 	private static Field[] parseCommonFields(Sheet sheet) {
@@ -429,6 +458,7 @@ public class Generator {
 		p.fieldName = s1;
 		return p;
 	}
+
 	static FromToPair[] parseFromToPairs(Sheet sheet, Map<String, Field> fields) {
 		List<FromToPair> list = new ArrayList<>();
 		XlsUtil.consumeRows(sheet, NBR_CELLS_FROM_TO, new Consumer<Row>() {
@@ -486,15 +516,15 @@ public class Generator {
 	static Form parseForm(Workbook book, String formName, Field[] commonFields) {
 		logger.info("Started parsing work book " + formName);
 		Sheet fieldsSheet = book.getSheet("fields");
-		if(fieldsSheet == null) {
+		if (fieldsSheet == null) {
 			fieldsSheet = book.getSheet("columns");
-			if(fieldsSheet == null) {
+			if (fieldsSheet == null) {
 				logger.error("Work book has neither fields, nor columns. ignored.");
 				return null;
 			}
 			return parseDbForm(book, formName);
 		}
-		
+
 		Form form = new Form();
 		form.name = formName;
 		Sheet[] sheets = new Sheet[SHEET_NAMES.length];
@@ -511,13 +541,13 @@ public class Generator {
 		/*
 		 * special instructions
 		 */
-		sheet = sheets[0]; 
+		sheet = sheets[0];
 		boolean addCommonFields = false;
 		if (sheet != null) {
 			parseSi(sheet, form.params);
 			Object obj = form.params.get("addCommonFields");
-			if(obj != null && obj instanceof Boolean) {
-				addCommonFields = (Boolean)obj;
+			if (obj != null && obj instanceof Boolean) {
+				addCommonFields = (Boolean) obj;
 			}
 		}
 
@@ -579,25 +609,25 @@ public class Generator {
 	 */
 	private static Form parseDbForm(Workbook book, String formName) {
 		Sheet sheet = book.getSheet("params");
-		if(sheet == null) {
+		if (sheet == null) {
 			logger.error("Form {} has specialInstructions sheet missing.");
 			return null;
 		}
 		Form form = new Form();
 		form.name = formName;
 		parseSi(sheet, form.params);
-		if(form.params.get("dbTableName") == null) {
+		if (form.params.get("dbTableName") == null) {
 			logger.error("dbTableName is required in specialInstructions sheet");
 			return null;
 		}
-		
+
 		/*
 		 * fields
 		 */
 		sheet = book.getSheet("columns");
 		List<Field> list = new ArrayList<>();
 		Set<String> fieldNames = new HashSet<>();
-		
+
 		XlsUtil.consumeRows(sheet, 4, new Consumer<Row>() {
 
 			@Override
@@ -605,35 +635,18 @@ public class Generator {
 				Field f = new Field();
 				f.name = XlsUtil.textValueOf(row.getCell(0));
 				f.dbColumnName = XlsUtil.textValueOf(row.getCell(1));
-				String t = XlsUtil.textValueOf(row.getCell(2));
+				f.dataType = XlsUtil.textValueOf(row.getCell(2));
 				f.isKey = XlsUtil.boolValueOf(row.getCell(3));
-				ValueType vt = null;
-				try {
-					vt = ValueType.valueOf(t.toUpperCase());
-				}catch(Exception e) {
-					logger.error("{} is not a valid value type. form not generated");
-				}
-				f.valueType = vt;
 				f.index = list.size();
-				if(vt == null) {
-					list.add(0, null); //to flag error
-				}else {
-					if (fieldNames.add(f.name)) {
-						list.add(f);
-					} else {
-						list.add(0, null); //to flag error
-						logger.error("Field name {} is duplicate at row {}. skipped", f.name, row.getRowNum());
-					}
+				if (fieldNames.add(f.name)) {
+					logger.error("Field name {} is duplicate at row {}. skipped", f.name, row.getRowNum());
 				}
+				list.add(f);
 			}
 		});
 		int n = list.size();
 		if (n == 0) {
 			logger.warn("No fields for this form!!");
-			return null;
-		}
-		if(list.get(0) == null) {
-			//we had encountered an error in the lambda function
 			return null;
 		}
 		form.fields = list.toArray(new Field[0]);
@@ -642,10 +655,10 @@ public class Generator {
 		 * child forms
 		 */
 		sheet = book.getSheet("children");
-		if(sheet == null) {
+		if (sheet == null) {
 			return form;
 		}
-		
+
 		List<ChildForm> children = new ArrayList<>();
 		XlsUtil.consumeRows(sheet, 4, new Consumer<Row>() {
 
@@ -653,7 +666,7 @@ public class Generator {
 			public void accept(Row row) {
 				ChildForm f = new ChildForm();
 				f.formName = XlsUtil.textValueOf(row.getCell(0));
-				f.linkParentFields =  splitToArray(XlsUtil.textValueOf(row.getCell(1)));
+				f.linkParentFields = splitToArray(XlsUtil.textValueOf(row.getCell(1)));
 				f.linkChildFields = splitToArray(XlsUtil.textValueOf(row.getCell(2)));
 				f.index = list.size();
 				children.add(f);
@@ -662,7 +675,7 @@ public class Generator {
 		n = list.size();
 		if (n == 0) {
 			logger.warn("No children added!!");
-		}else {
+		} else {
 			form.childForms = children.toArray(new ChildForm[0]);
 		}
 		return form;
@@ -695,7 +708,6 @@ public class Generator {
 			}
 		});
 
-		
 		int n = list.size();
 		if (n == 0) {
 			logger.warn("No fields for this form!!");
@@ -703,7 +715,6 @@ public class Generator {
 		}
 		return list.toArray(new Field[0]);
 	}
-
 
 	static Field parseField(Row row) {
 		Field f = new Field();
@@ -899,8 +910,7 @@ public class Generator {
 		}
 		return result;
 	}
-	
-	
+
 	/**
 	 * using a builder to accumulate rows for a list and then create a list
 	 * 
@@ -916,9 +926,9 @@ public class Generator {
 
 		public Map<String, ValueList> done() {
 			this.build();
-			 Map<String, ValueList> result = this.lists;
-			 this.lists = new HashMap<>();
-			 return result;
+			Map<String, ValueList> result = this.lists;
+			this.lists = new HashMap<>();
+			return result;
 		}
 
 		/**
@@ -967,5 +977,5 @@ public class Generator {
 			AppComps.logger.info("Value list {} pared and added to the map", this.name);
 		}
 	}
-	
+
 }

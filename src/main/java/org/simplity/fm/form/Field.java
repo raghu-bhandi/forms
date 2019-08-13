@@ -25,7 +25,7 @@ import org.simplity.fm.ValueLists;
 import org.simplity.fm.datatypes.DataType;
 import org.simplity.fm.datatypes.InvalidValueException;
 import org.simplity.fm.datatypes.ValueType;
-import org.simplity.fm.validn.ValueList;
+import org.simplity.fm.validn.IValueList;
 
 /**
  * @author simplity.org
@@ -81,20 +81,18 @@ public class Field {
 	private boolean isKeyField;
 
 	/**
-	 * if this field has a list of valid values (to be rendered on the client as
-	 * a drop-down)
-	 * this list may be design-time in which it is available in valueLists.
-	 * if the valid value list depends on another field, then it is not
-	 * specified here, but as part of inter-field validations
-	 * <code>ValueLists</code> Otherwise this value list is fetched at run time
-	 * TODO: as of now, only design-time known list is supported
+	 * if this field has a list of valid values, either known at design time or
+	 * at run-time.
+	 * Note that this attribute is assigned ONLY if this list is not based on
+	 * another field value. If it is based on another field value, it is managed
+	 * as part of inter-field validations
 	 */
 	private String valueListName;
 
 	/**
 	 * cached value list for
 	 */
-	private ValueList valueList;
+	private IValueList valueList;
 
 	/**
 	 * db column name
@@ -167,17 +165,18 @@ public class Field {
 
 	/**
 	 * a field that has no validation/client related meta data
+	 * 
 	 * @param fieldName
 	 * @param index
 	 * @param isKeyField
-	 * @param valueType
+	 * @param dataType
 	 * @param dbColumnName
 	 */
-	public Field(String fieldName, int index, boolean isKeyField, ValueType valueType, String dbColumnName) {
+	public Field(String fieldName, int index, boolean isKeyField, DataType dataType, String dbColumnName) {
 		this.fieldName = fieldName;
 		this.index = index;
 		this.isKeyField = isKeyField;
-		this.dataType = DataType.getDefaultType(valueType);
+		this.dataType = dataType;
 		this.dbColumnName = dbColumnName;
 	}
 
@@ -262,7 +261,7 @@ public class Field {
 			this.throwMessage();
 		}
 
-		if (this.valueList != null && this.valueList.isValid(inputValue) == false) {
+		if (this.valueList != null && this.valueList.isValid(inputValue, null) == false) {
 			this.throwMessage();
 		}
 		return obj;

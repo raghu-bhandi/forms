@@ -25,29 +25,31 @@ package org.simplity.fm;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.simplity.fm.validn.ValueList;
+import org.simplity.fm.validn.IValueList;
 
 /**
+ * repository that serves all lists defined for this project
+ * 
  * @author simplity.org
  *
  */
 public final class ValueLists {
-	private static final Map<String, ValueList> allLists = new HashMap<>();
+	private static final Map<String, IValueList> allLists = new HashMap<>();
 
 	/**
 	 * 
 	 * @param listName
 	 * @return list of valid values, null if no such named list
 	 */
-	public static ValueList getList(String listName) {
-		ValueList list = allLists.get(listName);
+	public static IValueList getList(String listName) {
+		IValueList list = allLists.get(listName);
 		if (list != null) {
 			return list;
 		}
 		try {
 			String cls = Config.getConfig().getGeneratedPackageName() + ".list."
 					+ listName.substring(0, 1).toUpperCase() + listName.substring(1);
-			list = (ValueList)Class.forName(cls).newInstance();
+			list = (IValueList) Class.forName(cls).newInstance();
 			allLists.put(listName, list);
 			return list;
 		} catch (Exception e) {

@@ -2,12 +2,18 @@ import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
 import { FormGroup, FormBuilder, FormArray, FormControl, ValidationErrors } from '@angular/forms';
 import { WebDriverLogger } from 'blocking-proxy/built/lib/webdriver_logger';
+import { Timestamp } from 'rxjs';
 
 // tslint:disable: indent
 /**
  * represents the data contained in a form
  */
 export abstract class AbstractData {
+	static TAG_HEADER = 'header';
+	static TAG_DATA = 'data';
+	static FORM_SERVICE = 'manageForm';
+	static LIST_SERVICE = 'listService';
+
 	public constructor(public form: Form) {
 	}
 	/**
@@ -29,32 +35,115 @@ export class FormData extends AbstractData {
 	 * data for child forms. index for a child form name is defined as static member of the form class
 	 */
 	childData: Map<string, AbstractData>;
-
+	/**
+	 * ng model for all fields in this form
+	 */
 	formGroup: FormGroup;
 	/**
-	 * @param form for which data is to be captured
+	 * list of options/values for alldrop-downs in this form
+	 */
+	lists: { [key: string]: Array<[any, string]> };
+
+	/**
+	 * @param f form forwhich this data is tobe created
+	 * @param fb form builder to be used to create formGroup
 	 */
 	public constructor(f: Form, fb: FormBuilder) {
 		super(f);
 		this.formGroup = fb.group(this.form.controls);
+		let triggers = this.handleDropDowns(f);
 
-		if (!f.childForms) {
-			return;
+		if (f.childForms) {
+			this.childData = new Map<string, AbstractData>();
+			f.childForms.forEach((child: ChildForm, key: string) => {
+				if (child.isTabular) {
+					const fd = new TabularData(child.form, fb);
+					this.childData.set(child.name, fd);
+					this.formGroup.addControl(child.name, fd.formArray);
+				} else {
+					const fd = new FormData(child.form, fb);
+					this.childData.set(child.name, fd);
+					this.formGroup.addControl(child.name, fd.formGroup);
+				}
+			});
 		}
-		this.childData = new Map<string, AbstractData>();
-		f.childForms.forEach((child: ChildForm, key: string) => {
-			if (child.isTabular) {
-				const fd = new TabularData(child.form, fb);
-				this.childData.set(child.name, fd);
-				this.formGroup.addControl(child.name, fd.formArray);
-			} else {
-				const fd = new FormData(child.form, fb);
-				this.childData.set(child.name, fd);
-				this.formGroup.addControl(child.name, fd.formGroup);
+		if (triggers) {
+			for (const field of triggers) {
+				this.getListValues(field);
 			}
-		});
+		}
 	}
 
+	/**
+	 * get drop-down list of values for a field. 
+	 * it may be available locally, or we my have to get it from the server
+	 * @param field for which drop-down list id to be fetched
+	 */
+	public getListValues(field: Field): void {
+		let key: string = null;
+		if (field.valueListKey) {
+			key = this.getFieldValue(field.valueListKey);
+			console.log('On change trigger for key-based drop down field ' + field.name + ' with key-name ' + field.valueListKey + ' with its current value of ' + key);
+		}
+		if (field.keyedList) {
+			console.log('Field has a design-time keyed list');
+			let arr = field.keyedList[key];
+			if (!arr) {
+				console.error('Drop down values for field ' + field.name + ' not available in the design-time supplied list for value ' + key);
+				arr = [];
+			}
+			this.lists[field.name] = arr;
+			console.log("Drop down set with " + arr.length + ' rows');
+			return;
+		}
+		console.log("We have to make a trip to the server to get values for drop down field " + field.name)
+		let data: any;
+		if (key) {
+			data = { list: field.listName, key: key };
+		} else {
+			data = { list: field.listName };
+		}
+		DataStore.getResponse(FormData.LIST_SERVICE, data, false, (list, msg) => {
+			const arr = list['list'] as Array<[any, string]>;
+			console.log('list values received for field ' + field.name + ' with ' + (arr && arr.length) + ' values');
+			this.lists[field.name] = arr;
+		}, null);
+	}
+
+	private handleDropDowns(f: Form): Array<Field> {
+		if (!f.listFields) {
+			return null;
+		}
+		this.lists = {};
+		let triggers: Array<Field> = [];
+		for (const nam of f.listFields) {
+			const field = f.fields.get(nam) as Field;
+			if (field.valueList) {
+				console.log('Field ' + nam + ' found design-time list with ' + field.valueList.length + ' entries in ti');
+				this.lists[nam] = field.valueList;
+			} else {
+				this.lists[nam] = [];
+				if (field.valueListKey) {
+					//register on-change for the parent field
+					console.log('Field ' + nam + '  is based on ' + field.valueListKey +  '. Hence we just added a trigger');
+					const fc = this.formGroup.get(field.valueListKey) as FormControl;
+					fc.registerOnChange(() => this.getListValues(field));
+				} else {
+					console.log('Field ' + nam + '  is not key-based and not design-time. We will make a call to the server.');
+					//fixed list, but we have to get it from server at run time
+					triggers.push(field);
+				}
+			}
+		}
+		if (triggers.length > 0) {
+			return triggers;
+		}
+		return null;
+	}
+
+	/**
+	 * is this form data valid?
+	 */
 	public isValid(): boolean {
 		return this.formGroup.valid;
 	}
@@ -123,7 +212,7 @@ export class FormData extends AbstractData {
 		return d;
 	}
 	/**
-	 * submit this form
+	 * get/save/validate/submit this form
 	 */
 	public manageForm(operation: string) {
 		let msg = 'requesting operation "' + operation;
@@ -140,9 +229,32 @@ export class FormData extends AbstractData {
 			msg += '" without validating data';
 		}
 		console.log(msg);
-		new DataStore(this).manageForm(operation);
+		let data = {};
+		this.addHeader(data, operation);
+		if (operation !== 'get') {
+			data[FormData.TAG_DATA] = this.extractAll();
+		}
+		DataStore.getResponse(FormData.FORM_SERVICE, data, true,
+			(data, msgs) => {
+				if (operation === 'get') {
+					this.setAll(data);
+				} else if (operation === 'submit') {
+					window.alert('Submitted successfully with receipt id ' + data['ackId']);
+				} else {
+					window.alert("Data saved successfully");
+				}
+			}, null);
 	}
 
+	private addHeader(data: any, op: string): void {
+		data[FormData.TAG_HEADER] = {
+			operation: op,
+			formName: this.form.getName(),
+			customerId: DataStore.AUTH,
+			referenceYear: DataStore.YEAR
+		};
+
+	}
 
 	public validateForm(): boolean {
 		const vals = this.form.validations;
@@ -171,7 +283,6 @@ export class FormData extends AbstractData {
 				c1.setErrors(err);
 				c2.setErrors(err);
 				allOk = false;
-
 			}
 		}
 		return allOk;

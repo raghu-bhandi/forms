@@ -22,45 +22,47 @@
 
 package org.simplity.fm.validn;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
- * Base class to specify an enumeration of valid values for a field. The
- * enumeration are further restricted based on a key field. This class is
- * extended by the generated key value list classes
+ * design-time or run-time list that can be used for validating a field value
+ * and supplying possible list of values for that field
  * 
  * @author simplity.org
+ *
  */
-public class KeyedValueList implements IValueList{
-	protected String name;
-	protected Map<String, ValueList> values = new HashMap<>();
+public interface IValueList {
+	/**
+	 * 
+	 * @return unique name of this list
+	 */
+	public String getName();
 
-	@Override
-	public boolean isValid(Object fieldValue, Object keyValue) {
-		ValueList vl  = this.values.get(keyValue.toString());
-		if (vl == null) {
-			return false;
-		}
-		return vl.isValid(fieldValue, null);
-	}
+	/**
+	 * is this list key-based?
+	 * 
+	 * @return true if the list depends on a key. false if the list is fixed
+	 */
+	public boolean isKeyBased();
 
-	@Override
-	public String getName() {
-		return this.name;
-	}
+	/**
+	 * get a list of valid values
+	 * 
+	 * @param keyValue
+	 *            null if this list is not key-based.
+	 * @return array of [internalValue, displayValue]. possibly null
+	 */
+	public String[][] getList(String keyValue);
 
-	@Override
-	public boolean isKeyBased() {
-		return true;
-	}
-
-	@Override
-	public String[][] getList(String keyValue) {
-		ValueList vl  = this.values.get(keyValue.toString());
-		if (vl == null) {
-			return null;
-		}
-		return vl.getList(null);
-	}
+	/**
+	 * is the field value valid as per this list?
+	 * 
+	 * @param fieldVale
+	 *            non-null value of the right type. Typically either String or
+	 *            Long
+	 * @param keyValue
+	 *            null if this list is not key-based. value of the right type if
+	 *            it is key-based
+	 * @return true of the field value is valid. false if it is invalid, or
+	 *         these is any error in the validation process
+	 */
+	public boolean isValid(Object fieldVale, Object keyValue);
 }

@@ -29,6 +29,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.simplity.fm.validn.ValueList;
+
 /**
  * @author simplity.org
  *
@@ -48,11 +50,9 @@ class KeyedValueList {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
 
-		Util.emitImport(sbf, Arrays.class);
-		Util.emitImport(sbf, Set.class);
-		Util.emitImport(sbf, HashSet.class);
 		Util.emitImport(sbf, HashMap.class);
 		Util.emitImport(sbf, org.simplity.fm.validn.KeyedValueList.class);
+		Util.emitImport(sbf, org.simplity.fm.validn.ValueList.class);
 
 		sbf.append("\n\n/**\n * List of valid values for list ").append(this.name);
 		sbf.append("\n * <br /> generated at ").append(LocalDateTime.now());
@@ -60,43 +60,44 @@ class KeyedValueList {
 
 		sbf.append("\npublic class ").append(Util.toClassName(this.name)).append(" extends KeyedValueList {");
 
-		sbf.append("\n\tprivate static final String[] _names = {");
+		sbf.append("\n\tprivate static final String[] NAMES = {");
 		StringBuilder vals = new StringBuilder();
-		vals.append("\n\tprivate static final Object[] _values = {");
+		vals.append("\n\tprivate static final String[][][] VALUES = {");
 		for (Map.Entry<String, Pair[]> entry : this.lists.entrySet()) {
 			sbf.append(Util.escape(entry.getKey())).append(C);
 			this.emitJavaSet(vals, entry.getValue());
 			vals.append(C);
 		}
 		sbf.setLength(sbf.length() - C.length());
-		sbf.append("};");
+		sbf.append("\n\t\t};");
 
 		vals.setLength(vals.length() - C.length());
 		vals.append("};");
 		sbf.append(vals.toString());
 
-		sbf.append("\n\tprivate static final String _name = \"").append(this.name).append("\";");
+		sbf.append("\n\tprivate static final String NAME = \"").append(this.name).append("\";");
 
 		sbf.append("\n\n/**\n *").append(this.name).append("\n */");
 
 		sbf.append("\n\tpublic ").append(Util.toClassName(this.name)).append("() {");
-		sbf.append("\n\t\tthis.name = _name;");
+		sbf.append("\n\t\tthis.name = NAME;");
 		sbf.append("\n\t\tthis.values = new HashMap<>();");
 
-		sbf.append("\n\t\tfor (int i = 0; i < _names.length;i++) {");
-		sbf.append("\n\t\t\tthis.values.put(_names[i], (Set<String>)_values[i]);");
+		sbf.append("\n\t\tfor (int i = 0; i < NAMES.length;i++) {");
+		sbf.append("\n\t\t\tthis.values.put(NAMES[i], new ValueList(NAMES[i], VALUES[i]));");
 		sbf.append("\n\t\t}");
 		sbf.append("\n\t}");
 		sbf.append("\n}\n");
 	}
 
 	private void emitJavaSet(StringBuilder vals, Pair[] ps) {
-		vals.append("new HashSet<>(Arrays.asList(");
+		vals.append("\n\t\t\t{");
 		for (Pair p : ps) {
-			vals.append(Util.escape(p.value)).append(C);
+			vals.append("\n\t\t\t\t{").append(Util.escape(p.value)).append(C).append(Util.escape(p.label)).append("}");
+			vals.append(C);
 		}
 		vals.setLength(vals.length() - C.length());
-		vals.append("))");
+		vals.append("\n\t\t\t}");
 	}
 
 	protected void emitTs(StringBuilder sbf, String indent) {
@@ -118,8 +119,8 @@ class KeyedValueList {
 					sbf.append(C);
 				}
 				sbf.append(newIndent);
-				sbf.append("[").append(Util.escapeTs(p.label));
-				sbf.append(C).append(Util.escapeTs(p.value)).append("]");
+				sbf.append("[").append(Util.escapeTs(p.value));
+				sbf.append(C).append(Util.escapeTs(p.label)).append("]");
 			}
 			sbf.append(indent).append(']');
 		}

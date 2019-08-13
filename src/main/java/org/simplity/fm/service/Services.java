@@ -22,6 +22,10 @@ public class Services {
 	 * related to forms
 	 */
 	public static final String MANAGE_FORM = "manageForm";
+	/**
+	 * list service
+	 */
+	public static final String LIST_SERVICE = "listService";
 	private static final Services instance = new Services();
 
 	/**
@@ -71,5 +75,6 @@ public class Services {
 
 	private Services() {
 		this.services.put(MANAGE_FORM, ManageForm.getInstance());
+		this.services.put(LIST_SERVICE, ListService.getInstance());
 	}
 }

@@ -55,7 +55,6 @@ class Field {
 	String listKey;
 	String dbColumnName;
 	int index;
-	ValueType valueType;
 
 	void emitJavaCode(StringBuilder sbf, String dataTypesName) {
 		sbf.append("\n\t\t\tnew Field(\"").append(this.name).append('"');
@@ -79,11 +78,11 @@ class Field {
 		sbf.append(')');
 	}
 
-	void emitJavaCode(StringBuilder sbf) {
+	void emitJavaCodeSimple(StringBuilder sbf, String dataTypesName) {
 		sbf.append("\n\t\t\tnew Field(\"").append(this.name).append('"');
 		sbf.append(C).append(this.index);
 		sbf.append(C).append(this.isKey);
-		sbf.append(C).append("ValueType.").append(this.valueType);
+		sbf.append(C).append(dataTypesName).append('.').append(this.dataType);
 		sbf.append(C).append(Util.escape(this.dbColumnName));
 		sbf.append(')');
 	}
@@ -110,7 +109,7 @@ class Field {
 		if (this.isRequired) {
 			vals.add("Validators.required");
 		}
-		
+
 		if (dt.name.equalsIgnoreCase("email")) {
 			vals.add("Validators.email");
 		} else {
@@ -121,18 +120,18 @@ class Field {
 			if (dt.regex != null && dt.regex.isEmpty() == false) {
 				vals.add("Validators.pattern(" + Util.escapeTs(dt.regex) + ")");
 			}
-			if(dt.minLength != 0) {
+			if (dt.minLength != 0) {
 				vals.add("Validators.minLength(" + dt.minLength + ")");
 			}
-			if(dt.maxLength != 0) {
+			if (dt.maxLength != 0) {
 				vals.add("Validators.maxLength(" + dt.maxLength + ")");
 			}
 		}
 		boolean isFirst = true;
-		for(String s: vals) {
-			if(isFirst) {
+		for (String s : vals) {
+			if (isFirst) {
 				isFirst = false;
-			}else {
+			} else {
 				sbf.append(C);
 			}
 			sbf.append(s);
@@ -170,6 +169,7 @@ class Field {
 		sbf.append(C).append(dt.minValue);
 		sbf.append(C).append(dt.maxValue);
 		sbf.append(C).append(dt.nbrFractions);
+		sbf.append(C).append(Util.escapeTs(this.listName));
 		sbf.append(C).append(Util.escapeTs(this.listKey));
 		sbf.append(C);
 		if (this.listName == null) {
@@ -186,15 +186,9 @@ class Field {
 	}
 
 	private void emitListTs(StringBuilder sbf, Map<String, ValueList> valueLists) {
-		if (this.listName == null) {
-			sbf.append("null");
-			return;
-		}
-
 		ValueList list = valueLists.get(this.listName);
 		if (list == null) {
-			logger.info("List name {} is not found. probably it is a run time list. Client script with no list.",
-					this.listName);
+			logger.info("List of values not defined for list {}. It is treated as a run-time list.", this.listName);
 			sbf.append("null");
 			return;
 		}
@@ -204,15 +198,9 @@ class Field {
 	}
 
 	private void emitKeyedListTs(StringBuilder sbf, Map<String, KeyedValueList> valueLists) {
-		if (this.listName == null) {
-			sbf.append("null");
-			return;
-		}
-
 		KeyedValueList list = valueLists.get(this.listName);
 		if (list == null) {
-			Form.logger.info("List name {} is not found. probably it is a run time list. Client script with no list.",
-					this.listName);
+			Form.logger.info("keyd-list of values not defined for {}. It is treated as a run-time.", this.listName);
 			sbf.append("null");
 			return;
 		}

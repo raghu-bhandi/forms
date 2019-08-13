@@ -64,6 +64,7 @@ class Form {
 	final Map<String, Object> params = new HashMap<>();
 	Field[] fields;
 	Map<String, Field> fieldMap;
+	Field[] fieldsWithList;
 	ChildForm[] childForms;
 	FromToPair[] fromToPairs;
 	ExclusivePair[] exclusivePairs;
@@ -74,8 +75,15 @@ class Form {
 	void buildFieldMap() {
 		this.fieldMap = new HashMap<>();
 		if (this.fields != null) {
+			List<Field> list = new ArrayList<>();
 			for (Field field : this.fields) {
 				this.fieldMap.put(field.name, field);
+				if (field.listName != null) {
+					list.add(field);
+				}
+			}
+			if (list.size() > 0) {
+				this.fieldsWithList = list.toArray(new Field[0]);
 			}
 		}
 	}
@@ -120,16 +128,8 @@ class Form {
 		if (this.inclusivePairs != null) {
 			Util.emitImport(sbf, InclusiveValidation.class);
 		}
-		/*
-		 * importing anyways (avoiding a loop thru all fields to see if any one
-		 * has)
-		 */
-		if (this.isForDbOnly) {
-			Util.emitImport(sbf, ValueType.class);
-		}else {
-			Util.emitImport(sbf, DependentListValidation.class);
-			sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
-		}
+		Util.emitImport(sbf, DependentListValidation.class);
+		sbf.append("\nimport ").append(generatedPackage).append('.').append(typesName).append(';');
 		/*
 		 * class definition
 		 */
@@ -278,7 +278,7 @@ class Form {
 			}
 		}
 
-		if(this.childForms != null && this.childForms.length > 0) {
+		if (this.childForms != null && this.childForms.length > 0) {
 			this.emitChildDbParam(sbf);
 		}
 
@@ -374,7 +374,7 @@ class Form {
 				sbf.append(C);
 			}
 			if (this.isForDbOnly) {
-				field.emitJavaCode(sbf);
+				field.emitJavaCodeSimple(sbf, dataTypesName);
 			} else {
 				field.emitJavaCode(sbf, dataTypesName);
 			}
@@ -429,9 +429,9 @@ class Form {
 		/*
 		 * dependent lits
 		 */
-		if (this.fields != null) {
-			for (Field field : this.fields) {
-				if (field.listName == null || field.listKey == null) {
+		if (this.fieldsWithList != null) {
+			for (Field field : this.fieldsWithList) {
+				if (field.listKey == null) {
 					continue;
 				}
 				sbf.append("new DependentListValidation(").append(field.index);
@@ -575,6 +575,18 @@ class Form {
 
 		if (valBuf.length() > 0) {
 			sbf.append("\n\t\tthis.validations = [").append(valBuf).append("];");
+		}
+		/*
+		 * fields with drop-downs
+		 */
+		if (this.fieldsWithList != null) {
+			sbf.append("\n\t\tthis.listFields = [");
+			for (Field f : this.fieldsWithList) {
+				sbf.append(Util.escapeTs(f.name));
+				sbf.append(C);
+			}
+			sbf.setLength(sbf.length() - C.length());
+			sbf.append("];");
 		}
 		/*
 		 * end of constructor

@@ -45,9 +45,6 @@ class ValueList {
 		sbf.append("package ").append(packageName).append(';');
 		sbf.append('\n');
 
-		Util.emitImport(sbf, Arrays.class);
-		Util.emitImport(sbf, Set.class);
-		Util.emitImport(sbf, HashSet.class);
 		Util.emitImport(sbf, org.simplity.fm.validn.ValueList.class);
 
 		sbf.append("\n\n/**\n * List of valid values for list ").append(this.name);
@@ -56,20 +53,25 @@ class ValueList {
 
 		sbf.append("\npublic class ").append(Util.toClassName(this.name)).append(" extends ValueList {");
 
-		sbf.append("\n\t private static final Set<String> _values = new HashSet<>(Arrays.asList(");
+		sbf.append("\n\t private static final String[][] VALUES = { ");
 		for (Pair p : this.pairs) {
-			sbf.append(Util.escape(p.value)).append(C);
+			sbf.append("\n\t\t\t{").append(Util.escape(p.value)).append(C).append(Util.escape(p.label)).append("}");
+			sbf.append(C);
 		}
 		sbf.setLength(sbf.length() - C.length());
-		sbf.append("));");
-		sbf.append("\n\t private static final String _name = \"").append(this.name).append("\";");
+		sbf.append("\n\t\t};");
+		sbf.append("\n\t private static final String NAME = \"").append(this.name).append("\";");
+
+		sbf.append("\n\n/**\n *\n\t * @param name\n\t * @param valueList\n */");
+		sbf.append("\n\tpublic ").append(Util.toClassName(this.name)).append("(String name, String[][] valueList) {");
+		sbf.append("\n\t\tsuper(name, valueList);");
+		sbf.append("\n\t}");
 
 		sbf.append("\n\n/**\n *").append(this.name).append("\n */");
-
 		sbf.append("\n\tpublic ").append(Util.toClassName(this.name)).append("() {");
-		sbf.append("\n\t\tthis.name = _name;");
-		sbf.append("\n\t\tthis.values = _values;");
+		sbf.append("\n\t\tsuper(NAME, VALUES);");
 		sbf.append("\n\t}");
+
 		sbf.append("\n}\n");
 	}
 
@@ -80,8 +82,8 @@ class ValueList {
 			}
 			sbf.append(indent);
 			Pair pair = this.pairs[i];
-			sbf.append('[').append(Util.escapeTs(pair.label));
-			sbf.append(C).append(Util.escapeTs(pair.value)).append(']');
+			sbf.append('[').append(Util.escapeTs(pair.value));
+			sbf.append(C).append(Util.escapeTs(pair.label)).append(']');
 		}
 	}
 

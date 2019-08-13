@@ -44,7 +44,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * BAse class for all forms based services
+ * Bsse class for all forms based services
  * 
  * @author simplity.org
  *

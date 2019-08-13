@@ -1,4 +1,5 @@
 import { FormData } from './formData';
+import { Field } from './form';
 
 /**
  * manages data persistence. knows how to connect to the server and request services
@@ -9,12 +10,12 @@ export class DataStore {
 	static SERVICE_HEADER = '_s';
 	static AUTH = 'AAA-99-AAA';
 	static YEAR = '2010';
-	static SERVICE_NAME = 'manageForm';
+	static MANAGE_FORM = 'manageForm';
 	static TAG_MESSAGES = 'messages';
 	static TAG_ALL_OK = 'allOk';
 	static TAG_HEADER = 'header';
 	static TAG_DATA = 'data';
-
+	static LIST_SERVICE: 'listService';
 
 	constructor(private formData: FormData) {
 		this.formData = formData;
@@ -28,30 +29,6 @@ export class DataStore {
 		alert('Server returned with errors: ' + JSON.stringify(msgs));
 	}
 
-	public manageForm(operation: string): void {
-		const hdr = this.getHeader(this.formData.form.getName(), operation);
-		let payload = {};
-		payload[DataStore.TAG_HEADER] = hdr;
-		if (operation !== 'get') {
-			payload[DataStore.TAG_DATA] = this.formData.extractAll();
-		}
-
-		this.getResponse(DataStore.SERVICE_NAME, payload, true, (data, messages) => {
-			if (data) {
-				if (operation === 'get') {
-					this.formData.setAll(data);
-				} else {
-					console.log('Operation ' + operation + " successful");
-				}
-				return;
-			}
-			DataStore.showMessages(messages);
-		}, (messages) => { DataStore.showMessages(messages) });
-	}
-
-	private receiveData(data: object) {
-		this.formData.setAll(data);
-	}
 	/**
 	 * gets response from server for the service and invokes call-back function
 	 * with the response
@@ -61,20 +38,13 @@ export class DataStore {
 	 * @param successFn function is called with an object of data that is received from the server.
 	 * @param failureFn null if default error handling is expected
 	 */
-	getResponse(serviceName: string, data: any, asPayload: boolean,
+	public static getResponse(serviceName: string, data: any, asPayload: boolean,
 		successFn?: (data: any, messages: Array<any>) => void,
 		failureFn?: (messages: any[]) => void) {
 
-		if (!successFn) {
-			successFn = (data, messages) => {
-				this.receiveData(data);
-			}
-		};
 		if (!failureFn) {
-			failureFn = (messages) => {
-				for (const msg of messages) {
-					console.error(msg.toString());
-				}
+			failureFn = (msgs) => {
+				DataStore.showMessages(msgs);
 			}
 		};
 		const xhr = new XMLHttpRequest();
@@ -111,7 +81,11 @@ export class DataStore {
 			 * any issue with our web agent?
 			 */
 			if (allOk) {
-				successFn(data, messages);
+				if(successFn){
+					successFn(data, messages);
+				}else{
+					console.log('Server call succeeded. No call back requested.');
+				}
 			} else {
 				failureFn(messages);
 			}
@@ -139,20 +113,7 @@ export class DataStore {
 		}
 	}
 
-	/**
-	 * @param serviceName service to be called
-	 * @param data to be sent. null/empty if this service requires no data
-	 * @param asPayload true if the data is to be sent as paylaod. false means send them as query string
-	 * @returns promise
-	 */
-	public serve(serviceName: string, data: any, asPayload: boolean): Promise<any> {
-		/*
-		 *code to be written to use  promise instead of call back
-		 */
-		return null;
-	}
-
-	private getUrlWithQry(data: any): string {
+	private static getUrlWithQry(data: any): string {
 		let url = DataStore.URL;
 		if (!data) {
 			return url;
@@ -168,16 +129,7 @@ export class DataStore {
 		return url;
 	}
 
-	private getHeader(formName: string, operation: string): any {
-		return {
-			operation: operation,
-			formName: formName,
-			customerId: DataStore.AUTH,
-			referenceYear: DataStore.YEAR
-		};
-
-	}
-	public download(data: any, fileName: string) {
+	public static download(data: any, fileName: string) {
 		const json = JSON.stringify(data);
 		const blob = new Blob([json], { type: 'octet/stream' });
 		const url = window.URL.createObjectURL(blob);

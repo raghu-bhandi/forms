@@ -6,11 +6,12 @@ import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.form.ChildForm;
 import org.simplity.fm.form.DbMetaData;
 import org.simplity.fm.form.ChildDbMetaData;
-import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.validn.DependentListValidation;
+import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of user
- * <br /> generated at 2019-08-09T13:36:31.082 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/user.xlsx
+ * <br /> generated at 2019-08-13T10:43:14.353 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/user.xlsx
  */ 
 public class User extends Form {
 	public static final int userId = 0;
@@ -51,9 +52,9 @@ public class User extends Form {
 		this.uniqueName = "user";
 
 		Field[] flds = {
-			new Field("userId", 0, true, ValueType.TEXT, "user_id"), 
-			new Field("firstName", 1, false, ValueType.TEXT, "first_name"), 
-			new Field("lastName", 2, false, ValueType.TEXT, "last_name")
+			new Field("userId", 0, true, DefinedDataTypes.textId, "user_id"), 
+			new Field("firstName", 1, false, DefinedDataTypes.text, "first_name"), 
+			new Field("lastName", 2, false, DefinedDataTypes.text, "last_name")
 		};
 		this.fields = flds;
 

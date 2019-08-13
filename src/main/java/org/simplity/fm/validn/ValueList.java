@@ -22,6 +22,7 @@
 
 package org.simplity.fm.validn;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -30,25 +31,40 @@ import java.util.Set;
  * 
  * @author simplity.org
  */
-public abstract class ValueList {
+public class ValueList implements IValueList {
 	protected String name;
 	protected Set<String> values;
+	protected String[][] valueList;
 
 	/**
 	 * 
-	 * @param value
-	 * @return true if the value is valid as per this list
+	 * @param name non-null unique name
+	 * @param valueList non-null non-empty String[][String, String]
 	 */
-	public boolean isValid(String value) {
-		return this.values.contains(value);
+	public ValueList(String name, String[][] valueList) {
+		this.name = name;
+		this.valueList = valueList;
+		this.values = new HashSet<>();
+		for(String[] arr: valueList) {
+			this.values.add(arr[0]);
+		}
 	}
-
-	/**
-	 * 
-	 * @return unique name of this list. A naming convention must be followed
-	 *         to ensure that names do not clash
-	 */
+	@Override
 	public String getName() {
 		return this.name;
+	}
+
+	@Override
+	public boolean isKeyBased() {
+		return false;
+	}
+	@Override
+	public boolean isValid(Object fieldValue, Object keyValue) {
+		return this.values.contains(fieldValue.toString());
+	}
+
+	@Override
+	public String[][] getList(String keyValue) {
+		return this.valueList;
 	}
 }

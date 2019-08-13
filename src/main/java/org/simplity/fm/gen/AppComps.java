@@ -42,6 +42,7 @@ class AppComps {
 	DataType[] dataTypes;
 	Map<String, ValueList> lists;
 	Map<String, KeyedValueList> keyedLists;
+	Map<String, RuntimeList> runtimeLists;
 	Field[] commonFields;
 
 
@@ -53,10 +54,16 @@ class AppComps {
 		StringBuilder sbf = new StringBuilder();
 		this.emitJavaTypes(sbf, packageName);
 		Util.writeOut(rootFolder + dataTypesFileName + ".java", sbf);
-
-		emitJavaLists(packageName + ".list",  rootFolder + "list/");
-		emitJavaKlists(packageName + ".klist",  rootFolder + "klist/");
-
+		String pck = packageName + ".list";
+		String fldr = rootFolder + "list/";
+		
+		File dir = new File(fldr);
+		if (dir.exists() == false) {
+			dir.mkdirs();
+		}
+		emitJavaLists(pck, fldr);
+		emitJavaKlists(pck, fldr);
+		emitJavaRlists(pck, fldr);
 	}
 	
 	void emitJavaTypes(StringBuilder sbf, String packageName) {
@@ -118,10 +125,6 @@ class AppComps {
 			logger.warn("No lists created for this project");
 			return;
 		}
-		File dir = new File(folder);
-		if (dir.exists() == false) {
-			dir.mkdirs();
-		}
 		StringBuilder sbf = new StringBuilder();
 		for (ValueList list : this.lists.values()) {
 			sbf.setLength(0);
@@ -138,12 +141,25 @@ class AppComps {
 			logger.warn("No keyed lists created for this project");
 			return;
 		}
-		File dir = new File(folder);
-		if (dir.exists() == false) {
-			dir.mkdirs();
-		}
+
 		StringBuilder sbf = new StringBuilder();
 		for (KeyedValueList list : this.keyedLists.values()) {
+			sbf.setLength(0);
+			list.emitJava(sbf, pack);
+			Util.writeOut(folder + Util.toClassName(list.name) + ".java", sbf);
+		}
+	}
+	
+	void emitJavaRlists(String pack, String folder) {
+		/**
+		 * runtime lists
+		 */
+		if (this.runtimeLists == null || this.runtimeLists.size() == 0) {
+			logger.warn("No runtime lists created for this project");
+			return;
+		}
+		StringBuilder sbf = new StringBuilder();
+		for (RuntimeList list : this.runtimeLists.values()) {
 			sbf.setLength(0);
 			list.emitJava(sbf, pack);
 			Util.writeOut(folder + Util.toClassName(list.name) + ".java", sbf);

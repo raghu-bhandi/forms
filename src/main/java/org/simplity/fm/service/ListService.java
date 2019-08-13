@@ -20,40 +20,52 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm;
+package org.simplity.fm.service;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import org.simplity.fm.validn.KeyedValueList;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
- * locator for generated keyedValueList
- * 
+ * handles request to get drop-down values for a field, typically from a client
  * @author simplity.org
  *
  */
-public final class KeyedValueLists {
-	private static final Map<String, KeyedValueList> allLists = new HashMap<>();
+public class ListService implements IService{
+	private static final ListService instance = new ListService();
+	protected static final Logger logger = LoggerFactory.getLogger(ListService.class);
 
 	/**
 	 * 
-	 * @param listName
-	 * @return list of valid values, null if no such named list
+	 * @return non-null instance
 	 */
-	public static KeyedValueList getList(String listName) {
-		KeyedValueList list = allLists.get(listName);
-		if (list != null) {
-			return list;
-		}
-		try {
-			String cls = Config.getConfig().getGeneratedPackageName() + ".klist."
-					+ listName.substring(0, 1).toUpperCase() + listName.substring(1);
-			list = (KeyedValueList) Class.forName(cls).newInstance();
-			allLists.put(listName, list);
-			return list;
-		} catch (Exception e) {
+	public static ListService getInstance() {
+		return instance;
+	}
+	
+	private ListService() {
+		//privatised for a singleton pattern
+	}
+
+	@Override
+	public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
+		String listName = getTextAttribute(payload, "list");
+		String key = getTextAttribute(payload, "key");
+	}
+	
+	private static String getTextAttribute(JsonNode json, String fieldName) {
+		JsonNode node = json.get(fieldName);
+		if (node == null) {
 			return null;
 		}
+		JsonNodeType nt = node.getNodeType();
+		if (nt == JsonNodeType.NULL || nt == JsonNodeType.MISSING) {
+			return null;
+		}
+		return node.asText();
 	}
+
 }
