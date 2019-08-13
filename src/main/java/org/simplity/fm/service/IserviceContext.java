@@ -45,6 +45,13 @@ public interface IserviceContext {
 	public Map<String, String> getInputFields();
 
 	/**
+	 * 
+	 * @param fieldName non-null fieldName
+	 * @return value received as input, or null if no value is received for this field
+	 */
+	public String getInputValue(String fieldName);
+	
+	/**
 	 * @return non-null user on whose behalf this service is requested
 	 */
 	public LoggedInUser getUser();

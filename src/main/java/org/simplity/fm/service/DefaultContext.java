@@ -65,6 +65,14 @@ public class DefaultContext implements IserviceContext {
 	}
 
 	@Override
+	public String getInputValue(String fieldName) {
+		if(this.inputFields == null) {
+			return  null;
+		}
+		return this.inputFields.get(fieldName);
+	}
+	
+	@Override
 	public LoggedInUser getUser() {
 		return this.loggedInUser;
 	}

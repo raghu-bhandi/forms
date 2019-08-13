@@ -22,11 +22,15 @@
 
 package org.simplity.fm.service;
 
+import java.io.Writer;
+
+import org.simplity.fm.JsonUtil;
+import org.simplity.fm.Message;
+import org.simplity.fm.ValueLists;
+import org.simplity.fm.validn.IValueList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -52,20 +56,35 @@ public class ListService implements IService{
 
 	@Override
 	public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
-		String listName = getTextAttribute(payload, "list");
-		String key = getTextAttribute(payload, "key");
-	}
-	
-	private static String getTextAttribute(JsonNode json, String fieldName) {
-		JsonNode node = json.get(fieldName);
-		if (node == null) {
-			return null;
+		
+		String listName = ctx.getInputValue("list");
+		if(listName == null) {
+			ctx.AddMessage(Message.newError("list is requred for listService"));
+			return;
 		}
-		JsonNodeType nt = node.getNodeType();
-		if (nt == JsonNodeType.NULL || nt == JsonNodeType.MISSING) {
-			return null;
+		IValueList list = ValueLists.getList(listName);
+		if(list == null) {
+			ctx.AddMessage(Message.newError("list " + listName + " is not configured"));
+			return;
 		}
-		return node.asText();
+		String key = null;
+		if(list.isKeyBased()) {
+			key = ctx.getInputValue("key");
+			if(key == null) {
+				ctx.AddMessage(Message.newError("list " + listName + " is key based. key is missing in the request"));
+				return;
+			}
+		}
+		String[][] result = list.getList(key);
+		if(result == null) {
+			ctx.AddMessage(Message.newError("list " + listName + " did not return any values for key "+ key));
+			return;
+		}
+		
+		@SuppressWarnings("resource")
+		Writer writer = ctx.getResponseWriter();
+		writer.write("{\"list\":");
+		JsonUtil.write(writer, result);
+		writer.write("}");
 	}
-
 }
