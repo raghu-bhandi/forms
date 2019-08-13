@@ -69,7 +69,7 @@ export class FormData extends AbstractData {
 		}
 		if (triggers) {
 			for (const field of triggers) {
-				this.getListValues(field);
+				this.getListValues(field, null);
 			}
 		}
 	}
@@ -79,12 +79,7 @@ export class FormData extends AbstractData {
 	 * it may be available locally, or we my have to get it from the server
 	 * @param field for which drop-down list id to be fetched
 	 */
-	public getListValues(field: Field): void {
-		let key: string = null;
-		if (field.valueListKey) {
-			key = this.getFieldValue(field.valueListKey);
-			console.log('On change trigger for key-based drop down field ' + field.name + ' with key-name ' + field.valueListKey + ' with its current value of ' + key);
-		}
+	public getListValues(field: Field, key: string): void {
 		if (field.keyedList) {
 			console.log('Field has a design-time keyed list');
 			let arr = field.keyedList[key];
@@ -127,7 +122,7 @@ export class FormData extends AbstractData {
 					//register on-change for the parent field
 					console.log('Field ' + nam + '  is based on ' + field.valueListKey +  '. Hence we just added a trigger');
 					const fc = this.formGroup.get(field.valueListKey) as FormControl;
-					fc.registerOnChange(() => this.getListValues(field));
+					fc.valueChanges.subscribe((value:string)  => this.getListValues(field, value));
 				} else {
 					console.log('Field ' + nam + '  is not key-based and not design-time. We will make a call to the server.');
 					//fixed list, but we have to get it from server at run time
