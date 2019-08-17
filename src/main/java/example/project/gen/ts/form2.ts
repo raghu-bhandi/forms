@@ -1,15 +1,51 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx at 2019-08-13T10:43:13.920
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx at 2019-08-17T13:14:21.257
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
 
 export class Form2 extends Form {
 	private static _instance = new Form2();
-	headerId = new Field('headerId', 0, null, 'Header Id', null, null, null, null, false, 'invalidId', false, 1, 13, 1, null, 1, 9999999999999, 0, null, null, null, null);
-	productId = new Field('productId', 1, null, 'Product Id', null, 'product Id', null, null, true, 'invalidTextId', true, 4, 15, 0, '[\\w]*', 0, 0, 0, null, null, null, null);
-	quantity = new Field('quantity', 2, null, 'Quantity', null, 'quantity', null, null, true, 'InvalidOrderQty', true, 1, 4, 1, null, 1, 2000, 0, null, null, null, null);
-	color = new Field('color', 3, null, 'Color', null, 'Select', null, null, true, 'invalidColor', true, 1, 5, 1, null, 0, 100, 0, 'colors', null, null,null);
+	headerId = new Field('headerId', 0, 1, {
+		label:'Header Id', 
+		errorId:'invalidId', 
+		minLength:1, 
+		maxLength:13, 
+		minValue:1, 
+		maxValue:9999999999999
+	});
+	productId = new Field('productId', 1, 0, {
+		label:'Product Id', 
+		placeHolder:'product Id', 
+		isEditable:true, 
+		errorId:'invalidTextId', 
+		isRequired:true, 
+		minLength:4, 
+		maxLength:15, 
+		reges:'[\\w]*'
+	});
+	quantity = new Field('quantity', 2, 1, {
+		label:'Quantity', 
+		placeHolder:'quantity', 
+		isEditable:true, 
+		errorId:'InvalidOrderQty', 
+		isRequired:true, 
+		minLength:1, 
+		maxLength:4, 
+		minValue:1, 
+		maxValue:2000
+	});
+	color = new Field('color', 3, 1, {
+		label:'Color', 
+		placeHolder:'Select', 
+		isEditable:true, 
+		errorId:'invalidColor', 
+		isRequired:true, 
+		minLength:1, 
+		maxLength:5, 
+		maxValue:100, 
+		listName:'colors'
+	});
 
 	public static getInstance(): Form2 {
 		return Form2._instance;

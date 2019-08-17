@@ -160,6 +160,6 @@ public class RuntimeList implements IValueList{
 			logger.error("Error while getting values for list {}. ERROR: {} ", this.name, msg);
 			return false;
 		}
-		return true;
+		return result[0];
 	}
 }

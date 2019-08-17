@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-13T10:43:13.636
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-17T13:14:21.071
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -8,42 +8,175 @@ import { Form2 } from './form2';
 
 export class Form1 extends Form {
 	private static _instance = new Form1();
-	headerId = new Field('headerId', 0, null, 'internal id', null, 'Header Id', null, null, false, 'invalidId', false, 1, 13, 1, null, 1, 9999999999999, 0, null, null, null, null);
-	customerId = new Field('customerId', 1, 'AAA-99-AAA', 'customer Id', null, 'Customer Id', null, null, true, 'invalidCustId', true, 10, 10, 0, '[A-Z]{3}-[\\d]{2}-[A-Z]{3}', 0, 0, 0, null, null, null, null);
-	financialYear = new Field('financialYear', 2, '2010', 'Financial Year', null, 'financial year', null, null, true, 'invalidFy', true, 4, 4, 1, null, 1989, 2025, 0, null, null, null, null);
-	boolField = new Field('boolField', 3, 'true', 'Boolean Field', null, 'boolean field', 'True', 'False', true, 'invalidTrueFalse', false, 0, 0, 3, null, 0, 0, 0, null, null, null, null);
-	fromDate = new Field('fromDate', 4, '44175', 'From Date', null, 'from field', null, null, true, 'invalidFutureDate', false, 0, 0, 4, null, 1, 73000, 0, null, null, null, null);
-	toDate = new Field('toDate', 5, '44896', 'To Date', null, 'to field', null, null, true, 'invalidFutureDate', false, 0, 0, 4, null, 1, 73000, 0, null, null, null, null);
-	intField1 = new Field('intField1', 6, '33', 'Int Field 1', null, 'int field 1', null, null, true, 'invalidQty', false, 1, 9, 1, null, 1, 9874, 0, null, null, null, null);
-	intField2 = new Field('intField2', 7, '45', 'Int Field 2', null, 'int field 2', null, null, true, 'invalidQty', false, 1, 9, 1, null, 1, 9874, 0, null, null, null, null);
-	derivedField = new Field('derivedField', 8, null, 'Total', null, null, null, null, false, 'invalidQty', false, 1, 9, 1, null, 1, 9874, 0, null, null, null, null);
-	fyStartDate = new Field('fyStartDate', 9, null, 'FY Start Date', null, null, null, null, false, 'invalidDate', false, 0, 0, 4, null, -73000, 73000, 0, null, null, null, null);
-	state = new Field('state', 10, 'KA', 'State', null, 'State', null, null, true, 'invalidState', true, 2, 2, 0, '[A-Z][A-Z]', 0, 0, 0, 'states', null, [
+	headerId = new Field('headerId', 0, 1, {
+		label:'internal id', 
+		placeHolder:'Header Id', 
+		errorId:'invalidId', 
+		minLength:1, 
+		maxLength:13, 
+		minValue:1, 
+		maxValue:9999999999999
+	});
+	customerId = new Field('customerId', 1, 0, {
+		defaultVlue:'AAA-99-AAA', 
+		label:'customer Id', 
+		placeHolder:'Customer Id', 
+		isEditable:true, 
+		errorId:'invalidCustId', 
+		isRequired:true, 
+		minLength:10, 
+		maxLength:10, 
+		reges:'[A-Z]{3}-[\\d]{2}-[A-Z]{3}'
+	});
+	financialYear = new Field('financialYear', 2, 1, {
+		defaultVlue:'2010', 
+		label:'Financial Year', 
+		placeHolder:'financial year', 
+		isEditable:true, 
+		errorId:'invalidFy', 
+		isRequired:true, 
+		minLength:4, 
+		maxLength:4, 
+		minValue:1989, 
+		maxValue:2025
+	});
+	boolField = new Field('boolField', 3, 3, {
+		defaultVlue:'true', 
+		label:'Boolean Field', 
+		placeHolder:'boolean field', 
+		trueLabel:'True', 
+		falseLabel:'False', 
+		isEditable:true, 
+		errorId:'invalidTrueFalse'
+	});
+	fromDate = new Field('fromDate', 4, 4, {
+		defaultVlue:'44175', 
+		label:'From Date', 
+		placeHolder:'from field', 
+		isEditable:true, 
+		errorId:'invalidFutureDate', 
+		minValue:1, 
+		maxValue:73000
+	});
+	toDate = new Field('toDate', 5, 4, {
+		defaultVlue:'44896', 
+		label:'To Date', 
+		placeHolder:'to field', 
+		isEditable:true, 
+		errorId:'invalidFutureDate', 
+		minValue:1, 
+		maxValue:73000
+	});
+	intField1 = new Field('intField1', 6, 1, {
+		defaultVlue:'33', 
+		label:'Int Field 1', 
+		placeHolder:'int field 1', 
+		isEditable:true, 
+		errorId:'invalidQty', 
+		minLength:1, 
+		maxLength:9, 
+		minValue:1, 
+		maxValue:9874
+	});
+	intField2 = new Field('intField2', 7, 1, {
+		defaultVlue:'45', 
+		label:'Int Field 2', 
+		placeHolder:'int field 2', 
+		isEditable:true, 
+		errorId:'invalidQty', 
+		minLength:1, 
+		maxLength:9, 
+		minValue:1, 
+		maxValue:9874
+	});
+	derivedField = new Field('derivedField', 8, 1, {
+		label:'Total', 
+		errorId:'invalidQty', 
+		minLength:1, 
+		maxLength:9, 
+		minValue:1, 
+		maxValue:9874
+	});
+	fyStartDate = new Field('fyStartDate', 9, 4, {
+		label:'FY Start Date', 
+		errorId:'invalidDate', 
+		minValue:-73000, 
+		maxValue:73000
+	});
+	state = new Field('state', 10, 0, {
+		defaultVlue:'KA', 
+		label:'State', 
+		placeHolder:'State', 
+		isEditable:true, 
+		errorId:'invalidState', 
+		isRequired:true, 
+		minLength:2, 
+		maxLength:2, 
+		reges:'[A-Z][A-Z]', 
+		listName:'states', valueList:[
 				['KA', 'Karnataka'],
 				['TN', 'Tamil Nadu'],
 				['TS', 'Telengana']
-			],null);
-	district = new Field('district', 11, '123', 'District', null, 'District', null, null, true, 'invalidDistrict', true, 0, 0, 1, null, 1, 9999, 0, 'districts', 'state', null,{
-				"KA" : [
+			]
+	});
+	district = new Field('district', 11, 1, {
+		defaultVlue:'123', 
+		label:'District', 
+		placeHolder:'District', 
+		isEditable:true, 
+		errorId:'invalidDistrict', 
+		isRequired:true, 
+		minValue:1, 
+		maxValue:9999, 
+		listName:'districts', 
+		listKey:'state', keyedList:{
+				KA : [
 					['0', 'Bengaluru'], 
 					['1', 'Mysuru'], 
 					['2', 'Uttara Kannada']
 				], 
-				"TN" : [
+				TN : [
 					['44', 'Periyar'], 
 					['45', 'Chennai Urban'], 
 					['46', 'Chennai Rural'], 
 					['47', 'Coimbatore']
 				], 
-				"TS" : [
+				TS : [
 					['57', 'Hydrabad Urban'], 
 					['58', 'Secundrabad'], 
 					['61', 'Kachiguda']
 				]
-			});
-	kaSpecificField = new Field('kaSpecificField', 12, 'kannada', 'Mother Tongue', null, 'Mother Tongue', null, null, true, 'invalidText', false, 2, 100, 0, null, 0, 0, 0, null, null, null, null);
-	aadhaar = new Field('aadhaar', 13, '111122223333', 'Aadhaar', null, 'Aadhaar', null, null, true, 'invalidAadhaar', false, 0, 0, 1, '12 digits', 100000000000, 999999999999, 0, null, null, null, null);
-	pan = new Field('pan', 14, 'ACTPB3029K', 'pan', null, 'Pan', null, null, true, 'invalidPan', false, 10, 10, 0, '[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]', 0, 0, 0, null, null, null, null);
+			}
+	});
+	kaSpecificField = new Field('kaSpecificField', 12, 0, {
+		defaultVlue:'kannada', 
+		label:'Mother Tongue', 
+		placeHolder:'Mother Tongue', 
+		isEditable:true, 
+		errorId:'invalidText', 
+		minLength:2, 
+		maxLength:100
+	});
+	aadhaar = new Field('aadhaar', 13, 1, {
+		defaultVlue:'111122223333', 
+		label:'Aadhaar', 
+		placeHolder:'Aadhaar', 
+		isEditable:true, 
+		errorId:'invalidAadhaar', 
+		reges:'12 digits', 
+		minValue:100000000000, 
+		maxValue:999999999999
+	});
+	pan = new Field('pan', 14, 0, {
+		defaultVlue:'ACTPB3029K', 
+		label:'pan', 
+		placeHolder:'Pan', 
+		isEditable:true, 
+		errorId:'invalidPan', 
+		minLength:10, 
+		maxLength:10, 
+		reges:'[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]'
+	});
 
 	orderLines = new ChildForm('orderLines', 0, 'Order Lines', Form2.getInstance(), true, 1, 200, 'wrongLines');
 

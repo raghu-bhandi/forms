@@ -94,7 +94,6 @@ public abstract class FormIo implements IService{
 		}
 	}
 	
-
 	protected static class FormReader extends FormIo{
 		private final Form form;
 		
@@ -115,7 +114,6 @@ public abstract class FormIo implements IService{
 			fd.serializeAsJson(ctx.getResponseWriter());
 			return;
 		}
-		
 	}
 
 	protected static class FormUpdater extends FormIo{

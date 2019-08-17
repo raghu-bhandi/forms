@@ -147,65 +147,78 @@ class Field {
 			sbf.append("\n\t//ERROR: ").append(msg);
 			return;
 		}
-		sbf.append("\n\t").append(this.name).append(" = new Field('").append(this.name);
-		sbf.append("', ").append(this.index);
-		sbf.append(C).append(Util.escapeTs(this.defaultValue));
-		sbf.append(C).append(Util.escapeTs(this.label));
-		sbf.append(C).append(Util.escapeTs(this.altLabel));
-		sbf.append(C).append(Util.escapeTs(this.placeHolder));
-		sbf.append(C).append(Util.escapeTs(dt.trueLabel));
-		sbf.append(C).append(Util.escapeTs(dt.falseLabel));
-		sbf.append(C).append(this.isEditable);
+		sbf.append("\n\t").append(this.name).append(" = new Field(");
+		sbf.append(Util.escapeTs(this.name));
+		sbf.append(C).append(this.index);
+		sbf.append(C).append(dt.valueType.ordinal());
+		sbf.append(", {");
+		int n = sbf.length();
+
+		emitAttr(sbf, "defaultVlue", this.defaultValue);
+		emitAttr(sbf, "label", this.label);
+		emitAttr(sbf, "altLabel", this.altLabel);
+		emitAttr(sbf, "placeHolder", this.placeHolder);
+		emitAttr(sbf, "trueLabel", dt.trueLabel);
+		emitAttr(sbf, "falseLabel", dt.falseLabel);
+
+		emitAttr(sbf, "isEditable", this.isEditable);
 		String eid = this.errorId;
 		if (eid == null || eid.isEmpty()) {
 			eid = dt.errorId;
 		}
-		sbf.append(C).append(Util.escapeTs(eid));
-		sbf.append(C).append(this.isRequired);
-		sbf.append(C).append(dt.minLength);
-		sbf.append(C).append(dt.maxLength);
-		sbf.append(C).append(dt.valueType.ordinal());
-		sbf.append(C).append(Util.escapeTs(dt.regex));
-		sbf.append(C).append(dt.minValue);
-		sbf.append(C).append(dt.maxValue);
-		sbf.append(C).append(dt.nbrFractions);
-		sbf.append(C).append(Util.escapeTs(this.listName));
-		sbf.append(C).append(Util.escapeTs(this.listKey));
-		sbf.append(C);
-		if (this.listName == null) {
-			sbf.append("null, null");
-		} else if (this.listKey == null) {
-			this.emitListTs(sbf, valueLists);
-			sbf.append(",null");
-		} else {
-			sbf.append("null,");
-			this.emitKeyedListTs(sbf, keyedLists);
+		emitAttr(sbf, "errorId", eid);
+		emitAttr(sbf, "isRequired", this.isRequired);
+		emitAttr(sbf, "minLength", dt.minLength);
+		emitAttr(sbf, "maxLength", dt.maxLength);
+		emitAttr(sbf, "reges", dt.regex);
+		emitAttr(sbf, "minValue", dt.minValue);
+		emitAttr(sbf, "maxValue", dt.maxValue);
+		emitAttr(sbf, "nbrFractions", dt.nbrFractions);
+		emitAttr(sbf, "listName", this.listName);
+		emitAttr(sbf, "listKey", this.listKey);
+		if (this.listName != null) {
+			if (this.listKey == null) {
+				ValueList list = valueLists.get(this.listName);
+				if (list == null) {
+					Form.logger.info("values not defined for {}. It is treated as a run-time list.", this.listName);
+				} else {
+					sbf.append("valueList:[");
+					list.emitTs(sbf, "\n\t\t\t\t");
+					sbf.append("\n\t\t\t]").append(C);
+				}
+			} else {
+				KeyedValueList list = keyedLists.get(this.listName);
+				if (list == null) {
+					Form.logger.info("keyed-list of values not defined for {}. It is treated as a run-time list.",
+							this.listName);
+				} else {
+					sbf.append("keyedList:{");
+					list.emitTs(sbf, "\n\t\t\t\t");
+					sbf.append("\n\t\t\t}").append(C);
+				}
+			}
 		}
-
-		sbf.append(");");
+		// remove extra comma..
+		if (sbf.length() != n) {
+			sbf.setLength(sbf.length() - C.length());
+		}
+		sbf.append("\n\t});");
 	}
 
-	private void emitListTs(StringBuilder sbf, Map<String, ValueList> valueLists) {
-		ValueList list = valueLists.get(this.listName);
-		if (list == null) {
-			logger.info("List of values not defined for list {}. It is treated as a run-time list.", this.listName);
-			sbf.append("null");
+	private static void emitAttr(StringBuilder sbf, String attr, Object value) {
+		if (value == null) {
 			return;
 		}
-		sbf.append("[");
-		list.emitTs(sbf, "\n\t\t\t\t");
-		sbf.append("\n\t\t\t]");
-	}
+		String s = value.toString();
+		if (value instanceof String) {
+			if (s.isEmpty()) {
+				return;
+			}
+			s = Util.escapeTs(s);
+		} else if (s.equals("0") || s.equals("false")) {
+			return;
+		}
+		sbf.append("\n\t\t").append(attr).append(":").append(s).append(C);
 
-	private void emitKeyedListTs(StringBuilder sbf, Map<String, KeyedValueList> valueLists) {
-		KeyedValueList list = valueLists.get(this.listName);
-		if (list == null) {
-			Form.logger.info("keyd-list of values not defined for {}. It is treated as a run-time.", this.listName);
-			sbf.append("null");
-			return;
-		}
-		sbf.append("{");
-		list.emitTs(sbf, "\n\t\t\t\t");
-		sbf.append("\n\t\t\t}");
 	}
 }

@@ -1,8 +1,6 @@
 import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
 import { FormGroup, FormBuilder, FormArray, FormControl, ValidationErrors } from '@angular/forms';
-import { WebDriverLogger } from 'blocking-proxy/built/lib/webdriver_logger';
-import { Timestamp } from 'rxjs';
 
 // tslint:disable: indent
 /**

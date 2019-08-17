@@ -4,7 +4,7 @@ import org.simplity.fm.validn.ValueList;
 
 /**
  * List of valid values for list states
- * <br /> generated at 2019-08-13T10:43:13.128
+ * <br /> generated at 2019-08-17T13:14:20.527
  */ 
 public class States extends ValueList {
 	 private static final String[][] VALUES = { 

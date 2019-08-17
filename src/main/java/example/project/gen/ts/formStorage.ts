@@ -1,18 +1,64 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-13T10:43:14.178
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-17T13:14:21.411
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
 
 export class FormStorage extends Form {
 	private static _instance = new FormStorage();
-	customerId = new Field('customerId', 0, null, 'CustomerId', null, null, null, null, true, 'invalidCustId', true, 10, 10, 0, '[A-Z]{3}-[\\d]{2}-[A-Z]{3}', 0, 0, 0, null, null, null, null);
-	formName = new Field('formName', 1, null, 'Form Name', null, null, null, null, true, 'invalidText', true, 2, 100, 0, null, 0, 0, 0, null, null, null, null);
-	referenceYear = new Field('referenceYear', 2, null, 'Ref Year', null, null, null, null, true, 'invalidFy', true, 4, 4, 1, null, 1989, 2025, 0, null, null, null, null);
-	ackId = new Field('ackId', 3, null, 'Acknwledgment Id', null, null, null, null, false, 'invalidText', false, 2, 100, 0, null, 0, 0, 0, null, null, null, null);
-	status = new Field('status', 4, null, 'Status', null, null, null, null, false, 'invalidText', false, 2, 100, 0, null, 0, 0, 0, null, null, null, null);
-	formData = new Field('formData', 5, null, 'Form Data', null, null, null, null, false, 'invalidMahabharat', false, 1, 10000, 0, null, 0, 0, 0, null, null, null, null);
-	operation = new Field('operation', 6, null, 'Operation', null, null, null, null, true, 'invalidText', true, 2, 100, 0, null, 0, 0, 0, null, null, null, null);
+	customerId = new Field('customerId', 0, 0, {
+		label:'CustomerId', 
+		isEditable:true, 
+		errorId:'invalidCustId', 
+		isRequired:true, 
+		minLength:10, 
+		maxLength:10, 
+		reges:'[A-Z]{3}-[\\d]{2}-[A-Z]{3}'
+	});
+	formName = new Field('formName', 1, 0, {
+		label:'Form Name', 
+		isEditable:true, 
+		errorId:'invalidText', 
+		isRequired:true, 
+		minLength:2, 
+		maxLength:100
+	});
+	referenceYear = new Field('referenceYear', 2, 1, {
+		label:'Ref Year', 
+		isEditable:true, 
+		errorId:'invalidFy', 
+		isRequired:true, 
+		minLength:4, 
+		maxLength:4, 
+		minValue:1989, 
+		maxValue:2025
+	});
+	ackId = new Field('ackId', 3, 0, {
+		label:'Acknwledgment Id', 
+		errorId:'invalidText', 
+		minLength:2, 
+		maxLength:100
+	});
+	status = new Field('status', 4, 0, {
+		label:'Status', 
+		errorId:'invalidText', 
+		minLength:2, 
+		maxLength:100
+	});
+	formData = new Field('formData', 5, 0, {
+		label:'Form Data', 
+		errorId:'invalidMahabharat', 
+		minLength:1, 
+		maxLength:10000
+	});
+	operation = new Field('operation', 6, 0, {
+		label:'Operation', 
+		isEditable:true, 
+		errorId:'invalidText', 
+		isRequired:true, 
+		minLength:2, 
+		maxLength:100
+	});
 
 	public static getInstance(): FormStorage {
 		return FormStorage._instance;

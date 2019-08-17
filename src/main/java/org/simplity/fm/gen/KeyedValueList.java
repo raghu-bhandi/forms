@@ -109,7 +109,7 @@ class KeyedValueList {
 				sbf.append(C);
 			}
 			sbf.append(indent);
-			sbf.append(Util.escape(entry.getKey())).append(" : [");
+			sbf.append(entry.getKey()).append(" : [");
 			String newIndent = indent + '\t';
 			boolean f = true;
 			for (Pair p : entry.getValue()) {

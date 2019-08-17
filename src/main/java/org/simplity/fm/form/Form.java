@@ -170,6 +170,7 @@ public class Form {
 		for (int i = 0; i < this.childForms.length; i++) {
 			ChildDbMetaData cm = this.dbMetaData.childMeta[i];
 			if (cm == null) {
+				logger.info("Form {} has a child {} but this child has no dbmetadata", this.getFormId(), this.childForms[i].form.getFormId());
 				continue;
 			}
 			foundOne = true;
