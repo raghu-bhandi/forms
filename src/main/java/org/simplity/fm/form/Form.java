@@ -179,6 +179,7 @@ public class Form {
 			 */
 			sbf.setLength(WH.length());
 			Form form = this.childForms[i].form;
+			cm.childMeta = form.dbMetaData;
 			for (String f : cm.childLinkNames) {
 				Field field = form.getField(f);
 				if (field == null) {

@@ -32,15 +32,11 @@ import java.io.Writer;
 public class JsonUtil {
 	private static final char OPEN_ARR = '[';
 	private static final char CLOS_ARR = ']';
-	private static final char OBJ_OPEN = '{';
-	private static final char OBJ_CLOSE = '}';
 	private static final char COMA = ',';
 	private static final char Q = '"';
 	private static final String QS = "\"";
 	private static final String QQS = "\"\"";
 	private static final String NULL = "null";
-	private static final String TRUE = "true";
-	private static final String FALSE = "false";
 	
 	/**
 	 * write a 2d array of string

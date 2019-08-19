@@ -118,6 +118,7 @@ public class Generator {
 			logger.error("Forms folder {} not found. No forms are processed", f.getPath());
 			return;
 		}
+		
 		Map<String, DataType> typesMap = project.getTypes();
 		for (File xls : f.listFiles()) {
 			emitForm(xls, outputRoot, typesMap, project);
@@ -610,19 +611,19 @@ public class Generator {
 	private static Form parseDbForm(Workbook book, String formName) {
 		Sheet sheet = book.getSheet("params");
 		if (sheet == null) {
-			logger.error("Form {} has specialInstructions sheet missing.");
+			logger.error("Form {} has params sheet missing.");
 			return null;
 		}
 		Form form = new Form();
 		form.name = formName;
 		parseSi(sheet, form.params);
 		if (form.params.get("dbTableName") == null) {
-			logger.error("dbTableName is required in specialInstructions sheet");
+			logger.error("dbTableName is required in params sheet");
 			return null;
 		}
 
 		/*
-		 * fields
+		 * db columns
 		 */
 		sheet = book.getSheet("columns");
 		List<Field> list = new ArrayList<>();
@@ -638,7 +639,7 @@ public class Generator {
 				f.dataType = XlsUtil.textValueOf(row.getCell(2));
 				f.isKey = XlsUtil.boolValueOf(row.getCell(3));
 				f.index = list.size();
-				if (fieldNames.add(f.name)) {
+				if (fieldNames.add(f.name) == false) {
 					logger.error("Field name {} is duplicate at row {}. skipped", f.name, row.getRowNum());
 				}
 				list.add(f);
