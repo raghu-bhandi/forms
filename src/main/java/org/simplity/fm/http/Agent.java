@@ -188,10 +188,11 @@ public class Agent {
 			writeMessage(writer, ctx.getMessages());
 			writer.write("}");
 		} catch (Exception e) {
+			e.printStackTrace();
 			try {
 				resp.sendError(500);
 			} catch (IOException e1) {
-				e1.printStackTrace();
+				//
 			}
 		}
 	}

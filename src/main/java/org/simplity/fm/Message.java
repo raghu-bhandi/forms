@@ -48,9 +48,10 @@ public class Message {
 	 */
 	public static final String MSG_INVALID_DATA = "invalidData";
 	/**
-	 * error to be used to indicate that value is required for an input field 
+	 * error to be used to indicate that value is required for an input field
 	 */
 	public static final String FIELD_REQUIRED = "valueRequired";
+
 	/**
 	 * create an error message for a message id
 	 * 
@@ -100,9 +101,9 @@ public class Message {
 		return new Message(MessageType.ERROR, messageId, tableName, params, columnName, 0);
 	}
 
-
 	/**
 	 * generic message could be warning/info etc..
+	 * 
 	 * @param messageType
 	 * @param messageId
 	 * @param params
@@ -162,32 +163,40 @@ public class Message {
 
 	/**
 	 * @param writer
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void toJson(Writer writer) throws IOException {
 		writer.write("{\"type\":\"");
+
+		if(this.messageType == null) {
+			writer.write("\"error\"");
+		}else {
+			writer.write(this.messageType.toString().toLowerCase());
+		}
 		
-		writer.write(this.messageType.toString().toLowerCase());
 		writer.write("\", \"id\":\"");
 		writer.write(this.messageId);
-		if(this.fieldName != null) {
-		writer.write("\", \"fieldName\": ");
-		writer.write(this.fieldName);
+		if (this.fieldName != null) {
+			writer.write("\", \"fieldName\": ");
+			writer.write(this.fieldName);
 		}
-		if(this.columnName != null) {
+		
+		if (this.columnName != null) {
 			writer.write("\", \"columnName\": ");
 			writer.write(this.columnName);
 		}
-		if(this.params != null) {
+		
+		if (this.params != null) {
 			writer.write("\", \"params\": ");
-			writer.write(this.params.replaceAll("'", "''"));
+			writer.write(this.params.replaceAll("\"", "\"\""));
 		}
+		
 		writer.write("\"");
-		if(this.rowNumber != 0) {
+		if (this.rowNumber != 0) {
 			writer.write(", \"rowNumber\": ");
 			writer.write(this.rowNumber);
 		}
+		
 		writer.write("}");
 	}
-
 }

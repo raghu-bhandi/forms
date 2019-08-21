@@ -62,7 +62,7 @@ public class DependentListValidation implements IValidation {
 
 	@Override
 	public boolean isValid(FormData data, List<Message> mesages) {
-		Object fieldValue = data.getStringValue(this.fieldIndex);
+		Object fieldValue = data.getObject(this.fieldIndex);
 		if(fieldValue == null) {
 			return true;
 		}

@@ -289,12 +289,13 @@ public class Generator {
 		List<Field> fields = new ArrayList<Field>();
 		logger.info("Started parsing common fields");
 		XlsUtil.consumeRows(sheet, NBR_CELLS_FIELD, new Consumer<Row>() {
-
+			private int idx = 0;
 			@Override
 			public void accept(Row row) {
-				Field field = parseField(row);
+				Field field = parseField(row, this.idx);
 				if (field != null) {
 					fields.add(field);
+					this.idx++;
 				}
 			}
 		});
@@ -696,12 +697,11 @@ public class Generator {
 
 			@Override
 			public void accept(Row row) {
-				Field field = parseField(row);
+				Field field = parseField(row, list.size());
 				if (field == null) {
 					return;
 				}
 				if (fieldNames.add(field.name)) {
-					field.index = list.size();
 					list.add(field);
 				} else {
 					logger.error("Field name {} is duplicate at row {}. skipped", field.name, row.getRowNum());
@@ -717,7 +717,7 @@ public class Generator {
 		return list.toArray(new Field[0]);
 	}
 
-	static Field parseField(Row row) {
+	static Field parseField(Row row, int index) {
 		Field f = new Field();
 		f.name = XlsUtil.textValueOf(row.getCell(0));
 		if (f.name == null) {
@@ -733,11 +733,16 @@ public class Generator {
 		f.errorId = XlsUtil.textValueOf(row.getCell(7));
 		f.isRequired = XlsUtil.boolValueOf(row.getCell(8));
 		f.isEditable = XlsUtil.boolValueOf(row.getCell(9));
-		f.isDerived = XlsUtil.boolValueOf(row.getCell(10));
+		/*
+		 * current project has an issue people not managing it properly..
+		 */
+		//f.isDerived = XlsUtil.boolValueOf(row.getCell(10));
+		f.isDerived = false;
 		f.isKey = XlsUtil.boolValueOf(row.getCell(11));
 		f.listName = XlsUtil.textValueOf(row.getCell(12));
 		f.listKey = XlsUtil.textValueOf(row.getCell(13));
 		f.dbColumnName = XlsUtil.textValueOf(row.getCell(14));
+		f.index= index;
 
 		return f;
 	}

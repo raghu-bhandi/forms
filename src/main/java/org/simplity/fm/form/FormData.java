@@ -568,8 +568,8 @@ public class FormData {
 	 */
 	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert,
 			List<Message> errors) {
-		boolean keyIsOptional= false;
-		if(forInsert) {
+		boolean keyIsOptional = false;
+		if (forInsert) {
 			keyIsOptional = this.form.getDbMetaData().keyIsGenerated;
 		}
 		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, errors);
@@ -617,8 +617,10 @@ public class FormData {
 		if (nt == JsonNodeType.ARRAY) {
 			arr = (ArrayNode) childNode;
 			n = arr.size();
-			if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
-				arr = null;
+			if (allFieldsAreOptional == false) {
+				if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
+					arr = null;
+				}
 			}
 		}
 
@@ -705,7 +707,7 @@ public class FormData {
 
 	private void serialize(JsonGenerator gen) throws IOException {
 		gen.writeStartObject();
-		writeFields(gen, this.fieldValues, this.form.getFields());
+		writeFields(gen);
 		if (this.childData != null) {
 			this.serializeChildren(gen);
 		}
@@ -734,14 +736,14 @@ public class FormData {
 		}
 	}
 
-	private static void writeFields(JsonGenerator gen, Object[] values, Field[] fields) throws IOException {
-		for (int j = 0; j < values.length; j++) {
-			Object value = values[j];
+	private void writeFields(JsonGenerator gen) throws IOException {
+		for (Field field : this.form.getFields()) {
+			Object value = this.fieldValues[field.getIndex()];
 			if (value == null) {
 				continue;
 			}
-			Field field = fields[j];
 			if (field.isDerivedField()) {
+				logger.info("Field " + field + " is a derived fieldand hence is not serialized");
 				continue;
 			}
 			gen.writeFieldName(field.getFieldName());

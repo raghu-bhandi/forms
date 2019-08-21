@@ -53,14 +53,15 @@ public class Services {
 		DbOperation opern = null;
 		try {
 			opern = DbOperation.valueOf(serviceName.substring(0, idx).toUpperCase());
-			service = FormIo.getInstance(opern, serviceName.substring(idx + 1));
-			if(service!= null) {
-				instance.services.put(serviceName, service);
-			}
-			return service;
 		} catch (Exception e) {
 			return null;
 		}
+		
+		service = FormIo.getInstance(opern, serviceName.substring(idx + 1));
+		if (service != null) {
+			instance.services.put(serviceName, service);
+		}
+		return service;
 	}
 
 	/**
