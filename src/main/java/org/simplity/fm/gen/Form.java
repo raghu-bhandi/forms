@@ -64,6 +64,7 @@ class Form {
 	Field[] fields;
 	Map<String, Field> fieldMap;
 	Field[] fieldsWithList;
+	Field[] keyFields;
 	ChildForm[] childForms;
 	FromToPair[] fromToPairs;
 	ExclusivePair[] exclusivePairs;
@@ -75,14 +76,21 @@ class Form {
 		this.fieldMap = new HashMap<>();
 		if (this.fields != null) {
 			List<Field> list = new ArrayList<>();
+			List<Field> keyList = new ArrayList<>();
 			for (Field field : this.fields) {
 				this.fieldMap.put(field.name, field);
 				if (field.listName != null) {
 					list.add(field);
 				}
+				if(field.isKey) {
+					keyList.add(field);
+				}
 			}
 			if (list.size() > 0) {
 				this.fieldsWithList = list.toArray(new Field[0]);
+			}
+			if (keyList.size() > 0) {
+				this.keyFields = keyList.toArray(new Field[0]);
 			}
 		}
 	}
@@ -426,7 +434,7 @@ class Form {
 		}
 
 		/*
-		 * dependent lits
+		 * dependent lists
 		 */
 		if (this.fieldsWithList != null) {
 			for (Field field : this.fieldsWithList) {
@@ -586,6 +594,40 @@ class Form {
 			}
 			sbf.setLength(sbf.length() - C.length());
 			sbf.append("];");
+		}
+		/*
+		 * are there key fields?
+		 */
+		if (this.keyFields != null) {
+			sbf.append("\n\t\tthis.keyFields = [");
+			for (Field f : this.keyFields) {
+				sbf.append(Util.escapeTs(f.name));
+				sbf.append(C);
+			}
+			sbf.setLength(sbf.length() - C.length());
+			sbf.append("];");
+		}
+		/*
+		 * auto-service operations?
+		 */
+		Object obj = this.params.get("allowDbOperations");
+		if (obj != null) {
+			sbf.append("\n\t\tthis.opsAllowed = {");
+			boolean first = true;
+			for (String op : obj.toString().split(",")) {
+				try {
+					DbOperation.valueOf(op.trim().toUpperCase());
+					if(first) {
+						first = false;
+					}else {
+						sbf.append(C);
+					}
+					sbf.append(op.trim().toLowerCase()).append(": true");
+				} catch (Exception e) {
+					logger.error("{} is not a valid dbOperation. directive in allowDbOperations ignored");
+				}
+			}
+			sbf.append("};");
 		}
 		/*
 		 * end of constructor
