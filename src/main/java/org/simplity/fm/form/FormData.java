@@ -825,7 +825,7 @@ public class FormData {
 	/**
 	 * fetch data for this form from a db
 	 * 
-	 * @return true if it is read.false if no dta found for this form (key not
+	 * @return true if it is read.false if no data found for this form (key not
 	 *         found...)
 	 * @throws SQLException
 	 */

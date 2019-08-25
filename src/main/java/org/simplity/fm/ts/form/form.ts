@@ -30,6 +30,16 @@ export abstract class Form {
 	public listFields: Array<string>;
 
 	/**
+	 * fields that make up the primary key. generally onl one, but possible to have more than one
+	 */
+	public keyFields: Array<string>;
+
+	/**
+	 * what operations are allowed on this form.
+	 */
+	public opsAllowed: { [key: string]: boolean };
+
+	/**
 	 * name of this form. 
 	 */
 	public abstract getName(): string;
@@ -76,7 +86,7 @@ export class Field {
 	public valueListKey: string;
 	public valueList: Array<[string, string]>;
 	public keyedList: { [key: string]: Array<[string, string]> };
-	constructor(name: string, index: number, valueType: number, attrs: { [ket: string]: any }) {
+	constructor(name: string, index: number, valueType: number, attrs: { [key: string]: any }) {
 		this.name = name;
 		this.index = index;
 		this.valueType = valueType;

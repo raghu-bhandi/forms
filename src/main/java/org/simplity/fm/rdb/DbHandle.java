@@ -49,6 +49,7 @@ public class DbHandle {
 
 	/**
 	 * to be created by DbDriver ONLY
+	 * 
 	 * @param con
 	 * @param readOnly
 	 */
@@ -131,8 +132,8 @@ public class DbHandle {
 		for (ChildDbMetaData cm : meta.childMeta) {
 			if (cm != null) {
 				DbMetaData childDetils = cm.childMeta;
-				Object[][] rows = RdbDriver.doReadChildRows(this.con, childDetils.selectClause + cm.whereClause,
-						cm.whereParams, childDetils.selectParams, data, cm.nbrChildFields);
+				Object[][] rows = RdbDriver.doReadFormRows(this.con, childDetils.selectClause + cm.whereClause,
+						cm.whereParams, data, childDetils.selectParams, cm.nbrChildFields);
 				childData[idx] = childForms[idx].form.createChildData(rows);
 			}
 			idx++;
@@ -168,7 +169,7 @@ public class DbHandle {
 	}
 
 	/**
-	 * specialized method for Form with childForm (tabular data)
+	 * specialized method for Form with childForm (tabular data), filtering rows
 	 * 
 	 * @param sql
 	 *            prepared statement for selecting data
@@ -176,7 +177,7 @@ public class DbHandle {
 	 *            parameters for the where clause
 	 * @param selectParams
 	 *            parameters for reading values from the result set
-	 * @param formData
+	 * @param whereValues
 	 *            form data. parameter values are taken from this, and
 	 *            extracted values are put into this
 	 * @param nbrChildFields
@@ -185,9 +186,32 @@ public class DbHandle {
 	 * @return true if a row is read. False otherwise
 	 * @throws SQLException
 	 */
-	public Object[][] readChildRows(String sql, FormDbParam[] whereParams, FormDbParam[] selectParams, Object[] formData,
+	public Object[] readFormRow(String sql, FormDbParam[] whereParams, Object[] whereValues, FormDbParam[] selectParams,
 			int nbrChildFields) throws SQLException {
-		return RdbDriver.doReadChildRows(this.con, sql, whereParams, selectParams, formData, nbrChildFields);
+		return RdbDriver.doReadFormRow(this.con, sql, whereParams, whereValues, selectParams, nbrChildFields);
+	}
+
+	/**
+	 * specialized method for Form with childForm (tabular data), filtering rows
+	 * 
+	 * @param sql
+	 *            prepared statement for selecting data
+	 * @param whereParams
+	 *            parameters for the where clause
+	 * @param selectParams
+	 *            parameters for reading values from the result set
+	 * @param whereValues
+	 *            form data. parameter values are taken from this, and
+	 *            extracted values are put into this
+	 * @param nbrChildFields
+	 *            number of fields in the child form. Object array for
+	 *            tabular data is created with this length
+	 * @return true if a row is read. False otherwise
+	 * @throws SQLException
+	 */
+	public Object[][] readFormRows(String sql, FormDbParam[] whereParams, Object[] whereValues,
+			FormDbParam[] selectParams, int nbrChildFields) throws SQLException {
+		return RdbDriver.doReadFormRows(this.con, sql, whereParams, whereValues, selectParams, nbrChildFields);
 	}
 
 	/**
@@ -265,7 +289,7 @@ public class DbHandle {
 		}
 		return true;
 	}
-	
+
 	protected void writeChildren(DbMetaData meta, Object[] data, FormData[][] childData) throws SQLException {
 		int idx = 0;
 		for (ChildDbMetaData cm : meta.childMeta) {
@@ -393,7 +417,7 @@ public class DbHandle {
 		this.isDirty = true;
 		return RdbDriver.doFormBatch(this.con, sql, params, childData);
 	}
-	
+
 	/**
 	 * 
 	 * @return blob object

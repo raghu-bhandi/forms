@@ -33,6 +33,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.simplity.fm.Conventions;
 import org.simplity.fm.Message;
 import org.simplity.fm.service.DefaultContext;
 import org.simplity.fm.service.IService;
@@ -81,8 +82,8 @@ public class Agent {
 	 * @param resp
 	 */
 	public void setOptions(HttpServletRequest req, HttpServletResponse resp) {
-		for (int i = 0; i < Http.HDR_NAMES.length; i++) {
-			resp.setHeader(Http.HDR_NAMES[i], Http.HDR_TEXTS[i]);
+		for (int i = 0; i < Conventions.Http.HDR_NAMES.length; i++) {
+			resp.setHeader(Conventions.Http.HDR_NAMES[i], Conventions.Http.HDR_TEXTS[i]);
 		}
 		/*
 		 * we have no issue with CORS. We are ready to respond to any client so
@@ -109,20 +110,20 @@ public class Agent {
 		LoggedInUser user = this.getUser(req);
 		if (user == null) {
 			logger.info("No User. Responding with auth required status");
-			resp.setStatus(Http.STATUS_AUTH_REQUIRED);
+			resp.setStatus(Conventions.Http.STATUS_AUTH_REQUIRED);
 			return;
 		}
 
 		IService service = this.getService(req);
 		if (service == null) {
-			resp.setStatus(Http.STATUS_INVALID_SERVICE);
+			resp.setStatus(Conventions.Http.STATUS_INVALID_SERVICE);
 			return;
 		}
 
 		ObjectNode json = this.readContent(req);
 		if (json == null) {
 			logger.info("Invalid JSON recd from client ");
-			resp.setStatus(Http.STATUS_INVALID_DATA);
+			resp.setStatus(Conventions.Http.STATUS_INVALID_DATA);
 			return;
 		}
 		Map<String, String> fields = this.readQueryString(req);
@@ -172,13 +173,13 @@ public class Agent {
 	private static void respond(HttpServletResponse resp, IserviceContext ctx, String payload) {
 		try (Writer writer = resp.getWriter()) {
 			writer.write("{\"");
-			writer.write(Http.TAG_ALL_OK);
+			writer.write(Conventions.Http.TAG_ALL_OK);
 			writer.write("\":");
 			if (ctx.allOk()) {
 				writer.write("true");
 				if (payload != null && payload.isEmpty() == false) {
 					writer.write(",\"");
-					writer.append(Http.TAG_DATA);
+					writer.append(Conventions.Http.TAG_DATA);
 					writer.write("\":");
 					writer.write(payload);
 				}
@@ -207,7 +208,7 @@ public class Agent {
 			return;
 		}
 		writer.write(",\"");
-		writer.write(Http.TAG_MESSAGES);
+		writer.write(Conventions.Http.TAG_MESSAGES);
 		writer.write("\":[");
 		boolean isFirst = true;
 		for (Message msg : msgs) {
@@ -246,9 +247,9 @@ public class Agent {
 	}
 
 	private IService getService(HttpServletRequest req) {
-		String serviceName = req.getHeader(Http.SERVICE_HEADER);
+		String serviceName = req.getHeader(Conventions.Http.SERVICE_HEADER);
 		if (serviceName == null) {
-			logger.info("header {} not received", Http.SERVICE_HEADER);
+			logger.info("header {} not received", Conventions.Http.SERVICE_HEADER);
 
 			return null;
 		}
@@ -267,7 +268,7 @@ public class Agent {
 	 * @return
 	 */
 	private LoggedInUser getUser(HttpServletRequest req) {
-		String token = req.getHeader(Http.TOKEN_HEADER);
+		String token = req.getHeader(Conventions.Http.TOKEN_HEADER);
 		if (token == null) {
 			return null;
 		}

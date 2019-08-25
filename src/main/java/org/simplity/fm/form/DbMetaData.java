@@ -40,7 +40,7 @@ public class DbMetaData {
 	 */
 	public String selectClause;
 	/**
-	 * db parameters to be used to receive data from the result set of the slect query
+	 * db parameters to be used to receive data from the result set of the select query
 	 */
 	public FormDbParam[] selectParams;
 	/**

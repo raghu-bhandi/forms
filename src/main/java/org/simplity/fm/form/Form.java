@@ -21,14 +21,25 @@
  */
 package org.simplity.fm.form;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
+import org.simplity.fm.Message;
+import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.rdb.FilterCondition;
 import org.simplity.fm.service.IFormProcessor;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
  * @author simplity.org
@@ -36,18 +47,13 @@ import org.slf4j.LoggerFactory;
  */
 public class Form {
 	private static final Logger logger = LoggerFactory.getLogger(Form.class);
-	/**
-	 * get operation
-	 */
-	public static final String SERVICE_TYPE_GET = "get";
-	/**
-	 * get operation
-	 */
-	public static final String SERVICE_TYPE_SAVE = "save";
-	/**
-	 * get operation
-	 */
-	public static final String SERVICE_TYPE_SUBMIT = "submit";
+	private static final String IN = " IN (";
+	private static final String LIKE = " LIKE ? escape '\\'";
+	private static final String BETWEEN = " BETWEEN ? and ?";
+	private static final String WILD_CARD = "%";
+	private static final String ESCAPED_WILD_CARD = "\\%";
+	private static final String WILD_CHAR = "_";
+	private static final String ESCAPED_WILD_CHAR = "\\_";
 	/**
 	 * this is the unique id given this to this form, it is an independent
 	 * form. It is the section name in case it is a section of a composite form
@@ -170,7 +176,8 @@ public class Form {
 		for (int i = 0; i < this.childForms.length; i++) {
 			ChildDbMetaData cm = this.dbMetaData.childMeta[i];
 			if (cm == null) {
-				logger.info("Form {} has a child {} but this child has no dbmetadata", this.getFormId(), this.childForms[i].form.getFormId());
+				logger.info("Form {} has a child {} but this child has no dbmetadata", this.getFormId(),
+						this.childForms[i].form.getFormId());
 				continue;
 			}
 			foundOne = true;
@@ -180,7 +187,6 @@ public class Form {
 			sbf.setLength(WH.length());
 			Form form = this.childForms[i].form;
 			cm.childMeta = form.dbMetaData;
-			cm.nbrChildFields = form.fields.length;
 			for (String f : cm.childLinkNames) {
 				Field field = form.getField(f);
 				if (field == null) {
@@ -203,7 +209,6 @@ public class Form {
 			this.dbMetaData.childMeta = null;
 		}
 	}
-
 
 	/**
 	 * @return the refillProcessor for this form
@@ -334,5 +339,155 @@ public class Form {
 			}
 		}
 		return new FormData(this, row, null);
+	}
+
+	/**
+	 * parse the input into a filter clause
+	 * 
+	 * @param json
+	 * @param errors
+	 * @return filter clause that can be used to get rows from the db
+	 */
+	public SqlReader parseForFilter(ObjectNode json, List<Message> errors) {
+		StringBuilder sql = new StringBuilder(this.dbMetaData.selectClause);
+		sql.append(" WHERE ");
+		List<FormDbParam> params = new ArrayList<>();
+		List<Object> values = new ArrayList<>();
+		
+		/*
+		 * fairly long inside the loop for each filed. But it is more
+		 * serial code. Hence left it that way
+		 */
+		for (Iterator<Map.Entry<String, JsonNode>> it = json.fields(); it.hasNext();) {
+			Map.Entry<String, JsonNode> entry = it.next();
+			String fieldName = entry.getKey();
+			Field field = this.getField(fieldName);
+			if (field == null) {
+				logger.warn("Input has value for a field named {} that is not part of this form", fieldName);
+				continue;
+			}
+
+			JsonNode node = entry.getValue();
+			if (node == null || node.getNodeType() != JsonNodeType.ARRAY) {
+				logger.error("Filter condition for filed {} should be an array, but it is {}", fieldName, node);
+				errors.add(Message.newError(Message.MSG_INVALID_DATA));
+				return null;
+			}
+
+			ArrayNode arr = (ArrayNode) node;
+			int n = node.size();
+			if (n < 2 || n > 3) {
+				logger.error("Filter condition for filed {} should have 2 elements, but it has {}", fieldName,
+						arr.size());
+				errors.add(Message.newError(Message.MSG_INVALID_DATA));
+				return null;
+			}
+
+			String condnText = arr.get(0).asText();
+			FilterCondition condn = FilterCondition.parse(condnText);
+			if (condn == null) {
+				logger.error("{} is not a valid filter condition", condnText);
+				errors.add(Message.newError(Message.MSG_INVALID_DATA));
+				return null;
+			}
+
+			int idx = params.size();
+			if ( idx > 0) {
+				sql.append(" and ");
+			}
+
+			sql.append(field.getDbColumnName());
+			ValueType vt = field.getValueType();
+			Object value = null;
+
+			String text = arr.get(1).asText();
+			/*
+			 * complex ones first.. we have to append ? to sql, and add type and
+			 * value to the lists for each case
+			 */
+			if ((condn == FilterCondition.Contains || condn == FilterCondition.StartsWith)) {
+				if (vt != ValueType.TEXT) {
+					logger.error("Condition {} is not a valid for field {} which is of value type {}", condn, fieldName,
+							vt);
+					errors.add(Message.newError(Message.MSG_INVALID_DATA));
+					return null;
+				}
+
+				sql.append(LIKE);
+				params.add(new FormDbParam(idx++, vt));
+				text = escapeLike(text);
+				if (condn == FilterCondition.Contains) {
+					values.add(WILD_CARD + text + WILD_CARD);
+				} else {
+					values.add(WILD_CARD + text);
+				}
+				continue;
+			}
+
+			if (condn == FilterCondition.In) {
+				sql.append(IN);
+				boolean firstOne = true;
+				for (String part : text.split(",")) {
+					value = vt.parse(part.trim());
+					if (value == null) {
+						logger.error("{} is not a valid value for value type {} for field {}", text, vt, fieldName);
+						errors.add(Message.newError(Message.MSG_INVALID_DATA));
+						return null;
+					}
+					params.add(new FormDbParam(idx++, vt));
+					values.add(value);
+					if (firstOne) {
+						sql.append('?');
+						firstOne = false;
+					} else {
+						sql.append(",?");
+					}
+				}
+				sql.append(')');
+				continue;
+			}
+
+			value = vt.parse(text);
+			if (value == null) {
+				logger.error("{} is not a valid value for value type {} for field {}", text, vt, fieldName);
+				errors.add(Message.newError(Message.MSG_INVALID_DATA));
+				return null;
+			}
+
+			if (condn == FilterCondition.Between) {
+				Object value2 = null;
+				text = arr.get(2).asText();
+				if (text != null) {
+					value2 = vt.parse(text);
+				}
+				if (value2 == null) {
+					logger.error("{} is not a valid value for value type {} for field {}", text, vt, fieldName);
+					errors.add(Message.newError(Message.MSG_INVALID_DATA));
+					return null;
+				}
+				sql.append(BETWEEN);
+				values.add(value);
+				params.add(new FormDbParam(idx++, vt));
+				values.add(value2);
+				params.add(new FormDbParam(idx++, vt));
+				continue;
+			}
+
+			sql.append(' ').append(condnText).append(" ?");
+			params.add(new FormDbParam(idx++, vt));
+			values.add(value);
+		}
+		//this.dbMetaData.selectParams
+		return new SqlReader(this, sql.toString(), params.toArray(new FormDbParam[0]), values.toArray(new Object[0]));
+	}
+
+	/**
+	 * NOTE: Does not work for MS-ACCESS. but we are fine with that!!!
+	 * 
+	 * @param string
+	 * @return string that is escaped for a LIKE sql operation.
+	 */
+	private static String escapeLike(String string) {
+		return string.replaceAll(WILD_CARD, ESCAPED_WILD_CARD).replaceAll(WILD_CHAR, ESCAPED_WILD_CHAR);
 	}
 }

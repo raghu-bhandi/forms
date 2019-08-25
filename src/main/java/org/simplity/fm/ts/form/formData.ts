@@ -1,6 +1,7 @@
 import { Form, Field, ChildForm } from './form';
 import { DataStore } from './dataStore';
 import { FormGroup, FormBuilder, FormArray, FormControl, ValidationErrors } from '@angular/forms';
+import { WebDriverLogger } from 'blocking-proxy/built/lib/webdriver_logger';
 
 // tslint:disable: indent
 /**
@@ -11,6 +12,28 @@ export abstract class AbstractData {
 	static TAG_DATA = 'data';
 	static FORM_SERVICE = 'manageForm';
 	static LIST_SERVICE = 'listService';
+	/*
+	 * form I/O service prefixes
+	 */
+	static OP_FETCH = 'get';
+	static OP_NEW = 'create';
+	static OP_UPDATE = 'update';
+	static OP_DELETE = 'delete';
+	static OP_FILTER = 'filter';
+
+	/*
+	 * filter operators
+	 */
+	static FILTER_EQ = '=';
+	static FILTER_NE = '!=';
+	static FILTER_LE = '<=';
+	static FILTER_LT = '<';
+	static FILTER_GE = '>=';
+	static FILTER_GT = '>';
+	static FILTER_BETWEEN = '><';
+	static FILTER_STARTS_WITH = '^';
+	static FILTER_CONTAINS = '~';
+	static FILTER_IN_LIST = '@';
 
 	public constructor(public form: Form) {
 	}
@@ -118,9 +141,9 @@ export class FormData extends AbstractData {
 				this.lists[nam] = [];
 				if (field.valueListKey) {
 					//register on-change for the parent field
-					console.log('Field ' + nam + '  is based on ' + field.valueListKey +  '. Hence we just added a trigger');
+					console.log('Field ' + nam + '  is based on ' + field.valueListKey + '. Hence we just added a trigger');
 					const fc = this.formGroup.get(field.valueListKey) as FormControl;
-					fc.valueChanges.subscribe((value:string)  => this.getListValues(field, value));
+					fc.valueChanges.subscribe((value: string) => this.getListValues(field, value));
 				} else {
 					console.log('Field ' + nam + '  is not key-based and not design-time. We will make a call to the server.');
 					//fixed list, but we have to get it from server at run time
@@ -204,17 +227,131 @@ export class FormData extends AbstractData {
 		}
 		return d;
 	}
+
+	/**
+	 * get data from the server and populates this formData
+	 */
+	public fetchData() {
+		const operation = FormData.OP_FETCH;
+		if(!this.opAllowed(operation)){
+			return;
+		}
+
+		const data = this.extractKeyFields();
+		if(data == null){
+			console.error('Fetch request abandoned');
+			return;
+		}
+		DataStore.getResponse(this.getServiceName(operation), data, false, (payload, messages) => {
+			this.setAll(payload);
+		});
+		console.log('Fetch request sent to the server with data ', data);
+	}
+
+	private getServiceName(operation: string): string {
+		return operation + '-' + this.form.getName();
+	}
+
+	public saveAsNew() {
+		if (!this.opAllowed(FormData.OP_NEW)) {
+			return;
+		}
+
+		this.validateForm();
+		if (!this.isValid()) {
+			//we have to ensure that the field in error is brought to focus!!
+			alert("Form data has some errors. Please fix and then try again.");
+			return;
+		}
+		//TODO: what to do on success???
+		DataStore.getResponse(this.getServiceName(FormData.OP_NEW), this.extractAll(), true, (payload, msgs) =>{
+			alert("Crate New Operation Successful");
+		});
+	}
+
+	public save() {
+		if (!this.opAllowed(FormData.OP_UPDATE)) {
+			return;
+		}
+		/*
+		 * save requires key. just checking..
+		 */
+		if(!this.extractKeyFields){
+			return;
+		}
+
+		if(!this.validateForm()) {
+			//we have to ensure that the field in error is brought to focus!!
+			alert("Form data has some errors. Please fix and then try again.");
+			return;
+		}
+		const data = this.extractAll();
+		DataStore.getResponse(this.getServiceName(FormData.OP_UPDATE), data, true, (paylaod, msgs) =>{
+			alert('Updated');
+		});
+	}
+
+	private opAllowed(operation: string):boolean{
+		if (this.form.opsAllowed[operation]) {
+			return true;
+		}
+		console.error('Form ', this.form.getName(), ' is not designed for ', operation, ' operation');
+		return false;
+	}
+	
+	public delete() {
+		const operation = FormData.OP_DELETE;
+		if(!this.opAllowed(operation)){
+			return;
+		}
+
+		const data = this.extractKeyFields();
+		if(data == null){
+			return;
+		}
+		DataStore.getResponse(this.getServiceName(operation), data, false, (data, messages) => {
+			alert('Delete succeeded');
+		});
+		console.log('Delete request sent to server with data ', data);
+	}
+
+	private extractKeyFields(): {[key:string]:any}{
+		const data = {};
+		for (const key of this.form.keyFields) {
+			const val = this.getFieldValue(key);
+			if (!val) {
+				console.error('Key field ', key, ' has no value. operation abandoned.');
+				return;
+			}
+			data[key] = val;
+		}
+		return data;
+	}
+	/**
+	 * 
+	 * @param conditions example {field1 : ['><', 13, 57], field2: ['@', '3,56,78'], f3:['=', '2018-12-21']..}
+	 * possible conditions are listed in FormData.FILTER_XXX.
+	 */
+	public filter(conditions: {[key:string]: []}): void{
+		const operation = FormData.OP_FILTER;
+		if(!this.opAllowed(operation)){
+			return;
+		}
+		DataStore.getResponse(this.getServiceName(operation), conditions, true, (data, messages) => {
+			alert('Filter returned, but we still do not know what to do wit the returned data');
+		});
+
+		console.log('Filter request sent to the server with condition = ', conditions);
+	}
 	/**
 	 * get/save/validate/submit this form
 	 */
-	public manageForm(operation: string) {
+	public manageForm(operation: string): void {
 		let msg = 'requesting operation "' + operation;
 		if (operation === 'validate' || operation === 'submit') {
-			this.formGroup.updateValueAndValidity();
-			this.validateForm();
-			if (!this.formGroup.valid) {
+			if (!this.validateForm()) {
 				console.error('Form has errors. "' + operation + '" operation aborted.');
-				alert("Form data has some errors. Please fix and then and try again.");
+				alert("Form data has some errors. Please fix and then try again.");
 				return;
 			}
 			msg += '" after successful validation';
@@ -250,6 +387,10 @@ export class FormData extends AbstractData {
 	}
 
 	public validateForm(): boolean {
+		this.formGroup.updateValueAndValidity();
+		if (!this.formGroup.valid) {
+			return false;
+		}
 		const vals = this.form.validations;
 		if (!vals) {
 			return true;
@@ -266,7 +407,7 @@ export class FormData extends AbstractData {
 			} else if (t === 'incl') {
 				ok = this.validateInclPair(c1.value, c2.value, v.value);
 			} else if (t === 'excl') {
-				ok = this.validateExclPair(c1.value, c2.value, v.stLeastOne);
+				ok = this.validateExclPair(c1.value, c2.value, v.atLeastOne);
 			} else {
 				console.error('Form validation type ' + t + ' is not valid. validation ignored');
 				ok = true;

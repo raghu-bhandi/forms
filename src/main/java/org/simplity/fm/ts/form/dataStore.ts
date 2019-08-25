@@ -17,9 +17,6 @@ export class DataStore {
 	static TAG_DATA = 'data';
 	static LIST_SERVICE: 'listService';
 
-	constructor(private formData: FormData) {
-		this.formData = formData;
-	}
 
 	static showMessages(msgs: Array<any>) {
 		if (!msgs) {

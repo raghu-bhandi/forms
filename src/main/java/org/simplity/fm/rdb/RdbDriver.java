@@ -116,8 +116,8 @@ public class RdbDriver {
 		}
 	}
 
-	protected static boolean doReadForm(Connection con, String sql, FormDbParam[] whereParams, FormDbParam[] selectParams,
-			Object[] formData) throws SQLException {
+	protected static boolean doReadForm(Connection con, String sql, FormDbParam[] whereParams,
+			FormDbParam[] selectParams, Object[] formData) throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
 			for (FormDbParam p : whereParams) {
@@ -139,22 +139,23 @@ public class RdbDriver {
 		}
 	}
 
-	protected static Object[][] doReadRows(Connection con, String sql, ValueType[] whereTypes, Object[] whereData,
-			ValueType[] resultTypes) throws SQLException {
+	protected static Object[][] doReadRows(Connection con, String sql, ValueType[] paramTypes, Object[] paramValues,
+			ValueType[] outputTypes) throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
-			for (ValueType vt : whereTypes) {
-				Object val = whereData[posn];
+			for (ValueType vt : paramTypes) {
+				Object val = paramValues[posn];
 				posn++;
 				vt.setPsParam(ps, posn, val);
 			}
+
 			List<Object[]> result = new ArrayList<>();
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					Object[] row = new Object[resultTypes.length];
+					Object[] row = new Object[outputTypes.length];
 					result.add(row);
-					for (int i = 0; i < resultTypes.length; i++) {
-						row[i] = resultTypes[i].getFromRs(rs, i + 1);
+					for (int i = 0; i < outputTypes.length; i++) {
+						row[i] = outputTypes[i].getFromRs(rs, i + 1);
 					}
 				}
 				if (result.size() == 0) {
@@ -165,19 +166,33 @@ public class RdbDriver {
 		}
 	}
 
-	protected static Object[][] doReadChildRows(Connection con, String sql, FormDbParam[] whereParams,
-			FormDbParam[] selectParams, Object[] formData, int nbrChildFields) throws SQLException {
+	/**
+	 * This is a specialized one for form-based i/o where output row may have
+	 * more fields than the fields in the result set, and the order may not be
+	 * the same.
+	 * 
+	 * @param con
+	 * @param sql
+	 * @param whereParams
+	 * @param whereValues
+	 * @param selectParams
+	 * @param nbrFields
+	 * @return
+	 * @throws SQLException
+	 */
+	protected static Object[][] doReadFormRows(Connection con, String sql, FormDbParam[] whereParams,
+			Object[] whereValues, FormDbParam[] selectParams, int nbrFields) throws SQLException {
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
 			for (FormDbParam p : whereParams) {
 				posn++;
-				p.valueType.setPsParam(ps, posn, formData[p.idx]);
+				p.valueType.setPsParam(ps, posn, whereValues[p.idx]);
 			}
 
 			List<Object[]> result = new ArrayList<>();
 			try (ResultSet rs = ps.executeQuery()) {
 				while (rs.next()) {
-					Object[] row = new Object[nbrChildFields];
+					Object[] row = new Object[nbrFields];
 					result.add(row);
 					posn = 0;
 					for (FormDbParam p : selectParams) {
@@ -189,6 +204,45 @@ public class RdbDriver {
 					return null;
 				}
 				return result.toArray(new Object[0][]);
+			}
+		}
+	}
+
+	/**
+	 * This is a specialized one for form-based i/o where output row may have
+	 * more fields than the fields in the result set, and the order may not be
+	 * the same.
+	 * 
+	 * @param con
+	 * @param sql
+	 * @param whereParams
+	 * @param whereValues
+	 * @param selectParams
+	 * @param nbrFields
+	 * @return
+	 * @throws SQLException
+	 */
+	protected static Object[] doReadFormRow(Connection con, String sql, FormDbParam[] whereParams, Object[] whereValues,
+			FormDbParam[] selectParams, int nbrFields) throws SQLException {
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
+			int posn = 0;
+			for (FormDbParam p : whereParams) {
+				posn++;
+				p.valueType.setPsParam(ps, posn, whereValues[p.idx]);
+			}
+
+			try (ResultSet rs = ps.executeQuery()) {
+				if (!rs.next()) {
+					return null;
+				}
+
+				Object[] result = new Object[nbrFields];
+				posn = 0;
+				for (FormDbParam p : selectParams) {
+					posn++;
+					result[p.idx] = p.valueType.getFromRs(rs, posn);
+				}
+				return result;
 			}
 		}
 	}
@@ -446,7 +500,8 @@ public class RdbDriver {
 	}
 
 	/**
-	 * @param conFactory non-null factory to be used to get  db-connection
+	 * @param conFactory
+	 *            non-null factory to be used to get db-connection
 	 */
 	public static void setFactory(IConnectionFactory conFactory) {
 		factory = conFactory;

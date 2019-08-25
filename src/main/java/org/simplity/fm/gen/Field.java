@@ -170,7 +170,7 @@ class Field {
 		emitAttr(sbf, "isRequired", this.isRequired);
 		emitAttr(sbf, "minLength", dt.minLength);
 		emitAttr(sbf, "maxLength", dt.maxLength);
-		emitAttr(sbf, "reges", dt.regex);
+		emitAttr(sbf, "regex", dt.regex);
 		emitAttr(sbf, "minValue", dt.minValue);
 		emitAttr(sbf, "maxValue", dt.maxValue);
 		emitAttr(sbf, "nbrFractions", dt.nbrFractions);

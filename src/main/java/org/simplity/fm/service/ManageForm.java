@@ -33,7 +33,7 @@ import org.simplity.fm.form.FormData;
 import org.simplity.fm.form.FormOperation;
 import org.simplity.fm.form.HeaderData;
 import org.simplity.fm.form.Form;
-import org.simplity.fm.http.Http;
+import org.simplity.fm.Conventions;
 import org.simplity.fm.http.LoggedInUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,9 +74,9 @@ public class ManageForm implements IService {
 			return;
 		}
 
-		JsonNode node = payload.get(Http.TAG_HEADER);
+		JsonNode node = payload.get(Conventions.Http.TAG_HEADER);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
-			logger.error("Payload has to have a header object named {} ", Http.TAG_HEADER);
+			logger.error("Payload has to have a header object named {} ", Conventions.Http.TAG_HEADER);
 			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
 			return;
 		}
@@ -149,9 +149,9 @@ public class ManageForm implements IService {
 			return;
 		}
 
-		node = payload.get(Http.TAG_DATA);
+		node = payload.get(Conventions.Http.TAG_DATA);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
-			logger.error("Payload has to have a form data object named {}", Http.TAG_DATA);
+			logger.error("Payload has to have a form data object named {}", Conventions.Http.TAG_DATA);
 			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
 			return;
 		}

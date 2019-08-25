@@ -24,6 +24,7 @@ package org.simplity.fm.service;
 
 import java.io.Writer;
 
+import org.simplity.fm.Conventions;
 import org.simplity.fm.JsonUtil;
 import org.simplity.fm.Message;
 import org.simplity.fm.ValueLists;
@@ -83,7 +84,9 @@ public class ListService implements IService{
 		
 		@SuppressWarnings("resource")
 		Writer writer = ctx.getResponseWriter();
-		writer.write("{\"list\":");
+		writer.write("{\"");
+		writer.write(Conventions.Http.TAG_LIST);
+		writer.write("\":");
 		JsonUtil.write(writer, result);
 		writer.write("}");
 	}

@@ -4,7 +4,7 @@ import org.simplity.fm.validn.RuntimeList;
 
 /**
  * run-time utility to get list of valid values and validate a field runtimeList1
- * <br /> generated at 2019-08-17T13:14:20.537
+ * <br /> generated at 2019-08-21T22:41:13.053
  */ 
 public class RuntimeList1 extends RuntimeList {
 	 private static final String NAME = "runtimeList1";

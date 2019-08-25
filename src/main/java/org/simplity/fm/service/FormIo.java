@@ -22,14 +22,17 @@
 
 package org.simplity.fm.service;
 
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.simplity.fm.Conventions;
 import org.simplity.fm.Forms;
 import org.simplity.fm.Message;
 import org.simplity.fm.form.DbMetaData;
 import org.simplity.fm.form.DbOperation;
+import org.simplity.fm.form.SqlReader;
 import org.simplity.fm.form.Form;
 import org.simplity.fm.form.FormData;
 import org.simplity.fm.rdb.DbHandle;
@@ -80,8 +83,7 @@ public abstract class FormIo implements IService {
 			return new FormDeleter(form);
 
 		case FILTER:
-			logger.error("Filter operation not yet ready.");
-			return null;
+			return new FormFilter(form);
 
 		case GET:
 			return new FormReader(form);
@@ -118,6 +120,52 @@ public abstract class FormIo implements IService {
 				fd.serializeAsJson(ctx.getResponseWriter());
 			}
 			return;
+		}
+	}
+
+	protected static class FormFilter extends FormIo {
+		private final Form form;
+
+		protected FormFilter(Form form) {
+			this.form = form;
+		}
+
+		@Override
+		public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
+			List<Message> msgs = new ArrayList<>();
+			SqlReader reader = this.form.parseForFilter(payload, msgs);
+
+			if (msgs.size() > 0) {
+				ctx.AddMessages(msgs);
+				return;
+			}
+
+			if (reader == null) {
+				logger.error("DESIGN ERROR: form.parseForFilter() returned null, but failed to put ay error message. ");
+				ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
+				return;
+			}
+			FormData[] data = reader.filter();
+			if (data == null) {
+				logger.info("No data found for the form {}", this.form.getFormId());
+				data = new FormData[0];
+			}
+
+			@SuppressWarnings("resource") // because we are not to close it
+			Writer writer = ctx.getResponseWriter();
+			writer.write("{\"");
+			writer.write(Conventions.Http.TAG_LIST);
+			writer.write("\":[");
+			boolean firstOne = true;
+			for (FormData fd : data) {
+				if (firstOne) {
+					firstOne = false;
+				} else {
+					writer.write(',');
+				}
+				fd.serializeAsJson(writer);
+			}
+			writer.write("]}");
 		}
 	}
 
