@@ -104,6 +104,19 @@ public class Conventions {
 		 * sent/returned
 		 */
 		public static final String TAG_LIST = "list";
+		/**
+		 * number of rows of data (expected or delivered)
+		 */
+		public static final String TAG_NBR_ROWS = "nbrRows";
+		/**
+		 * filter conditions
+		 */
+		public static final String TAG_CONDITIONS = "conditions";
+		/**
+		 * default MAX nbr rows
+		 */
+		public static final int DEFAULT_NBR_ROWS = 200;
+		
 	}
 
 	/**

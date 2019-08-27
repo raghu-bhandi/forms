@@ -203,6 +203,7 @@ public class Form {
 			 */
 			sbf.setLength(sbf.length() - 2);
 			cm.whereClause = sbf.toString();
+			cm.nbrChildFields = form.fields.length;
 		}
 
 		if (!foundOne) {
@@ -344,21 +345,22 @@ public class Form {
 	/**
 	 * parse the input into a filter clause
 	 * 
-	 * @param json
+	 * @param conditions
 	 * @param errors
 	 * @return filter clause that can be used to get rows from the db
 	 */
-	public SqlReader parseForFilter(ObjectNode json, List<Message> errors) {
+	public SqlReader parseForFilter(ObjectNode conditions, List<Message> errors) {
 		StringBuilder sql = new StringBuilder(this.dbMetaData.selectClause);
 		sql.append(" WHERE ");
 		List<FormDbParam> params = new ArrayList<>();
 		List<Object> values = new ArrayList<>();
 		
+		
 		/*
 		 * fairly long inside the loop for each filed. But it is more
 		 * serial code. Hence left it that way
 		 */
-		for (Iterator<Map.Entry<String, JsonNode>> it = json.fields(); it.hasNext();) {
+		for (Iterator<Map.Entry<String, JsonNode>> it = conditions.fields(); it.hasNext();) {
 			Map.Entry<String, JsonNode> entry = it.next();
 			String fieldName = entry.getKey();
 			Field field = this.getField(fieldName);
@@ -477,7 +479,6 @@ public class Form {
 			params.add(new FormDbParam(idx++, vt));
 			values.add(value);
 		}
-		//this.dbMetaData.selectParams
 		return new SqlReader(this, sql.toString(), params.toArray(new FormDbParam[0]), values.toArray(new Object[0]));
 	}
 

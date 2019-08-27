@@ -35,7 +35,7 @@ export class DataStore {
 	 * @param successFn function is called with an object of data that is received from the server.
 	 * @param failureFn null if default error handling is expected
 	 */
-	public static getResponse(serviceName: string, data: any, asPayload: boolean,
+	public static getResponse(serviceName: string, headers: {[key:string]: string}, data: any, asPayload: boolean,
 		successFn?: (data: any, messages: Array<any>) => void,
 		failureFn?: (messages: any[]) => void) {
 
@@ -98,6 +98,13 @@ export class DataStore {
 			xhr.open('POST', url, true);
 			xhr.setRequestHeader(DataStore.SERVICE_HEADER, serviceName);
 			xhr.setRequestHeader('_t', DataStore.AUTH);
+			if(headers){
+				for (const a in headers) {
+					if (headers.hasOwnProperty(a)) {
+						xhr.setRequestHeader(a, headers[a]);
+					}
+				}
+			}
 			if (asPayload) {
 				xhr.setRequestHeader('Content-Type', 'application/jsonp; charset=utf-8');
 				xhr.send(JSON.stringify(data));

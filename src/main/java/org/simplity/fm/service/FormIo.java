@@ -41,6 +41,8 @@ import org.simplity.fm.rdb.RdbDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 /**
@@ -133,7 +135,22 @@ public abstract class FormIo implements IService {
 		@Override
 		public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
 			List<Message> msgs = new ArrayList<>();
-			SqlReader reader = this.form.parseForFilter(payload, msgs);
+			ObjectNode conditions = null;
+			JsonNode node = payload.get(Conventions.Http.TAG_CONDITIONS);
+			if (node != null && node.getNodeType() == JsonNodeType.OBJECT) {
+				conditions = (ObjectNode) node;
+			} else {
+				ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
+				return;
+			}
+
+			int nbrRows = Conventions.Http.DEFAULT_NBR_ROWS;
+			node = payload.get(Conventions.Http.TAG_NBR_ROWS);
+			if (node != null && node.getNodeType() == JsonNodeType.NUMBER) {
+				nbrRows = node.asInt(nbrRows);
+			}
+
+			SqlReader reader = this.form.parseForFilter(conditions, msgs);
 
 			if (msgs.size() > 0) {
 				ctx.AddMessages(msgs);
@@ -145,27 +162,33 @@ public abstract class FormIo implements IService {
 				ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
 				return;
 			}
-			FormData[] data = reader.filter();
-			if (data == null) {
-				logger.info("No data found for the form {}", this.form.getFormId());
-				data = new FormData[0];
-			}
 
-			@SuppressWarnings("resource") // because we are not to close it
+			@SuppressWarnings("resource")
 			Writer writer = ctx.getResponseWriter();
-			writer.write("{\"");
-			writer.write(Conventions.Http.TAG_LIST);
-			writer.write("\":[");
-			boolean firstOne = true;
-			for (FormData fd : data) {
-				if (firstOne) {
-					firstOne = false;
-				} else {
-					writer.write(',');
+			if (nbrRows == 1) {
+				FormData data = reader.read();
+				data.serializeAsJson(writer);
+			} else {
+				FormData[] rows = reader.filter();
+				if (rows == null) {
+					logger.info("No data found for the form {}", this.form.getFormId());
+					rows = new FormData[0];
 				}
-				fd.serializeAsJson(writer);
+
+				writer.write("{\"");
+				writer.write(Conventions.Http.TAG_LIST);
+				writer.write("\":[");
+				boolean firstOne = true;
+				for (FormData fd : rows) {
+					if (firstOne) {
+						firstOne = false;
+					} else {
+						writer.write(',');
+					}
+					fd.serializeAsJson(writer);
+				}
+				writer.write("]}");
 			}
-			writer.write("]}");
 		}
 	}
 

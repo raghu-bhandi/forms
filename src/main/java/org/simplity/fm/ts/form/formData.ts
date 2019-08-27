@@ -119,7 +119,7 @@ export class FormData extends AbstractData {
 		} else {
 			data = { list: field.listName };
 		}
-		DataStore.getResponse(FormData.LIST_SERVICE, data, false, (list, msg) => {
+		DataStore.getResponse(FormData.LIST_SERVICE, null, data, false, (list, msg) => {
 			const arr = list['list'] as Array<[any, string]>;
 			console.log('list values received for field ' + field.name + ' with ' + (arr && arr.length) + ' values');
 			this.lists[field.name] = arr;
@@ -233,16 +233,16 @@ export class FormData extends AbstractData {
 	 */
 	public fetchData() {
 		const operation = FormData.OP_FETCH;
-		if(!this.opAllowed(operation)){
+		if (!this.opAllowed(operation)) {
 			return;
 		}
 
 		const data = this.extractKeyFields();
-		if(data == null){
+		if (data == null) {
 			console.error('Fetch request abandoned');
 			return;
 		}
-		DataStore.getResponse(this.getServiceName(operation), data, false, (payload, messages) => {
+		DataStore.getResponse(this.getServiceName(operation), null, data, false, (payload, messages) => {
 			this.setAll(payload);
 		});
 		console.log('Fetch request sent to the server with data ', data);
@@ -264,7 +264,7 @@ export class FormData extends AbstractData {
 			return;
 		}
 		//TODO: what to do on success???
-		DataStore.getResponse(this.getServiceName(FormData.OP_NEW), this.extractAll(), true, (payload, msgs) =>{
+		DataStore.getResponse(this.getServiceName(FormData.OP_NEW), null, this.extractAll(), true, (payload, msgs) => {
 			alert("Crate New Operation Successful");
 		});
 	}
@@ -276,46 +276,46 @@ export class FormData extends AbstractData {
 		/*
 		 * save requires key. just checking..
 		 */
-		if(!this.extractKeyFields){
+		if (!this.extractKeyFields) {
 			return;
 		}
 
-		if(!this.validateForm()) {
+		if (!this.validateForm()) {
 			//we have to ensure that the field in error is brought to focus!!
 			alert("Form data has some errors. Please fix and then try again.");
 			return;
 		}
 		const data = this.extractAll();
-		DataStore.getResponse(this.getServiceName(FormData.OP_UPDATE), data, true, (paylaod, msgs) =>{
+		DataStore.getResponse(this.getServiceName(FormData.OP_UPDATE), null, data, true, (paylaod, msgs) => {
 			alert('Updated');
 		});
 	}
 
-	private opAllowed(operation: string):boolean{
+	private opAllowed(operation: string): boolean {
 		if (this.form.opsAllowed[operation]) {
 			return true;
 		}
 		console.error('Form ', this.form.getName(), ' is not designed for ', operation, ' operation');
 		return false;
 	}
-	
+
 	public delete() {
 		const operation = FormData.OP_DELETE;
-		if(!this.opAllowed(operation)){
+		if (!this.opAllowed(operation)) {
 			return;
 		}
 
 		const data = this.extractKeyFields();
-		if(data == null){
+		if (data == null) {
 			return;
 		}
-		DataStore.getResponse(this.getServiceName(operation), data, false, (data, messages) => {
+		DataStore.getResponse(this.getServiceName(operation), null, data, false, (data, messages) => {
 			alert('Delete succeeded');
 		});
 		console.log('Delete request sent to server with data ', data);
 	}
 
-	private extractKeyFields(): {[key:string]:any}{
+	private extractKeyFields(): { [key: string]: any } {
 		const data = {};
 		for (const key of this.form.keyFields) {
 			const val = this.getFieldValue(key);
@@ -331,14 +331,21 @@ export class FormData extends AbstractData {
 	 * 
 	 * @param conditions example {field1 : ['><', 13, 57], field2: ['@', '3,56,78'], f3:['=', '2018-12-21']..}
 	 * possible conditions are listed in FormData.FILTER_XXX.
+	 * @param maxRows =1 if you want the response to have one object in the response payload. > 1 if the
+	 * pyalod shoudl combe back aith 0 or more objects in an array
 	 */
-	public filter(conditions: {[key:string]: []}): void{
+	public filter(conditions: { [key: string]: [] }, maxRows: number): void {
 		const operation = FormData.OP_FILTER;
-		if(!this.opAllowed(operation)){
+		if (!this.opAllowed(operation)) {
 			return;
 		}
-		DataStore.getResponse(this.getServiceName(operation), conditions, true, (data, messages) => {
-			alert('Filter returned, but we still do not know what to do wit the returned data');
+		const payload = {nbrRows: maxRows, conditions: conditions};
+		DataStore.getResponse(this.getServiceName(operation), null, conditions, true, (data, messages) => {
+			if(maxRows == 1){
+				this.setAll(data);
+			}else{
+				alert('Filter returned, with' + (data as Array<any>).length + ' rows.');
+			}
 		});
 
 		console.log('Filter request sent to the server with condition = ', conditions);
@@ -364,7 +371,7 @@ export class FormData extends AbstractData {
 		if (operation !== 'get') {
 			data[FormData.TAG_DATA] = this.extractAll();
 		}
-		DataStore.getResponse(FormData.FORM_SERVICE, data, true,
+		DataStore.getResponse(FormData.FORM_SERVICE, null, data, true,
 			(data, msgs) => {
 				if (operation === 'get') {
 					this.setAll(data);

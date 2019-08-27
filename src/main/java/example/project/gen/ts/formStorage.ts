@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-21T22:41:14.006
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-26T01:38:24.094
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -13,7 +13,7 @@ export class FormStorage extends Form {
 		isRequired:true, 
 		minLength:10, 
 		maxLength:10, 
-		reges:'[A-Z]{3}-[\\d]{2}-[A-Z]{3}'
+		regex:'[A-Z]{3}-[\\d]{2}-[A-Z]{3}'
 	});
 	formName = new Field('formName', 1, 0, {
 		label:'Form Name', 
@@ -83,6 +83,7 @@ export class FormStorage extends Form {
 			formData: ['',[Validators.minLength(1), Validators.maxLength(10000)]], 
 			operation: ['',[Validators.required, Validators.minLength(2), Validators.maxLength(100)]]
 		};
+		this.keyFields = ['customerId', 'formName', 'referenceYear'];
 	}
 
 	public getName(): string {
