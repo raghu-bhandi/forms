@@ -23,7 +23,6 @@
 package org.simplity.fm.service;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.simplity.fm.Config;
@@ -70,24 +69,19 @@ public class ManageForm implements IService {
 		HeaderData headerData = Config.getConfig().newHeaderData();
 		if (headerData == null) {
 			logger.error("Header Form is not configured. FormService can not operate.");
-			ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
+			ctx.addMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
 			return;
 		}
 
 		JsonNode node = payload.get(Conventions.Http.TAG_HEADER);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
 			logger.error("Payload has to have a header object named {} ", Conventions.Http.TAG_HEADER);
-			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
+			ctx.addMessage(Message.newError(Message.MSG_INVALID_DATA));
 			return;
 		}
 
-		List<Message> msgs = new ArrayList<>();
-
-		headerData.validateAndLoad((ObjectNode) node, false, true, msgs);
-		if (msgs.size() > 0) {
-			for (Message msg : msgs) {
-				ctx.AddMessage(msg);
-			}
+		headerData.validateAndLoad((ObjectNode) node, false, true, ctx);
+		if (ctx.allOk() == false) {
 			logger.error("Header data is invalid");
 			return;
 		}
@@ -95,7 +89,7 @@ public class ManageForm implements IService {
 		if (headerData.isOwner(ctx.getUser()) == false) {
 			logger.error("Logged in user {} is not authorized to manage this form with {} as userId ",
 					ctx.getUser().getUserId(), headerData.getUserId());
-			ctx.AddMessage(Message.newError(Message.MSG_NOT_AUTHORIZED));
+			ctx.addMessage(Message.newError(Message.MSG_NOT_AUTHORIZED));
 			return;
 		}
 
@@ -103,14 +97,14 @@ public class ManageForm implements IService {
 		Form form = Forms.getForm(formName);
 		if (form == null) {
 			logger.error("Unable to get form {} ", formName);
-			ctx.AddMessage(Message.newError("invalidFormName"));
+			ctx.addMessage(Message.newError("invalidFormName"));
 			return;
 		}
 
 		FormOperation op = headerData.getFormOperation();
 		if (op == null) {
 			logger.error("Header has an invalid operation. it should be get, save or submit");
-			ctx.AddMessage(Message.newError("invalidOperation"));
+			ctx.addMessage(Message.newError("invalidOperation"));
 			return;
 		}
 
@@ -152,16 +146,12 @@ public class ManageForm implements IService {
 		node = payload.get(Conventions.Http.TAG_DATA);
 		if (node == null || node.getNodeType() != JsonNodeType.OBJECT) {
 			logger.error("Payload has to have a form data object named {}", Conventions.Http.TAG_DATA);
-			ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
+			ctx.addMessage(Message.newError(Message.MSG_INVALID_DATA));
 			return;
 		}
 
-		fd.validateAndLoad((ObjectNode) node, op == FormOperation.SAVE, true, msgs);
-		if (msgs.size() > 0) {
-			for (Message msg : msgs) {
-				logger.error("{}", msg);
-				ctx.AddMessage(msg);
-			}
+		fd.validateAndLoad((ObjectNode) node, op == FormOperation.SAVE, true, ctx);
+		if (ctx.allOk() == false) {
 			return;
 		}
 

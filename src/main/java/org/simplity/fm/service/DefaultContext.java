@@ -46,6 +46,7 @@ public class DefaultContext implements IserviceContext {
 	protected boolean inError;
 	protected Writer responseWriter;
 	protected LoggedInUser loggedInUser;
+	protected Object tenantId;
 
 
 	/**
@@ -58,6 +59,14 @@ public class DefaultContext implements IserviceContext {
 		this.inputFields = inputFields;
 		this.responseWriter = responseWriter;
 		this.loggedInUser = loggedInUser;
+	}
+	
+	/**
+	 * MUST be executed before this context is used in case this APP is designed for multi-tenant deployment
+	 * @param tenantId the tenantId to set
+	 */
+	public void setTenantId(Object tenantId) {
+		this.tenantId = tenantId;
 	}
 	@Override
 	public Map<String, String> getInputFields() {
@@ -88,7 +97,7 @@ public class DefaultContext implements IserviceContext {
 	}
 
 	@Override
-	public void AddMessage(Message message) {
+	public void addMessage(Message message) {
 		if(message == null) {
 			return;
 		}
@@ -102,10 +111,17 @@ public class DefaultContext implements IserviceContext {
 	public Message[] getMessages() {
 		return this.messages.toArray(new Message[0]);
 	}
+	
 	@Override
-	public void AddMessages(Collection<Message> msgs) {
+	public void addMessages(Collection<Message> msgs) {
 		for(Message msg : msgs) {
-			this.AddMessage(msg);
+			this.addMessage(msg);
 		}
+	}
+	
+	
+	@Override
+	public Object getTenantId() {
+		return this.tenantId;
 	}
 }

@@ -90,7 +90,7 @@ public class Config {
 		config.customCodePackage = getProperty(p, NAME4, VAL4, false);
 		String hdr = getProperty(p, NAME5, VAL5, false);
 		try {
-			config.headerForm = (HeaderForm) Class.forName(config.customCodePackage + '.' + hdr).newInstance();
+			//config.headerForm = (HeaderForm) Class.forName(config.customCodePackage + '.' + hdr).newInstance();
 		} catch (Exception e) {
 			logger.error("Unable to set formHeader using class name {} and package {}. Form service will not work. {}",
 					config.customCodePackage, hdr, e.getMessage());

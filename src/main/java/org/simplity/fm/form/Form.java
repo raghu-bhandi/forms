@@ -32,6 +32,7 @@ import org.simplity.fm.Message;
 import org.simplity.fm.datatypes.ValueType;
 import org.simplity.fm.rdb.FilterCondition;
 import org.simplity.fm.service.IFormProcessor;
+import org.simplity.fm.service.IserviceContext;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -347,14 +348,24 @@ public class Form {
 	 * 
 	 * @param conditions
 	 * @param errors
+	 * @param ctx 
 	 * @return filter clause that can be used to get rows from the db
 	 */
-	public SqlReader parseForFilter(ObjectNode conditions, List<Message> errors) {
+	public SqlReader parseForFilter(ObjectNode conditions, List<Message> errors, IserviceContext ctx) {
 		StringBuilder sql = new StringBuilder(this.dbMetaData.selectClause);
 		sql.append(" WHERE ");
 		List<FormDbParam> params = new ArrayList<>();
 		List<Object> values = new ArrayList<>();
 		
+		/*
+		 * force a condition on tenant id id required
+		 */
+		Field tenant = this.dbMetaData.tenantField;
+		if(tenant != null) {
+			sql.append(tenant.getDbColumnName()).append("=?");
+			values.add(ctx.getTenantId());
+			params.add(new FormDbParam(0, tenant.getValueType()));
+		}
 		
 		/*
 		 * fairly long inside the loop for each filed. But it is more

@@ -100,6 +100,10 @@ public class Field {
 	private String dbColumnName;
 
 	/**
+	 * what type of column, like key? time-stamp etc..
+	 */
+	private ColumnType columnType;
+	/**
 	 * this is generally invoked by the generated code for a Data Structure
 	 * 
 	 * @param fieldName
@@ -122,12 +126,6 @@ public class Field {
 	 *            the field is either a reference field or a derived field
 	 * @param messageId
 	 *            can be null in which case the id from dataType is used
-	 * @param isDerivedField
-	 *            true if this field value is derived/calculated based on other
-	 *            fields. Like sum of other fields, or calculated based on some
-	 *            rule
-	 * @param isKeyField
-	 *            is this a key (document id) field?
 	 * @param valueListName
 	 *            if this field has a list of valid values that are typically
 	 *            rendered in a drop-down. If the value list depends on value of
@@ -135,10 +133,11 @@ public class Field {
 	 *            not part of this field.
 	 * @param dbColumnName
 	 *            column name in the data base, if this is linked to one
+	 * @param columnType 
 	 */
 	public Field(String fieldName, int index, DataType dataType, String defaultValue, String messageId,
-			boolean isRequired, boolean isEditable, boolean isDerivedField, boolean isKeyField, String valueListName,
-			String dbColumnName) {
+			boolean isRequired, boolean isEditable, String valueListName,
+			String dbColumnName, ColumnType columnType) {
 		this.fieldName = fieldName;
 		this.index = index;
 		this.isRequired = isRequired;
@@ -149,9 +148,7 @@ public class Field {
 		} else {
 			this.defaultValue = dataType.parse(defaultValue);
 		}
-		this.isDerivedField = isDerivedField;
 		this.dataType = dataType;
-		this.isKeyField = isKeyField;
 		if (valueListName == null) {
 			this.valueListName = null;
 			this.valueList = null;
@@ -160,7 +157,7 @@ public class Field {
 			this.valueList = ValueLists.getList(valueListName);
 		}
 		this.dbColumnName = dbColumnName;
-
+		this.columnType = columnType;
 	}
 
 	/**
@@ -168,16 +165,16 @@ public class Field {
 	 * 
 	 * @param fieldName
 	 * @param index
-	 * @param isKeyField
 	 * @param dataType
 	 * @param dbColumnName
+	 * @param columnType 
 	 */
-	public Field(String fieldName, int index, boolean isKeyField, DataType dataType, String dbColumnName) {
+	public Field(String fieldName, int index, DataType dataType, String dbColumnName, ColumnType columnType) {
 		this.fieldName = fieldName;
 		this.index = index;
-		this.isKeyField = isKeyField;
 		this.dataType = dataType;
 		this.dbColumnName = dbColumnName;
+		this.columnType = columnType;
 	}
 
 	/**
@@ -232,6 +229,13 @@ public class Field {
 		return this.dbColumnName;
 	}
 
+	/**
+	 * 
+	 * @return the column-type, null if this is not a db-column
+	 */
+	public ColumnType getColumnType() {
+		return this.columnType;
+	}
 	/**
 	 * parse into the desired type, validate and return the value. caller should
 	 * check for exception for validation failure and not returned value as

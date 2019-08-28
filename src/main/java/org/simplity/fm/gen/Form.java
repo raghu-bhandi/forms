@@ -34,6 +34,7 @@ import org.simplity.fm.validn.FromToValidation;
 import org.simplity.fm.validn.IValidation;
 import org.simplity.fm.Config;
 import org.simplity.fm.form.ChildDbMetaData;
+import org.simplity.fm.form.ColumnType;
 import org.simplity.fm.form.DbMetaData;
 import org.simplity.fm.form.DbOperation;
 import org.simplity.fm.validn.DependentListValidation;
@@ -72,25 +73,129 @@ class Form {
 	boolean hasCustomValidations;
 	boolean isForDbOnly;
 
+	Field tenantField;
+	Field timestampField;
+	boolean keyIsGenerated;
+	boolean useTimeStampForUpdate;
+
 	void buildFieldMap() {
 		this.fieldMap = new HashMap<>();
+
+		/*
+		 * we want to check for duplicate definition of standard fields
+		 */
+		Field modifiedAt = null;
+		Field modifiedBy = null;
+		Field createdBy = null;
+		Field createdAt = null;
+
 		if (this.fields != null) {
 			List<Field> list = new ArrayList<>();
 			List<Field> keyList = new ArrayList<>();
+
 			for (Field field : this.fields) {
 				this.fieldMap.put(field.name, field);
 				if (field.listName != null) {
 					list.add(field);
 				}
-				if(field.isKey) {
-					keyList.add(field);
+
+				ColumnType ct = field.columnType;
+				if (ct == null) {
+					continue;
+				}
+				field.isRequired = ct.isRequired();
+				if (ct == ColumnType.GeneratedPrimaryKey) {
+					if (this.keyIsGenerated) {
+						logger.error("ONly one generated key please. Found {} as well as {} as generated primary keys.",
+								field.name, keyList.get(0).name);
+					} else {
+						if (keyList.size() > 0) {
+							logger.error(
+									"Field {} is marked as a generated primary key. But {} is also marked as a primary key field.",
+									field.name, keyList.get(0).name);
+							keyList.clear();
+						}
+						keyList.add(field);
+						this.keyIsGenerated = true;
+					}
+					continue;
+				}
+
+				if (ct == ColumnType.PrimaryKey || ct == ColumnType.PrimaryAndParentKey) {
+					if (this.keyIsGenerated) {
+						logger.error(
+								"{} is defined as a generated primary key, but {} is also defined as a primary key.",
+								keyList.get(0).name, field.name);
+					} else {
+						keyList.add(field);
+					}
+					continue;
+				}
+
+				if (ct == ColumnType.ModifiedAt) {
+					if (modifiedAt == null) {
+						modifiedAt = field;
+						if (this.useTimeStampForUpdate) {
+							this.timestampField = field;
+						}
+					} else {
+						logger.error("{} and {} are both defined as lastModifiedAt!!", field.name,
+								this.timestampField.name);
+					}
+					continue;
+				}
+
+				if (ct == ColumnType.TenantKey) {
+					if (field.dataType.equals("tenantKey") == false) {
+						logger.error(
+								"Tenant key field MUST use dataTYpe of tenantKey. Field {} which is marked as tenant key is of data type {}",
+								field.name, field.dataType);
+					}
+					if (this.tenantField == null) {
+						this.tenantField = field;
+					} else {
+						logger.error("Both {} and {} are marked as tenantKey. Tenant key has to be unique.", field.name,
+								this.tenantField.name);
+					}
+				}
+
+				if (ct == ColumnType.ModifiedBy) {
+					if (modifiedBy == null) {
+						modifiedBy = field;
+					} else {
+						logger.error("Only one field to be used as modifiedBy but {} and {} are marked", field.name,
+								modifiedBy.name);
+					}
+				}
+				if (ct == ColumnType.CreatedAt) {
+					if (createdAt == null) {
+						createdAt = field;
+					} else {
+						logger.error("Only one field to be used as createdAt but {} and {} are marked", field.name,
+								createdAt.name);
+					}
+				}
+				if (ct == ColumnType.CreatedBy) {
+					if (createdBy == null) {
+						createdBy = field;
+					} else {
+						logger.error("Only one field to be used as createdBy but {} and {} are marked", field.name,
+								createdBy.name);
+					}
 				}
 			}
+
 			if (list.size() > 0) {
 				this.fieldsWithList = list.toArray(new Field[0]);
 			}
+
 			if (keyList.size() > 0) {
 				this.keyFields = keyList.toArray(new Field[0]);
+			}
+
+			if (this.useTimeStampForUpdate && this.timestampField == null) {
+				logger.error(
+						"Table is designed to use time-stamp for concurrancy, but no field with columnType=modifiedAt");
 			}
 		}
 	}
@@ -122,6 +227,7 @@ class Form {
 		Util.emitImport(sbf, org.simplity.fm.form.ChildForm.class);
 		Util.emitImport(sbf, DbMetaData.class);
 		Util.emitImport(sbf, ChildDbMetaData.class);
+		Util.emitImport(sbf, ColumnType.class);
 
 		/*
 		 * validation imports on need basis
@@ -209,43 +315,35 @@ class Form {
 
 	private void emitDbStuff(StringBuilder sbf) {
 		String tableName = (String) this.params.get("dbTableName");
-		Field[] keys = null;
 		if (tableName == null) {
 			logger.warn("dbTableName not set. no db related code generated for this form");
 			sbf.append("\n\n\tprivate void setDbMeta(){\n\t\t//\n\t}");
 			return;
 		}
 
-		List<Field> list = new ArrayList<>();
-		for (Field field : this.fields) {
-			if (field.isKey) {
-				list.add(field);
-			}
-		}
-
-		boolean keyIsGenerated = false;
-		Object obj = this.params.get("keyIsGenerated");
-		if (obj != null && obj instanceof Boolean) {
-			keyIsGenerated = (Boolean) obj;
-		}
-		int n = list.size();
-		if (n == 0) {
+		if (this.keyFields == null) {
 			logger.error(
-					"dbTable name is set but no field is marked as keyField. db operations require key field definition.");
-		} else {
-			if (n > 1 && keyIsGenerated) {
-				logger.error("keyIsGenerated is set to true, but there are {} key fields!!", n);
-			}
-
-			keys = list.toArray(new Field[0]);
+					"No keys defined for the db table. only filter operation is allowed. Other operations require primary key/s.");
 		}
 
 		this.emitSelect(sbf, tableName);
 		this.emitInsert(sbf, tableName);
 
-		if (keys != null) {
-			String whereIndexes = this.emitWhere(sbf, keys);
-			this.emitUpdate(sbf, whereIndexes, tableName, keys);
+		if (this.keyFields != null) {
+			/*
+			 * indexes is to be built like "1,2,3,4"
+			 */
+			StringBuilder indexes = new StringBuilder();
+			/*
+			 * clause is going to be like " WHERE k1=? AND k2=?...."
+			 */
+			StringBuilder clause = new StringBuilder();
+			this.makeWhere(clause, indexes, this.keyFields);
+
+			sbf.append(P).append("String WHERE = \"").append(clause.toString()).append("\";");
+			sbf.append(P).append("int[] WHERE_IDX = {").append(indexes.toString()).append("};");
+
+			this.emitUpdate(sbf, clause.toString(), indexes.toString(), tableName);
 			sbf.append(P).append("String DELETE = \"DELETE FROM ").append(tableName).append("\";");
 		}
 
@@ -257,14 +355,14 @@ class Form {
 		/*
 		 * set dbOperationOk[] to true for auto-service
 		 */
-		obj = this.params.get("allowDbOperations");
+		Object obj = this.params.get("allowDbOperations");
 		if (obj != null) {
 			for (String op : obj.toString().split(",")) {
 				try {
 					DbOperation opn = DbOperation.valueOf(op.trim().toUpperCase());
 					sbf.append(t).append("dbOperationOk[").append(opn.ordinal()).append("] = true;");
 				} catch (Exception e) {
-					logger.error("{} is not a valid dbOperation. directive in allowDbOperations ignored");
+					logger.error("{} is not a valid dbOperation. directive in allowDbOperations ignored", op);
 				}
 			}
 		}
@@ -274,13 +372,13 @@ class Form {
 		sbf.append(t).append("insertClause = INSERT;");
 		sbf.append(t).append("insertParams = this.getParams(INSERT_IDX);");
 
-		if (keys != null) {
+		if (this.keyFields != null) {
 			sbf.append(t).append("whereClause = WHERE;");
 			sbf.append(t).append("whereParams = this.getParams(WHERE_IDX);");
 			sbf.append(t).append("updateClause = UPDATE;");
 			sbf.append(t).append("updateParams = this.getParams(UPDATE_IDX);");
 			sbf.append(t).append("deleteClause = DELETE;");
-			if (keyIsGenerated) {
+			if (this.keyIsGenerated) {
 				sbf.append(t).append("keyIsGenerated = true;");
 			}
 		}
@@ -617,14 +715,14 @@ class Form {
 			for (String op : obj.toString().split(",")) {
 				try {
 					DbOperation.valueOf(op.trim().toUpperCase());
-					if(first) {
+					if (first) {
 						first = false;
-					}else {
+					} else {
 						sbf.append(C);
 					}
 					sbf.append(op.trim().toLowerCase()).append(": true");
 				} catch (Exception e) {
-					logger.error("{} is not a valid dbOperation. directive in allowDbOperations ignored");
+					logger.error("{} is not a valid dbOperation. directive in allowDbOperations ignored", op);
 				}
 			}
 			sbf.append("};");
@@ -641,34 +739,26 @@ class Form {
 		sbf.append("\n}\n");
 	}
 
-	private boolean isKey(String nam, Field[] keys) {
-		for (Field field : keys) {
-			if (nam.equals(field.name)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	private String emitWhere(StringBuilder sbf, Field[] keys) {
-		StringBuilder idxSbf = new StringBuilder();
-		sbf.append(P).append("String WHERE = \" WHERE ");
+	private void makeWhere(StringBuilder clause, StringBuilder indexes, Field[] keys) {
+		clause.append(" WHERE ");
 		boolean firstOne = true;
 		for (Field field : keys) {
 			if (firstOne) {
 				firstOne = false;
 			} else {
-				sbf.append(" AND ");
-				idxSbf.append(C);
+				clause.append(" AND ");
+				indexes.append(C);
 			}
-			sbf.append(field.dbColumnName).append("=?");
-			idxSbf.append(field.index);
+			clause.append(field.dbColumnName).append("=?");
+			indexes.append(field.index);
 		}
-		sbf.append("\";");
-		String idxStr = idxSbf.toString();
-		sbf.append(P).append("int[] WHERE_IDX = {").append(idxStr).append("};");
-
-		return idxStr;
+		/*
+		 * as a matter of safety, tenant key is always part of queries
+		 */
+		if (this.tenantField != null) {
+			clause.append(" AND ").append(this.tenantField.dbColumnName).append("=?");
+			indexes.append(C).append(this.tenantField.index);
+		}
 	}
 
 	private void emitSelect(StringBuilder sbf, String tableName) {
@@ -677,7 +767,8 @@ class Form {
 
 		boolean firstOne = true;
 		for (Field field : this.fields) {
-			if (field.dbColumnName == null) {
+			ColumnType ct = field.columnType;
+			if (ct == null || ct.isSelected() == false) {
 				continue;
 			}
 			if (firstOne) {
@@ -698,12 +789,14 @@ class Form {
 
 	private void emitInsert(StringBuilder sbf, String tableName) {
 		sbf.append(P).append(" String INSERT = \"INSERT INTO ").append(tableName).append('(');
-		StringBuilder idxSdf = new StringBuilder();
-		idxSdf.append(P).append("int[] INSERT_IDX = {");
+		StringBuilder idxSbf = new StringBuilder();
+		idxSbf.append(P).append("int[] INSERT_IDX = {");
 		StringBuilder vbf = new StringBuilder();
 		boolean firstOne = true;
+		boolean firstField = true;
 		for (Field field : this.fields) {
-			if (field.dbColumnName == null) {
+			ColumnType ct = field.columnType;
+			if (ct == null || ct.isInserted() == false) {
 				continue;
 			}
 			if (firstOne) {
@@ -711,36 +804,62 @@ class Form {
 			} else {
 				sbf.append(C);
 				vbf.append(C);
-				idxSdf.append(C);
 			}
 			sbf.append(field.dbColumnName);
-			vbf.append('?');
-			idxSdf.append(field.index);
+			if (ct == ColumnType.ModifiedAt || ct == ColumnType.CreatedAt) {
+				vbf.append(" CURRENT_TIMESTAMP ");
+			} else {
+				vbf.append('?');
+				if (firstField) {
+					firstField = false;
+				} else {
+					idxSbf.append(C);
+				}
+				idxSbf.append(field.index);
+			}
 		}
 
 		sbf.append(") values (").append(vbf).append(")\";");
-		sbf.append(idxSdf).append("};");
+		sbf.append(idxSbf).append("};");
 	}
 
-	private void emitUpdate(StringBuilder sbf, String whereIndexes, String tableName, Field[] keys) {
+	private void emitUpdate(StringBuilder sbf, String whereClause, String whereIndexes, String tableName) {
 		sbf.append(P).append(" String UPDATE = \"UPDATE ").append(tableName).append(" SET ");
 		StringBuilder idxSbf = new StringBuilder();
 		idxSbf.append(P).append(" int[] UPDATE_IDX = {");
 		boolean firstOne = true;
+		boolean firstField = true;
 		for (Field field : this.fields) {
-			if (field.dbColumnName == null || this.isKey(field.name, keys)) {
+			ColumnType ct = field.columnType;
+			if (ct == null || ct.isUpdated() == false) {
 				continue;
 			}
+
 			if (firstOne) {
 				firstOne = false;
 			} else {
 				sbf.append(C);
-				idxSbf.append(C);
 			}
-			sbf.append(field.dbColumnName).append("=?");
-			idxSbf.append(field.index);
-		}
 
+			sbf.append(field.dbColumnName).append("=");
+			if (ct == ColumnType.ModifiedAt) {
+				sbf.append(" CURRENT_TIMESTAMP ");
+			} else {
+				sbf.append(" ? ");
+				if (firstField) {
+					firstField = false;
+				} else {
+					idxSbf.append(C);
+				}
+				idxSbf.append(field.index);
+			}
+		}
+		idxSbf.append(C).append(whereIndexes);
+		sbf.append(whereClause);
+		if (this.timestampField != null) {
+			sbf.append(" AND ").append(this.timestampField.dbColumnName).append("=?");
+			idxSbf.append(C).append(this.timestampField.index);
+		}
 		sbf.append("\";");
 		sbf.append(idxSbf).append(C).append(whereIndexes).append("};");
 	}

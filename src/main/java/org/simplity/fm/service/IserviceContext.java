@@ -72,17 +72,22 @@ public interface IserviceContext {
 	 * 
 	 * @param message non-null message
 	 */
-	public void AddMessage(Message message);
+	public void addMessage(Message message);
 	
 	/**
 	 * 
 	 * @param messages non-null messages
 	 */
-	public void AddMessages(Collection<Message> messages);
+	public void addMessages(Collection<Message> messages);
 	
 	/**
 	 * 
 	 * @return non-null array all messages added so far. empty if no message added so far;
 	 */
 	public Message[] getMessages();
+
+	/**
+	 * @return tenantId, if this APP is designed for multi-tenant deployment. null if it is not.
+	 */
+	public Object getTenantId();
 }

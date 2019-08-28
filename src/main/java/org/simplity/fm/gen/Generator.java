@@ -33,12 +33,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.simplity.fm.Config;
 import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.form.ColumnType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +61,7 @@ public class Generator {
 	private static final String EXT = ".xlsx";
 	private static final int NBR_CELLS_INCL = 4;
 	private static final int NBR_CELLS_FROM_TO = 4;
-	private static final int NBR_CELLS_FIELD = 15;
+	private static final int NBR_CELLS_FIELD = 14;
 	private static final int NBR_CELLS_EXCL = 4;
 	private static final int NBR_CELLS_CHILD_FORM = 9;
 	private static final int NBR_CELLS_LIST = 3;
@@ -153,7 +155,7 @@ public class Generator {
 			form = parseForm(book, fn, project.commonFields);
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.error("Form {} not generated. Error : {}", fn, e.getMessage());
+			logger.error("Form {} not generated. Error : {}, {}", fn, e,  e.getMessage());
 			return;
 		}
 
@@ -638,7 +640,7 @@ public class Generator {
 				f.name = XlsUtil.textValueOf(row.getCell(0));
 				f.dbColumnName = XlsUtil.textValueOf(row.getCell(1));
 				f.dataType = XlsUtil.textValueOf(row.getCell(2));
-				f.isKey = XlsUtil.boolValueOf(row.getCell(3));
+				f.columnType = parseColumnType(row.getCell(3));
 				f.index = list.size();
 				if (fieldNames.add(f.name) == false) {
 					logger.error("Field name {} is duplicate at row {}. skipped", f.name, row.getRowNum());
@@ -736,12 +738,17 @@ public class Generator {
 		/*
 		 * current project has an issue people not managing it properly..
 		 */
-		//f.isDerived = XlsUtil.boolValueOf(row.getCell(10));
-		f.isDerived = false;
-		f.isKey = XlsUtil.boolValueOf(row.getCell(11));
-		f.listName = XlsUtil.textValueOf(row.getCell(12));
-		f.listKey = XlsUtil.textValueOf(row.getCell(13));
-		f.dbColumnName = XlsUtil.textValueOf(row.getCell(14));
+		f.listName = XlsUtil.textValueOf(row.getCell(10));
+		f.listKey = XlsUtil.textValueOf(row.getCell(11));
+		f.dbColumnName = XlsUtil.textValueOf(row.getCell(12));
+		f.columnType = parseColumnType(row.getCell(13));
+		if(f.dbColumnName != null && f.columnType == null) {
+			logger.error("Field {} is mapped to db column {} but columnType is not specified. columnName dropped.", f.name, f.dbColumnName);
+			f.dbColumnName = null;
+		}else if(f.dbColumnName == null && f.columnType != null) {
+			logger.error("Field {} has columnType but dbColumnName is not specified.", f.name, f.columnType);
+			f.columnType = null;
+		}
 		f.index= index;
 
 		return f;
@@ -915,6 +922,21 @@ public class Generator {
 			result[i] = result[i].trim();
 		}
 		return result;
+	}
+
+	
+	protected static ColumnType parseColumnType(Cell cell) {
+		if(cell == null || cell.getCellType() != Cell.CELL_TYPE_STRING) {
+			return null;
+		}
+		String val = cell.getStringCellValue().trim();
+		for(ColumnType ct : ColumnType.values()) {
+			if(ct.name().equalsIgnoreCase(val)){
+				return ct;
+			}
+		}
+		logger.error("{} is not a valid column type.");
+		return null;
 	}
 
 	/**

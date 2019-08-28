@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.simplity.fm.service;
+package org.simplity.fm.form;
 
 import java.io.Writer;
 import java.sql.SQLException;
@@ -30,14 +30,11 @@ import java.util.List;
 import org.simplity.fm.Conventions;
 import org.simplity.fm.Forms;
 import org.simplity.fm.Message;
-import org.simplity.fm.form.DbMetaData;
-import org.simplity.fm.form.DbOperation;
-import org.simplity.fm.form.SqlReader;
-import org.simplity.fm.form.Form;
-import org.simplity.fm.form.FormData;
 import org.simplity.fm.rdb.DbHandle;
 import org.simplity.fm.rdb.IDbClient;
 import org.simplity.fm.rdb.RdbDriver;
+import org.simplity.fm.service.IService;
+import org.simplity.fm.service.IserviceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,12 +109,17 @@ public abstract class FormIo implements IService {
 			List<Message> msgs = new ArrayList<>();
 			fd.loadKeys(ctx.getInputFields(), msgs);
 			if (msgs.size() > 0) {
-				ctx.AddMessages(msgs);
+				ctx.addMessages(msgs);
 				return;
 			}
+			Field tenant = this.form.dbMetaData.tenantField;
+			if(tenant != null) {
+				fd.setObject(tenant.getIndex(), ctx.getTenantId());
+			}
+
 			if (fd.fetchFromDb() == false) {
 				logger.error("No data found for the form {}", this.form.getFormId());
-				ctx.AddMessage(Message.newError("noData"));
+				ctx.addMessage(Message.newError("noData"));
 			} else {
 				fd.serializeAsJson(ctx.getResponseWriter());
 			}
@@ -140,7 +142,7 @@ public abstract class FormIo implements IService {
 			if (node != null && node.getNodeType() == JsonNodeType.OBJECT) {
 				conditions = (ObjectNode) node;
 			} else {
-				ctx.AddMessage(Message.newError(Message.MSG_INVALID_DATA));
+				ctx.addMessage(Message.newError(Message.MSG_INVALID_DATA));
 				return;
 			}
 
@@ -150,16 +152,16 @@ public abstract class FormIo implements IService {
 				nbrRows = node.asInt(nbrRows);
 			}
 
-			SqlReader reader = this.form.parseForFilter(conditions, msgs);
+			SqlReader reader = this.form.parseForFilter(conditions, msgs, ctx);
 
 			if (msgs.size() > 0) {
-				ctx.AddMessages(msgs);
+				ctx.addMessages(msgs);
 				return;
 			}
 
 			if (reader == null) {
 				logger.error("DESIGN ERROR: form.parseForFilter() returned null, but failed to put ay error message. ");
-				ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
+				ctx.addMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
 				return;
 			}
 
@@ -205,9 +207,14 @@ public abstract class FormIo implements IService {
 			List<Message> msgs = new ArrayList<>();
 			fd.validateAndLoad(payload, false, false, msgs);
 			if (msgs.size() > 0) {
-				ctx.AddMessages(msgs);
+				ctx.addMessages(msgs);
 				return;
 			}
+			Field tenant = this.form.dbMetaData.tenantField;
+			if(tenant != null) {
+				fd.setObject(tenant.getIndex(), ctx.getTenantId());
+			}
+
 			RdbDriver.getDriver().transact(new IDbClient() {
 
 				@Override
@@ -233,9 +240,14 @@ public abstract class FormIo implements IService {
 			List<Message> msgs = new ArrayList<>();
 			fd.validateAndLoad(payload, false, true, msgs);
 			if (msgs.size() > 0) {
-				ctx.AddMessages(msgs);
+				ctx.addMessages(msgs);
 				return;
 			}
+			Field tenant = this.form.dbMetaData.tenantField;
+			if(tenant != null) {
+				fd.setObject(tenant.getIndex(), ctx.getTenantId());
+			}
+
 			RdbDriver.getDriver().transact(new IDbClient() {
 
 				@Override
@@ -261,9 +273,14 @@ public abstract class FormIo implements IService {
 			List<Message> msgs = new ArrayList<>();
 			fd.loadKeys(ctx.getInputFields(), msgs);
 			if (msgs.size() > 0) {
-				ctx.AddMessages(msgs);
+				ctx.addMessages(msgs);
 				return;
 			}
+			Field tenant = this.form.dbMetaData.tenantField;
+			if(tenant != null) {
+				fd.setObject(tenant.getIndex(), ctx.getTenantId());
+			}
+
 			RdbDriver.getDriver().transact(new IDbClient() {
 
 				@Override

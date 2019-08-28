@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx at 2019-08-21T22:41:13.781
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx at 2019-08-29T00:54:12.060
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -22,7 +22,7 @@ export class Form2 extends Form {
 		isRequired:true, 
 		minLength:4, 
 		maxLength:15, 
-		reges:'[\\w]*'
+		regex:'[\\w]*'
 	});
 	quantity = new Field('quantity', 2, 1, {
 		label:'Quantity', 
@@ -65,6 +65,7 @@ export class Form2 extends Form {
 			color: ['',[Validators.required, Validators.max(100), Validators.min(0), Validators.minLength(1), Validators.maxLength(5)]]
 		};
 		this.listFields = ['color'];
+		this.keyFields = ['headerId', 'productId'];
 	}
 
 	public getName(): string {

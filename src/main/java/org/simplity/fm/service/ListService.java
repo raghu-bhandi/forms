@@ -60,25 +60,25 @@ public class ListService implements IService{
 		
 		String listName = ctx.getInputValue("list");
 		if(listName == null) {
-			ctx.AddMessage(Message.newError("list is requred for listService"));
+			ctx.addMessage(Message.newError("list is requred for listService"));
 			return;
 		}
 		IValueList list = ValueLists.getList(listName);
 		if(list == null) {
-			ctx.AddMessage(Message.newError("list " + listName + " is not configured"));
+			ctx.addMessage(Message.newError("list " + listName + " is not configured"));
 			return;
 		}
 		String key = null;
 		if(list.isKeyBased()) {
 			key = ctx.getInputValue("key");
 			if(key == null) {
-				ctx.AddMessage(Message.newError("list " + listName + " is key based. key is missing in the request"));
+				ctx.addMessage(Message.newError("list " + listName + " is key based. key is missing in the request"));
 				return;
 			}
 		}
 		String[][] result = list.getList(key);
 		if(result == null) {
-			ctx.AddMessage(Message.newError("list " + listName + " did not return any values for key "+ key));
+			ctx.addMessage(Message.newError("list " + listName + " did not return any values for key "+ key));
 			return;
 		}
 		

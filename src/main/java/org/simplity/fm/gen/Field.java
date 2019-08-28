@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.simplity.fm.datatypes.ValueType;
+import org.simplity.fm.form.ColumnType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,11 +50,10 @@ class Field {
 	String defaultValue;
 	boolean isRequired;
 	boolean isEditable;
-	boolean isKey;
-	boolean isDerived;
 	String listName;
 	String listKey;
 	String dbColumnName;
+	ColumnType columnType;
 	int index;
 
 	void emitJavaCode(StringBuilder sbf, String dataTypesName) {
@@ -64,8 +64,6 @@ class Field {
 		sbf.append(C).append(Util.escape(this.errorId));
 		sbf.append(C).append(this.isRequired);
 		sbf.append(C).append(this.isEditable);
-		sbf.append(C).append(this.isDerived);
-		sbf.append(C).append(this.isKey);
 		/*
 		 * list is handled by inter-field in case key is specified
 		 */
@@ -75,15 +73,26 @@ class Field {
 			sbf.append(C).append("null");
 		}
 		sbf.append(C).append(Util.escape(this.dbColumnName));
+		sbf.append(C);
+		if(this.columnType == null) {
+			sbf.append("null");
+		}else {
+			sbf.append("ColumnType.").append(this.columnType.name());
+		}
 		sbf.append(')');
 	}
 
 	void emitJavaCodeSimple(StringBuilder sbf, String dataTypesName) {
 		sbf.append("\n\t\t\tnew Field(\"").append(this.name).append('"');
 		sbf.append(C).append(this.index);
-		sbf.append(C).append(this.isKey);
 		sbf.append(C).append(dataTypesName).append('.').append(this.dataType);
 		sbf.append(C).append(Util.escape(this.dbColumnName));
+		sbf.append(C);
+		if(this.columnType == null) {
+			sbf.append("null");
+		}else {
+			sbf.append("ColumnType.").append(this.columnType.name());
+		}
 		sbf.append(')');
 	}
 

@@ -146,7 +146,7 @@ public class Agent {
 			e.printStackTrace();
 			String msg = e.getMessage();
 			logger.error("Internal Error : {}", msg);
-			ctx.AddMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
+			ctx.addMessage(Message.newError(Message.MSG_INTERNAL_ERROR));
 		}
 		respond(resp, ctx, writer.toString());
 	}

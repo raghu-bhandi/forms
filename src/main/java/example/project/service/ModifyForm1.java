@@ -26,8 +26,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.simplity.fm.Forms;
 import org.simplity.fm.Message;
@@ -55,10 +53,8 @@ public class ModifyForm1 implements IService {
 	public void serve(IserviceContext ctx, ObjectNode inputPayload) throws Exception {
 		Form form = Forms.getForm("form1");
 		FormData fd = form.newFormData();
-		List<Message> errors = new ArrayList<>();
-		fd.validateAndLoad(inputPayload, false, false, errors);
-		if (errors.size() > 0) {
-			ctx.AddMessages(errors);
+		fd.validateAndLoad(inputPayload, false, false, ctx);
+		if (ctx.allOk() == false) {
 			return;
 		}
 		/*
@@ -69,7 +65,7 @@ public class ModifyForm1 implements IService {
 		LocalDate d1 = fd.getDateValue(Form1.fromDate);
 		LocalDate d2 = fd.getDateValue(Form1.toDate);
 		if (d1.isAfter(d2)) {
-			ctx.AddMessage(Message.newFieldError("fromDate", "invalidFromTo", d1.toString() + ',' + d2.toString()));
+			ctx.addMessage(Message.newFieldError("fromDate", "invalidFromTo", d1.toString() + ',' + d2.toString()));
 			return;
 		}
 

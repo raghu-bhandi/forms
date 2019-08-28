@@ -38,6 +38,7 @@ import org.simplity.fm.http.LoggedInUser;
 import org.simplity.fm.rdb.DbHandle;
 import org.simplity.fm.rdb.IDbClient;
 import org.simplity.fm.rdb.RdbDriver;
+import org.simplity.fm.service.IserviceContext;
 import org.simplity.fm.validn.IValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -459,8 +460,7 @@ public class FormData {
 	 * @param value
 	 * 
 	 * @return true if field exists, and is of Instant type. false otherwise,
-	 *         and
-	 *         the value is not set
+	 *         and the value is not set
 	 */
 	public boolean setTimestamp(int idx, Instant value) {
 		if (!this.idxOk(idx)) {
@@ -485,17 +485,16 @@ public class FormData {
 	 *            valid index for this form
 	 * @param value
 	 *            string value to be parsed for this field
-	 * @param errors
-	 *            to which an error message is added =in case of validation
-	 *            failure
+	 * @param ctx
+	 *            
 	 */
-	public void parseField(int idx, String value, List<Message> errors) {
+	public void parseField(int idx, String value, IserviceContext ctx) {
 		if (!this.idxOk(idx)) {
-			errors.add(Message.newError(idx + " is not valid index for form " + this.form.getFormId()));
+			ctx.addMessage(Message.newError(idx + " is not valid index for form " + this.form.getFormId()));
 			return;
 		}
 		Field f = this.form.getFields()[idx];
-		validateAndSet(f, value, this.fieldValues, idx, false, false, errors);
+		validateAndSet(f, value, this.fieldValues, idx, false, ctx);
 	}
 
 	/**
@@ -513,10 +512,10 @@ public class FormData {
 	 * 
 	 * @param json
 	 *            non-null
-	 * @param errors
+	 * @param ctx
 	 *            non-null to which any validation errors are added
 	 */
-	public void loadKeys(ObjectNode json, List<Message> errors) {
+	public void loadKeys(ObjectNode json, IserviceContext ctx) {
 		int[] indexes = this.form.getKeyIndexes();
 		if (indexes == null) {
 			return;
@@ -525,7 +524,7 @@ public class FormData {
 		for (int idx : indexes) {
 			Field f = fields[idx];
 			String value = getTextAttribute(json, f.getFieldName());
-			validateAndSet(f, value, this.fieldValues, idx, false, false, errors);
+			validateAndSet(f, value, this.fieldValues, idx, false, ctx);
 		}
 	}
 
@@ -534,10 +533,10 @@ public class FormData {
 	 * 
 	 * @param inputValues
 	 *            non-null collection of field values
-	 * @param errors
+	 * @param ctx
 	 *            non-null to which any validation errors are added
 	 */
-	public void loadKeys(Map<String, String> inputValues, List<Message> errors) {
+	public void loadKeys(Map<String, String> inputValues, IserviceContext ctx) {
 		int[] indexes = this.form.getKeyIndexes();
 		if (indexes == null) {
 			return;
@@ -546,7 +545,7 @@ public class FormData {
 		for (int idx : indexes) {
 			Field f = fields[idx];
 			String value = inputValues.get(f.getFieldName());
-			validateAndSet(f, value, this.fieldValues, idx, false, false, errors);
+			validateAndSet(f, value, this.fieldValues, idx, false, ctx);
 		}
 	}
 
@@ -563,35 +562,34 @@ public class FormData {
 	 *            true if this data is meant to create a new row (insert
 	 *            operation). In this case, primary key is skipped if it is to
 	 *            be generated
-	 * @param errors
-	 *            non-null to which any validation errors are added
+	 * @param ctx
+	 *            non-null
 	 */
-	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert,
-			List<Message> errors) {
+	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert, IserviceContext ctx) {
 		boolean keyIsOptional = false;
 		if (forInsert) {
 			keyIsOptional = this.form.getDbMetaData().keyIsGenerated;
 		}
-		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, errors);
+		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, ctx);
 
 		ChildForm[] children = this.form.getChildForms();
 		if (children != null) {
 			for (int i = 0; i < children.length; i++) {
-				this.childData[i] = this.validateChild(children[i], json, allFieldsAreOptional, keyIsOptional, errors);
+				this.childData[i] = this.validateChild(children[i], json, allFieldsAreOptional, keyIsOptional, ctx);
 			}
 		}
 		if (!allFieldsAreOptional) {
-			this.validateForm(errors);
+			this.validateForm(ctx);
 		}
 	}
 
 	private FormData[] validateChild(ChildForm childForm, ObjectNode json, boolean allFieldsAreOptional,
-			boolean forInsert, List<Message> errors) {
+			boolean forInsert, IserviceContext ctx) {
 		String fieldName = childForm.fieldName;
 		JsonNode childNode = json.get(fieldName);
 		if (childNode == null) {
-			if (errors != null && childForm.minRows > 0) {
-				errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+			if (childForm.minRows > 0) {
+				ctx.addMessage(Message.newFieldError(fieldName, childForm.errorMessageId, null));
 			}
 			return null;
 		}
@@ -599,15 +597,14 @@ public class FormData {
 		JsonNodeType nt = childNode.getNodeType();
 		if (childForm.isTabular == false) {
 			if (nt != JsonNodeType.OBJECT) {
-				if (errors != null) {
-					logger.error(
-							"Form {} has a child form named {} and hence an object is expeted. But {} is received as data",
-							this.form.getFormId(), fieldName, nt);
-					return null;
-				}
+				logger.error(
+						"Form {} has a child form named {} and hence an object is expeted. But {} is received as data",
+						this.form.getFormId(), fieldName, nt);
+				ctx.addMessage(Message.newError(Message.MSG_INVALID_DATA));
+				return null;
 			}
 			FormData fd = childForm.form.newFormData();
-			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, forInsert, errors);
+			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, forInsert, ctx);
 			FormData[] result = { fd };
 			return result;
 		}
@@ -618,16 +615,17 @@ public class FormData {
 			arr = (ArrayNode) childNode;
 			n = arr.size();
 			if (allFieldsAreOptional == false) {
-				if (errors != null && (n < childForm.minRows || n > childForm.maxRows)) {
+				if ((n < childForm.minRows || n > childForm.maxRows)) {
+					logger.error(
+							"Form {} has a child form named {} and hence an object is expeted. But {} is received as data",
+							this.form.getFormId(), fieldName, nt);
 					arr = null;
 				}
 			}
 		}
 
 		if (arr == null) {
-			if (errors != null) {
-				errors.add(Message.newFieldError(fieldName, childForm.errorMessageId, null));
-			}
+			ctx.addMessage(Message.newFieldError(fieldName, childForm.errorMessageId, null));
 			return null;
 		}
 
@@ -639,14 +637,12 @@ public class FormData {
 			JsonNode col = arr.get(j);
 
 			if (col == null || col.getNodeType() != JsonNodeType.OBJECT) {
-				if (errors != null) {
-					errors.add(Message.newError(Message.MSG_INVALID_DATA));
-				}
+				ctx.addMessage(Message.newError(Message.MSG_INVALID_DATA));
 				continue;
 			}
 			FormData fd = childForm.form.newFormData();
 			fds.add(fd);
-			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, forInsert, errors);
+			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, forInsert, ctx);
 		}
 		if (fds.size() == 0) {
 			return null;
@@ -655,19 +651,33 @@ public class FormData {
 	}
 
 	private static void setFeilds(ObjectNode json, Form form, Object[] row, boolean allFieldsAreOptional,
-			boolean keyIsOptional, List<Message> errors) {
-		Field[] fields = form.getFields();
-		for (int i = 0; i < fields.length; i++) {
-			Field field = fields[i];
+			boolean keyIsOptional, IserviceContext ctx) {
+
+		for (Field field : form.getFields()) {
+			ColumnType ct = field.getColumnType();
+			if (ct != null) {
+				if (!ct.isInput()) {
+					logger.info("Filed {} skipped as we do not expect it from client", field.getFieldName());
+					continue;
+				}
+				if (ct == ColumnType.ModifiedBy || ct == ColumnType.CreatedBy) {
+					row[field.getIndex()] = ctx.getUser().getUserId();
+				}
+				if (keyIsOptional && ct == ColumnType.PrimaryKey) {
+					logger.info("{} is generated key and hence is not parsed", field.getFieldName());
+					continue;
+				}
+			}
+
 			String value = getTextAttribute(json, field.getFieldName());
-			validateAndSet(field, value, row, i, allFieldsAreOptional, keyIsOptional, errors);
+			validateAndSet(field, value, row, field.getIndex(), allFieldsAreOptional, ctx);
 		}
 	}
 
 	private static void validateAndSet(Field field, String value, Object[] row, int idx, boolean allFieldsAreOptional,
-			boolean keyIsOptional, List<Message> errors) {
+			IserviceContext ctx) {
 		if (value == null || value.isEmpty()) {
-			if (allFieldsAreOptional || (keyIsOptional && field.isKeyField())) {
+			if (allFieldsAreOptional) {
 				row[idx] = null;
 				return;
 			}
@@ -677,21 +687,23 @@ public class FormData {
 		} catch (InvalidValueException e) {
 			logger.error("{} is not a valid value for {} which is of data-type {} and value type {}", value,
 					field.getFieldName(), field.getDataType().getName(), field.getDataType().getValueType());
-			if (errors != null) {
-				errors.add(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
-			}
+				ctx.addMessage(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
 		}
 	}
 
 	/**
 	 * @param validations
 	 */
-	private void validateForm(List<Message> errors) {
+	private void validateForm(IserviceContext ctx) {
 		IValidation[] validations = this.form.getValidations();
+		List<Message> errors = new ArrayList<>();
 		if (validations != null) {
 			for (IValidation vln : validations) {
 				vln.isValid(this, errors);
 			}
+		}
+		if(errors.size() > 0) {
+			ctx.addMessages(errors);
 		}
 	}
 

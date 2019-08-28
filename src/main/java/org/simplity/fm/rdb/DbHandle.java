@@ -227,7 +227,7 @@ public class DbHandle {
 			logger.error("Form {} is not designed for db operation", form.getFormId());
 			return false;
 		}
-		String sql = meta.updateClause + meta.whereClause;
+		String sql = meta.updateClause;
 		Object[] data = formData.getFieldValues();
 		int n = RdbDriver.doWriteForm(this.con, sql, meta.updateParams, data, null);
 		if (n == 0) {

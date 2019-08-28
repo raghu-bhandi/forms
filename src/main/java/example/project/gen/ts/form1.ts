@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-21T22:41:13.538
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-29T00:54:11.690
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -26,7 +26,7 @@ export class Form1 extends Form {
 		isRequired:true, 
 		minLength:10, 
 		maxLength:10, 
-		reges:'[A-Z]{3}-[\\d]{2}-[A-Z]{3}'
+		regex:'[A-Z]{3}-[\\d]{2}-[A-Z]{3}'
 	});
 	financialYear = new Field('financialYear', 2, 1, {
 		defaultVlue:'2010', 
@@ -89,21 +89,13 @@ export class Form1 extends Form {
 		minValue:1, 
 		maxValue:9874
 	});
-	derivedField = new Field('derivedField', 8, 1, {
-		label:'Total', 
-		errorId:'invalidQty', 
-		minLength:1, 
-		maxLength:9, 
-		minValue:1, 
-		maxValue:9874
-	});
-	fyStartDate = new Field('fyStartDate', 9, 4, {
+	fyStartDate = new Field('fyStartDate', 8, 4, {
 		label:'FY Start Date', 
 		errorId:'invalidDate', 
 		minValue:-73000, 
 		maxValue:73000
 	});
-	state = new Field('state', 10, 0, {
+	state = new Field('state', 9, 0, {
 		defaultVlue:'KA', 
 		label:'State', 
 		placeHolder:'State', 
@@ -112,14 +104,14 @@ export class Form1 extends Form {
 		isRequired:true, 
 		minLength:2, 
 		maxLength:2, 
-		reges:'[A-Z][A-Z]', 
+		regex:'[A-Z][A-Z]', 
 		listName:'states', valueList:[
 				['KA', 'Karnataka'],
 				['TN', 'Tamil Nadu'],
 				['TS', 'Telengana']
 			]
 	});
-	district = new Field('district', 11, 1, {
+	district = new Field('district', 10, 1, {
 		defaultVlue:'123', 
 		label:'District', 
 		placeHolder:'District', 
@@ -148,7 +140,7 @@ export class Form1 extends Form {
 				]
 			}
 	});
-	kaSpecificField = new Field('kaSpecificField', 12, 0, {
+	kaSpecificField = new Field('kaSpecificField', 11, 0, {
 		defaultVlue:'kannada', 
 		label:'Mother Tongue', 
 		placeHolder:'Mother Tongue', 
@@ -157,17 +149,17 @@ export class Form1 extends Form {
 		minLength:2, 
 		maxLength:100
 	});
-	aadhaar = new Field('aadhaar', 13, 1, {
+	aadhaar = new Field('aadhaar', 12, 1, {
 		defaultVlue:'111122223333', 
 		label:'Aadhaar', 
 		placeHolder:'Aadhaar', 
 		isEditable:true, 
 		errorId:'invalidAadhaar', 
-		reges:'12 digits', 
+		regex:'12 digits', 
 		minValue:100000000000, 
 		maxValue:999999999999
 	});
-	pan = new Field('pan', 14, 0, {
+	pan = new Field('pan', 13, 0, {
 		defaultVlue:'ACTPB3029K', 
 		label:'pan', 
 		placeHolder:'Pan', 
@@ -175,7 +167,7 @@ export class Form1 extends Form {
 		errorId:'invalidPan', 
 		minLength:10, 
 		maxLength:10, 
-		reges:'[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]'
+		regex:'[A-Z,a-z]{5}[0-9]{4}[A-Z,a-z]'
 	});
 
 	orderLines = new ChildForm('orderLines', 0, 'Order Lines', Form2.getInstance(), true, 1, 200, 'wrongLines');
@@ -195,7 +187,6 @@ export class Form1 extends Form {
 		this.fields.set('toDate', this.toDate);
 		this.fields.set('intField1', this.intField1);
 		this.fields.set('intField2', this.intField2);
-		this.fields.set('derivedField', this.derivedField);
 		this.fields.set('fyStartDate', this.fyStartDate);
 		this.fields.set('state', this.state);
 		this.fields.set('district', this.district);
@@ -211,7 +202,6 @@ export class Form1 extends Form {
 			toDate: ['44896',[]], 
 			intField1: ['33',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
 			intField2: ['45',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
-			derivedField: ['',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
 			fyStartDate: ['',[]], 
 			state: ['KA',[Validators.required, Validators.pattern('[A-Z][A-Z]'), Validators.minLength(2), Validators.maxLength(2)]], 
 			district: ['123',[Validators.required, Validators.max(9999), Validators.min(1)]], 
@@ -224,6 +214,8 @@ export class Form1 extends Form {
 		this.childForms.set('orderLines', this.orderLines);
 		this.validations = [{type: 'range', errorId: 'invalidDateRange', f1: 'fromDate', f2: 'toDate', equalOk: false}, {type: 'excl', errorId: 'panOrAadhaar', f1: 'aadhaar', f2: 'pan', atLeastOne: true}, {type: 'incl', errorId: 'intfield1INtField2AreTogether', f1: 'intField1', f2: 'intField2'}, {type: 'incl', errorId: 'requiredOnKa', f1: 'state', f2: 'kaSpecificField', value:'KA'}];
 		this.listFields = ['state', 'district'];
+		this.keyFields = ['headerId'];
+		this.opsAllowed = {get: true, filter: true};
 	}
 
 	public getName(): string {
