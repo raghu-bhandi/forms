@@ -106,10 +106,8 @@ public abstract class FormIo implements IService {
 		@Override
 		public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
 			FormData fd = this.form.newFormData();
-			List<Message> msgs = new ArrayList<>();
-			fd.loadKeys(ctx.getInputFields(), msgs);
-			if (msgs.size() > 0) {
-				ctx.addMessages(msgs);
+			fd.loadKeys(ctx.getInputFields(), ctx);
+			if (!ctx.allOk()) {
 				return;
 			}
 			Field tenant = this.form.dbMetaData.tenantField;
@@ -204,10 +202,8 @@ public abstract class FormIo implements IService {
 		@Override
 		public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
 			FormData fd = this.form.newFormData();
-			List<Message> msgs = new ArrayList<>();
-			fd.validateAndLoad(payload, false, false, msgs);
-			if (msgs.size() > 0) {
-				ctx.addMessages(msgs);
+			fd.validateAndLoad(payload, false, false, ctx);
+			if (ctx.allOk() == false) {
 				return;
 			}
 			Field tenant = this.form.dbMetaData.tenantField;
@@ -237,10 +233,8 @@ public abstract class FormIo implements IService {
 		@Override
 		public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
 			FormData fd = this.form.newFormData();
-			List<Message> msgs = new ArrayList<>();
-			fd.validateAndLoad(payload, false, true, msgs);
-			if (msgs.size() > 0) {
-				ctx.addMessages(msgs);
+			fd.validateAndLoad(payload, false, true, ctx);
+			if (!ctx.allOk()) {
 				return;
 			}
 			Field tenant = this.form.dbMetaData.tenantField;
@@ -270,10 +264,8 @@ public abstract class FormIo implements IService {
 		@Override
 		public void serve(IserviceContext ctx, ObjectNode payload) throws Exception {
 			FormData fd = this.form.newFormData();
-			List<Message> msgs = new ArrayList<>();
-			fd.loadKeys(ctx.getInputFields(), msgs);
-			if (msgs.size() > 0) {
-				ctx.addMessages(msgs);
+			fd.loadKeys(ctx.getInputFields(), ctx);
+			if (!ctx.allOk()) {
 				return;
 			}
 			Field tenant = this.form.dbMetaData.tenantField;
