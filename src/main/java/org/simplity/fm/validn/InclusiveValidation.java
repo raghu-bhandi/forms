@@ -28,8 +28,16 @@ import org.simplity.fm.Message;
 import org.simplity.fm.form.FormData;
 
 /**
- * a pair of fields that are mutually inclusive. That is, if one is specified,
- * the other one should also be specified.
+ * a pair of fields that are mutually inclusive. Either both re present, or both
+ * are absent.
+ * There is also flexibility to use a specific value for field1 for this rule to
+ * be used.
+ * 
+ * for e.g. machineName and description.In this case, if machine is specified,
+ * it must be described. And you should not describe an unspecified machine
+ * 
+ * if country-code is 91, then pin code must be specified, otherwise it should
+ * not be specified
  * 
  * @author simplity.org
  *
@@ -74,21 +82,25 @@ public class InclusiveValidation implements IValidation {
 	@Override
 	public boolean isValid(FormData formData, List<Message> messages) {
 		Object main = formData.getObject(this.mainIndex);
-		/*
-		 * rule applicable only if main is non-null
-		 */
-		if (main == null) {
-			return true;
-		}
-		/*
-		 * value constraint on main?
-		 */
-		if (this.mainValue != null && main.toString().equals(this.mainValue) == false) {
-			return true;
-		}
+		Object dep = formData.getObject(this.dependentIndex);
 
-		if (formData.getObject(this.dependentIndex) != null) {
-			return true;
+		boolean mainSpecified = false;
+		if (main != null) {
+			if (this.mainValue == null) {
+				mainSpecified = true;
+			} else {
+				mainSpecified = this.mainValue.equals(main.toString());
+			}
+		}
+		
+		if(mainSpecified) {
+			if(dep != null) {
+				return true;
+			}
+		}else {
+			if(dep == null) {
+				return true;
+			}
 		}
 		messages.add(Message.newFieldError(this.fieldName, this.messageId, null));
 		return false;
