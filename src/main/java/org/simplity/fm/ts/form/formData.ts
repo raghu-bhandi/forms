@@ -448,23 +448,30 @@ export class FormData extends AbstractData {
 	}
 
 	/**
-	 * if v1 is specified, v2 is to be specified. 
-	 * Hoever, if value is specified, this conditio applies only if v1 == value
+	 * two fields have to be both specified or both skipped.
+	 * if value is specified, it means that the rule is applicable if v1 == value
 	 * @param v1 
 	 * @param v2 
 	 * @param value 
 	 */
 	private validateInclPair(v1: string, v2: string, value: string): boolean {
-		if (!v1 || v2) {
-			return true;
+		/*
+		 * we assume v1 is specified when a value is given. 
+		 * However, if value is specified, then it has to match it' 
+		 */
+		const v1Specified = v1 && (!value || value == v1);
+		if(v1Specified){
+			if(v2){
+				return true;
+			}
+			return false;
 		}
-		//v1 specieid, but not v1.
-		if (value && value != v1) {
-			//Lucky, the rule is not applicable 
-			return true;
+		// v1 is not specified, so v2 should not be specified
+		if(v2){
+			return false;
 		}
-		return false;
-	}
+		return true;
+}
 
 	/**
 	 * 
