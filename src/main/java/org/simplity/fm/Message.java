@@ -169,29 +169,33 @@ public class Message {
 		writer.write("{\"type\":\"");
 
 		if(this.messageType == null) {
-			writer.write("\"error\"");
+			writer.write("error");
 		}else {
 			writer.write(this.messageType.toString().toLowerCase());
 		}
 		
 		writer.write("\", \"id\":\"");
 		writer.write(this.messageId);
+		writer.write("\"");
+		
 		if (this.fieldName != null) {
-			writer.write("\", \"fieldName\": ");
+			writer.write(", \"fieldName\": \"");
 			writer.write(this.fieldName);
+			writer.write("\"");
 		}
 		
 		if (this.columnName != null) {
-			writer.write("\", \"columnName\": ");
+			writer.write(", \"columnName\": \"");
 			writer.write(this.columnName);
+			writer.write("\"");
 		}
 		
 		if (this.params != null) {
-			writer.write("\", \"params\": ");
+			writer.write(", \"params\": \"");
 			writer.write(this.params.replaceAll("\"", "\"\""));
+			writer.write("\"");
 		}
 		
-		writer.write("\"");
 		if (this.rowNumber != 0) {
 			writer.write(", \"rowNumber\": ");
 			writer.write(this.rowNumber);

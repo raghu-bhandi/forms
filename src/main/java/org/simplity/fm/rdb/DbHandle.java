@@ -229,7 +229,7 @@ public class DbHandle {
 		}
 		String sql = meta.updateClause;
 		Object[] data = formData.getFieldValues();
-		int n = RdbDriver.doWriteForm(this.con, sql, meta.updateParams, data, null);
+		int n = RdbDriver.doWriteForm(this.con, sql, meta.updateParams, data);
 		if (n == 0) {
 			return false;
 		}
@@ -254,8 +254,13 @@ public class DbHandle {
 		}
 		String sql = meta.insertClause;
 		Object[] data = formData.getFieldValues();
-		final long[] generatedKeys = meta.keyIsGenerated ? new long[1] : null;
-		int n = RdbDriver.doWriteForm(this.con, sql, meta.insertParams, data, generatedKeys);
+		int n = 0;
+		if (meta.generatedColumnName != null) {
+			final long[] generatedKeys = new long[1];
+			n = RdbDriver.doWriteForm(this.con, sql, meta.insertParams, data, generatedKeys, meta.generatedColumnName);
+		} else {
+			n = RdbDriver.doWriteForm(this.con, sql, meta.insertParams, data);
+		}
 		if (n == 0) {
 			return false;
 		}
@@ -280,7 +285,7 @@ public class DbHandle {
 		}
 		String sql = meta.deleteClause + meta.whereClause;
 		Object[] data = formData.getFieldValues();
-		int n = RdbDriver.doWriteForm(this.con, sql, meta.insertParams, data, null);
+		int n = RdbDriver.doWriteForm(this.con, sql, meta.insertParams, data);
 		if (n == 0) {
 			return false;
 		}
@@ -298,7 +303,7 @@ public class DbHandle {
 				/*
 				 * delete child rows
 				 */
-				this.writeForm(childDetils.deleteClause + cm.whereClause, cm.whereParams, data, null);
+				this.writeForm(childDetils.deleteClause + cm.whereClause, cm.whereParams, data);
 				/*
 				 * now insert them
 				 */
@@ -332,23 +337,43 @@ public class DbHandle {
 	 *            type of parameters to be set the prepared statement
 	 * @param params
 	 *            values to be set to the prepared statement
-	 * @param generatedKeys
-	 *            null, unless the sql execution is expected to result in a
-	 *            generated key by the RDBMS. first element is populated
-	 *            with
-	 *            the generated key. SqlException is thrown if the driver
-	 *            fails
-	 *            to get the generated key. the caller expects a
 	 * @return number of affected rows. -1 if the driver was unable to
 	 *         determine it
 	 * @throws SQLException
 	 */
-	public int write(String sql, ValueType[] paramTypes, Object[] params, long[] generatedKeys) throws SQLException {
+	public int write(String sql, ValueType[] paramTypes, Object[] params) throws SQLException {
 		if (this.readOnly) {
 			throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
 		}
 		this.isDirty = true;
-		return RdbDriver.doWrite(this.con, sql, paramTypes, params, generatedKeys);
+		return RdbDriver.doWrite(this.con, sql, paramTypes, params);
+	}
+
+	/**
+	 * API that is close to the JDBC API for insert operation that requires
+	 * generated key to be retrieved
+	 * 
+	 * @param sql
+	 *            a prepared statement that manipulates data.
+	 * @param paramTypes
+	 *            type of parameters to be set the prepared statement
+	 * @param params
+	 *            values to be set to the prepared statement
+	 * @param generatedKeys
+	 *            non-null array. generated key is returned in the first element
+	 * @param keyName
+	 *            non-null name of the key-column that is generated
+	 * @return number of affected rows. -1 if the driver was unable to
+	 *         determine it
+	 * @throws SQLException
+	 */
+	public int insert(String sql, ValueType[] paramTypes, Object[] params, long[] generatedKeys, String keyName)
+			throws SQLException {
+		if (this.readOnly) {
+			throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
+		}
+		this.isDirty = true;
+		return RdbDriver.doWrite(this.con, sql, paramTypes, params, generatedKeys, keyName);
 	}
 
 	/**
@@ -360,20 +385,40 @@ public class DbHandle {
 	 *            parameters to be set to the SQL
 	 * @param formData
 	 *            values for the parameters are picked up from here
-	 * @param generatedKey
-	 *            null if this operation is not an insert operation, or this
-	 *            table is not designed to generate it primary key on
-	 *            insert. array with one element. generated key is set in
-	 *            the first element
 	 * @return number of rows affected.
 	 * @throws SQLException
 	 */
-	public int writeForm(String sql, FormDbParam[] params, Object[] formData, long[] generatedKey) throws SQLException {
+	public int writeForm(String sql, FormDbParam[] params, Object[] formData) throws SQLException {
 		if (this.readOnly) {
 			throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
 		}
 		this.isDirty = true;
-		return RdbDriver.doWriteForm(this.con, sql, params, formData, generatedKey);
+		return RdbDriver.doWriteForm(this.con, sql, params, formData);
+	}
+
+	/**
+	 * API for form data to be inserted when the generated key is to be returned
+	 * 
+	 * @param sql
+	 *            insert/update/delete sql to be executed
+	 * @param params
+	 *            parameters to be set to the SQL
+	 * @param formData
+	 *            values for the parameters are picked up from here
+	 * @param generatedKey
+	 *            non- array with at least one element. generated key is
+	 *            returned in this element
+	 * @param keyName non-null name of the key field being generated
+	 * @return number of rows affected.
+	 * @throws SQLException
+	 */
+	public int writeForm(String sql, FormDbParam[] params, Object[] formData, long[] generatedKey, String keyName)
+			throws SQLException {
+		if (this.readOnly) {
+			throw new SQLException("Transaction is opened for readOnly. write operation not allowed.");
+		}
+		this.isDirty = true;
+		return RdbDriver.doWriteForm(this.con, sql, params, formData, generatedKey, keyName);
 	}
 
 	/**

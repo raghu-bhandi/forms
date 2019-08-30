@@ -935,7 +935,7 @@ public class Generator {
 				return ct;
 			}
 		}
-		logger.error("{} is not a valid column type.");
+		logger.error("{} is not a valid column type.", val);
 		return null;
 	}
 

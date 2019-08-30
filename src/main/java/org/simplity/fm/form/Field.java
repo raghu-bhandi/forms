@@ -69,16 +69,6 @@ public class Field {
 	 * typically not sent back from client.
 	 */
 	private boolean isEditable;
-	/**
-	 * if true, this field value is calculated based on other fields. Typically
-	 * not received from client, but some designs may receive and keep it for
-	 * logging/legal purposes. Not relevant if the field is editable.
-	 */
-	private boolean isDerivedField;
-	/**
-	 * is this part of the conceptual key (document-id) of the form.
-	 */
-	private boolean isKeyField;
 
 	/**
 	 * if this field has a list of valid values, either known at design time or
@@ -103,6 +93,7 @@ public class Field {
 	 * what type of column, like key? time-stamp etc..
 	 */
 	private ColumnType columnType;
+
 	/**
 	 * this is generally invoked by the generated code for a Data Structure
 	 * 
@@ -133,11 +124,10 @@ public class Field {
 	 *            not part of this field.
 	 * @param dbColumnName
 	 *            column name in the data base, if this is linked to one
-	 * @param columnType 
+	 * @param columnType
 	 */
 	public Field(String fieldName, int index, DataType dataType, String defaultValue, String messageId,
-			boolean isRequired, boolean isEditable, String valueListName,
-			String dbColumnName, ColumnType columnType) {
+			boolean isRequired, boolean isEditable, String valueListName, String dbColumnName, ColumnType columnType) {
 		this.fieldName = fieldName;
 		this.index = index;
 		this.isRequired = isRequired;
@@ -167,7 +157,7 @@ public class Field {
 	 * @param index
 	 * @param dataType
 	 * @param dbColumnName
-	 * @param columnType 
+	 * @param columnType
 	 */
 	public Field(String fieldName, int index, DataType dataType, String dbColumnName, ColumnType columnType) {
 		this.fieldName = fieldName;
@@ -236,6 +226,7 @@ public class Field {
 	public ColumnType getColumnType() {
 		return this.columnType;
 	}
+
 	/**
 	 * parse into the desired type, validate and return the value. caller should
 	 * check for exception for validation failure and not returned value as
@@ -277,20 +268,17 @@ public class Field {
 	}
 
 	/**
-	 * @return true if this field is derived based on other fields. false
-	 *         otherwise
-	 */
-	public boolean isDerivedField() {
-		return this.isDerivedField;
-	}
-
-	/**
 	 * is this a key field?
 	 * 
 	 * @return true if this is the key field, or one of the key fields
 	 */
 	public boolean isKeyField() {
-		return this.isKeyField;
+		if (this.columnType == null) {
+			return false;
+		}
+		return this.columnType == ColumnType.PrimaryKey 
+				|| this.columnType == ColumnType.GeneratedPrimaryKey
+				|| this.columnType == ColumnType.PrimaryAndParentKey;
 	}
 
 	/**

@@ -264,17 +264,28 @@ public class RdbDriver {
 	}
 
 	protected static int doWrite(Connection con, String sql, ValueType[] paramTypes, Object[] paramValues,
-			long[] generatedKeys) throws SQLException {
-		try (PreparedStatement ps = con.prepareStatement(sql)) {
+			long[] generatedKeys, String keyColumnName) throws SQLException {
+		String[] keys = {keyColumnName};
+		try (PreparedStatement ps = con.prepareStatement(sql, keys)) {
 
 			for (int i = 0; i < paramValues.length; i++) {
 				paramTypes[i].setPsParam(ps, i + 1, paramValues[i]);
 			}
 			int result = ps.executeUpdate();
-			if (result > 0 && generatedKeys != null) {
+			if (result > 0) {
 				generatedKeys[0] = getGeneratedKey(ps);
 			}
 			return result;
+		}
+	}
+
+	protected static int doWrite(Connection con, String sql, ValueType[] paramTypes, Object[] paramValues) throws SQLException {
+		try (PreparedStatement ps = con.prepareStatement(sql)) {
+
+			for (int i = 0; i < paramValues.length; i++) {
+				paramTypes[i].setPsParam(ps, i + 1, paramValues[i]);
+			}
+			return ps.executeUpdate();
 		}
 	}
 
@@ -288,7 +299,28 @@ public class RdbDriver {
 	}
 
 	protected static int doWriteForm(Connection con, String sql, FormDbParam[] params, Object[] formData,
-			long[] generatedKeys) throws SQLException {
+			long[] generatedKeys, String keyColumnName) throws SQLException {
+		logger.info("Sql: {}", sql);
+		String[] keys = {keyColumnName};
+		
+		try (PreparedStatement ps = con.prepareStatement(sql, keys)) {
+			int posn = 0;
+			for (FormDbParam p : params) {
+				posn++;
+				p.valueType.setPsParam(ps, posn, formData[p.idx]);
+			}
+			
+			int result = ps.executeUpdate();
+			
+			if (result > 0) {
+				generatedKeys[0] = getGeneratedKey(ps);
+			}
+			logger.info("Sql: {}\nresult:{}", sql, result);
+			return result;
+		}
+	}
+
+	protected static int doWriteForm(Connection con, String sql, FormDbParam[] params, Object[] formData) throws SQLException {
 		logger.info("Sql: {}", sql);
 		try (PreparedStatement ps = con.prepareStatement(sql)) {
 			int posn = 0;
@@ -296,10 +328,8 @@ public class RdbDriver {
 				posn++;
 				p.valueType.setPsParam(ps, posn, formData[p.idx]);
 			}
+			
 			int result = ps.executeUpdate();
-			if (result > 0 && generatedKeys != null) {
-				generatedKeys[0] = getGeneratedKey(ps);
-			}
 			logger.info("Sql: {}\nresult:{}", sql, result);
 			return result;
 		}

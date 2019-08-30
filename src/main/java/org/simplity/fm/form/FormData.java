@@ -486,7 +486,7 @@ public class FormData {
 	 * @param value
 	 *            string value to be parsed for this field
 	 * @param ctx
-	 *            
+	 * 
 	 */
 	public void parseField(int idx, String value, IserviceContext ctx) {
 		if (!this.idxOk(idx)) {
@@ -568,7 +568,7 @@ public class FormData {
 	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert, IserviceContext ctx) {
 		boolean keyIsOptional = false;
 		if (forInsert) {
-			keyIsOptional = this.form.getDbMetaData().keyIsGenerated;
+			keyIsOptional = this.form.getDbMetaData().generatedColumnName != null;
 		}
 		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, ctx);
 
@@ -660,6 +660,10 @@ public class FormData {
 					logger.info("Filed {} skipped as we do not expect it from client", field.getFieldName());
 					continue;
 				}
+				if (keyIsOptional && ct == ColumnType.GeneratedPrimaryKey) {
+					logger.info("Generated field {} skipped as we do not expect it from client", field.getFieldName());
+					continue;
+				}
 				if (ct == ColumnType.ModifiedBy || ct == ColumnType.CreatedBy) {
 					row[field.getIndex()] = ctx.getUser().getUserId();
 				}
@@ -687,7 +691,7 @@ public class FormData {
 		} catch (InvalidValueException e) {
 			logger.error("{} is not a valid value for {} which is of data-type {} and value type {}", value,
 					field.getFieldName(), field.getDataType().getName(), field.getDataType().getValueType());
-				ctx.addMessage(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
+			ctx.addMessage(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
 		}
 	}
 
@@ -702,7 +706,7 @@ public class FormData {
 				vln.isValid(this, errors);
 			}
 		}
-		if(errors.size() > 0) {
+		if (errors.size() > 0) {
 			ctx.addMessages(errors);
 		}
 	}
@@ -752,10 +756,6 @@ public class FormData {
 		for (Field field : this.form.getFields()) {
 			Object value = this.fieldValues[field.getIndex()];
 			if (value == null) {
-				continue;
-			}
-			if (field.isDerivedField()) {
-				logger.info("Field " + field + " is a derived fieldand hence is not serialized");
 				continue;
 			}
 			gen.writeFieldName(field.getFieldName());

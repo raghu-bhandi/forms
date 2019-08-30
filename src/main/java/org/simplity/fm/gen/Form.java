@@ -75,7 +75,7 @@ class Form {
 
 	Field tenantField;
 	Field timestampField;
-	boolean keyIsGenerated;
+	String generatedColumnName;
 	boolean useTimeStampForUpdate;
 
 	void buildFieldMap() {
@@ -105,7 +105,7 @@ class Form {
 				}
 				field.isRequired = ct.isRequired();
 				if (ct == ColumnType.GeneratedPrimaryKey) {
-					if (this.keyIsGenerated) {
+					if (this.generatedColumnName != null) {
 						logger.error("ONly one generated key please. Found {} as well as {} as generated primary keys.",
 								field.name, keyList.get(0).name);
 					} else {
@@ -116,13 +116,13 @@ class Form {
 							keyList.clear();
 						}
 						keyList.add(field);
-						this.keyIsGenerated = true;
+						this.generatedColumnName = field.dbColumnName;
 					}
 					continue;
 				}
 
 				if (ct == ColumnType.PrimaryKey || ct == ColumnType.PrimaryAndParentKey) {
-					if (this.keyIsGenerated) {
+					if (this.generatedColumnName != null) {
 						logger.error(
 								"{} is defined as a generated primary key, but {} is also defined as a primary key.",
 								keyList.get(0).name, field.name);
@@ -378,8 +378,8 @@ class Form {
 			sbf.append(t).append("updateClause = UPDATE;");
 			sbf.append(t).append("updateParams = this.getParams(UPDATE_IDX);");
 			sbf.append(t).append("deleteClause = DELETE;");
-			if (this.keyIsGenerated) {
-				sbf.append(t).append("keyIsGenerated = true;");
+			if (this.generatedColumnName != null) {
+				sbf.append(t).append("generatedColumnName = \"").append(this.generatedColumnName).append("\";");
 			}
 		}
 
@@ -854,13 +854,15 @@ class Form {
 				idxSbf.append(field.index);
 			}
 		}
-		idxSbf.append(C).append(whereIndexes);
+		//update sql will have the where indexes at the end
+		idxSbf.append(C).append(whereIndexes).append("};");
+
 		sbf.append(whereClause);
 		if (this.timestampField != null) {
 			sbf.append(" AND ").append(this.timestampField.dbColumnName).append("=?");
 			idxSbf.append(C).append(this.timestampField.index);
 		}
 		sbf.append("\";");
-		sbf.append(idxSbf).append(C).append(whereIndexes).append("};");
+		sbf.append(idxSbf);
 	}
 }
