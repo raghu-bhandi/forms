@@ -115,7 +115,7 @@ public class DbHandle {
 		String sql = meta.selectClause + meta.whereClause;
 		logger.info("Going to execute sql {} ", sql);
 		Object[] data = formData.getFieldValues();
-		boolean ok = RdbDriver.doReadForm(this.con, sql, meta.whereParams, meta.insertParams, data);
+		boolean ok = RdbDriver.doReadForm(this.con, sql, meta.whereParams, meta.selectParams, data);
 		if (!ok) {
 			return false;
 		}
