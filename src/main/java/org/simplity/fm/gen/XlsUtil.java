@@ -85,7 +85,7 @@ class XlsUtil {
 			return null;
 		}
 		if (ct == Cell.CELL_TYPE_STRING) {
-			return cell.getStringCellValue();
+			return cell.getStringCellValue().trim();
 		}
 		if (ct == Cell.CELL_TYPE_NUMERIC) {
 			return "" + (long) cell.getNumericCellValue();
