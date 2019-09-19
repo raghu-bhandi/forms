@@ -176,18 +176,23 @@ public class Form {
 		StringBuilder sbf = new StringBuilder(WH);
 		for (int i = 0; i < this.childForms.length; i++) {
 			ChildDbMetaData cm = this.dbMetaData.childMeta[i];
+			Form childForm = this.childForms[i].form;
 			if (cm == null) {
-				logger.info("Form {} has a child {} but this child has no dbmetadata", this.getFormId(),
-						this.childForms[i].form.getFormId());
+				logger.info("Form {} has a child {} but has no childMeta entry for it", this.getFormId(),childForm.getFormId());
 				continue;
 			}
+			Form form = this.childForms[i].form;
+			if(form.dbMetaData == null) {
+				logger.warn("Child {} has no db meta data. It will not particiapte in db I/O of its parent", childForm.getFormId());
+				continue;
+			}
+
+			cm.childMeta = form.dbMetaData;
 			foundOne = true;
 			/*
 			 * reset the sbf to re-use it
 			 */
 			sbf.setLength(WH.length());
-			Form form = this.childForms[i].form;
-			cm.childMeta = form.dbMetaData;
 			for (String f : cm.childLinkNames) {
 				Field field = form.getField(f);
 				if (field == null) {

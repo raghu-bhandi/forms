@@ -12,7 +12,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of formStorage
- * <br /> generated at 2019-08-29T00:54:12.248 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx
+ * <br /> generated at 2019-08-30T23:09:24.815 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx
  */ 
 public class FormStorage extends Form {
 	public static final int customerId = 0;
@@ -29,7 +29,7 @@ public class FormStorage extends Form {
 	private static final String WHERE = " WHERE customer_id=? AND form_name=? AND reference_year=?";
 	private static final int[] WHERE_IDX = {0, 1, 2};
 	private static final  String UPDATE = "UPDATE form SET ack_id= ? , status= ? , form_data= ?  WHERE customer_id=? AND form_name=? AND reference_year=?";
-	private static final  int[] UPDATE_IDX = {3, 4, 5, 0, 1, 2, 0, 1, 2};
+	private static final  int[] UPDATE_IDX = {3, 4, 5, 0, 1, 2};
 	private static final String DELETE = "DELETE FROM form";
 
 	private void setDbMeta(){
@@ -59,7 +59,7 @@ public class FormStorage extends Form {
 			new Field("referenceYear", 2, DefinedDataTypes.fy, null, null, true, true, null, "reference_year", ColumnType.PrimaryKey), 
 			new Field("ackId", 3, DefinedDataTypes.text, null, null, false, false, null, "ack_id", ColumnType.OptionalData), 
 			new Field("status", 4, DefinedDataTypes.text, null, null, false, false, null, "status", ColumnType.OptionalData), 
-			new Field("formData", 5, DefinedDataTypes.mahabharat, null, null, false, false, null, "form_data", ColumnType.RequiredData), 
+			new Field("formData", 5, DefinedDataTypes.mahabharat, null, null, true, false, null, "form_data", ColumnType.RequiredData), 
 			new Field("operation", 6, DefinedDataTypes.text, null, null, true, true, null, null, null)
 		};
 		this.fields = flds;

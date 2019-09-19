@@ -36,6 +36,14 @@ public class DbMetaData {
 	 */
 	public FormDbParam[] whereParams;
 	/**
+	 * e.g. where a=? and b=?
+	 */
+	public String uniqueClause;
+	/**
+	 * db parameters to be used for the where clause
+	 */
+	public FormDbParam[] uniqueParams;
+	/**
 	 * e.g. select a,b,c from t
 	 */
 	public String selectClause;

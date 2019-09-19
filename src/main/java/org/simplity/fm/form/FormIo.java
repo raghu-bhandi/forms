@@ -140,6 +140,7 @@ public abstract class FormIo implements IService {
 			if (node != null && node.getNodeType() == JsonNodeType.OBJECT) {
 				conditions = (ObjectNode) node;
 			} else {
+				logger.error("payload for filter should have attribute named {} to contain conditions", Conventions.Http.TAG_CONDITIONS);
 				ctx.addMessage(Message.newError(Message.MSG_INVALID_DATA));
 				return;
 			}

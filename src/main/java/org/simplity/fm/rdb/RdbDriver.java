@@ -484,6 +484,7 @@ public class RdbDriver {
 		try (Connection con = factory.getConnection()) {
 			DbHandle handle = new DbHandle(con, readOnly);
 			try {
+				con.setAutoCommit(readOnly);
 				boolean ok = transactor.transact(handle);
 				handle.done(ok);
 
@@ -518,6 +519,7 @@ public class RdbDriver {
 		try (Connection con = factory.getConnection(schemaName)) {
 			DbHandle handle = new DbHandle(con, readOnly);
 			try {
+				con.setAutoCommit(readOnly);
 				boolean ok = transactor.transact(handle);
 				handle.done(ok);
 

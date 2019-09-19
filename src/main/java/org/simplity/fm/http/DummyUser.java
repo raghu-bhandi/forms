@@ -19,55 +19,52 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.simplity.fm.datatypes;
+
+package org.simplity.fm.http;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author simplity.org
  *
  */
-public class InvalidValueException extends Exception {
-	private static final long serialVersionUID = 1L;
-	private String messageId;
-	private String fieldName;
-	private String[] params;
+public class DummyUser extends LoggedInUser {
+	private long trustId = 1;
+	private long instituteId = 2;
+	private int userType;
 
 	/**
-	 * a field has failed validations
 	 * 
-	 * @param fieldName
-	 * @param msgId
-	 * @param params
+	 * @param id
+	 * @param token
 	 */
-	public InvalidValueException(String msgId, String fieldName, String... params) {
-		this.messageId = msgId;
-		this.fieldName = fieldName;
-		this.params = params;
-	}
-
-	@Override
-	public String getMessage() {
-		return "validation for faield " + this.fieldName + " failed with messageId=" + this.messageId
-				+ " and additional params=" + this.params;
+	public DummyUser(String id, String token) {
+		super(id, token);
 	}
 
 	/**
-	 * @return the messageId
+	 * 
+	 * @return trust id, 0 if this user is not associated with a truet
 	 */
-	public String getMessageId() {
-		return this.messageId;
+	public long getTrustId() {
+		return this.trustId;
 	}
-
+	
 	/**
-	 * @return the fieldName
+	 * 
+	 * @return institute id being worked on. 
 	 */
-	public String getFieldName() {
-		return this.fieldName;
+	public long getInstituteId() {
+		return this.instituteId;
 	}
-
+	
 	/**
-	 * @return run-time parameters. null if no params
+	 * @return the userType
 	 */
-	public String[] getParams() {
-		return this.params;
+	public int getUserType() {
+		return this.userType;
 	}
+	
+	
 }

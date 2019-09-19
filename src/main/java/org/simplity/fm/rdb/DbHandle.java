@@ -299,16 +299,18 @@ public class DbHandle {
 		int idx = 0;
 		for (ChildDbMetaData cm : meta.childMeta) {
 			if (cm != null) {
-				DbMetaData childDetils = cm.childMeta;
-				/*
-				 * delete child rows
-				 */
-				this.writeForm(childDetils.deleteClause + cm.whereClause, cm.whereParams, data);
-				/*
-				 * now insert them
-				 */
-				if (childData != null) {
-					this.formBatch(childDetils.insertClause, childDetils.insertParams, childData[idx]);
+				DbMetaData childDetails = cm.childMeta;
+				if (childDetails != null) {
+					/*
+					 * delete child rows
+					 */
+					this.writeForm(childDetails.deleteClause + cm.whereClause, cm.whereParams, data);
+					/*
+					 * now insert them
+					 */
+					if (childData != null) {
+						this.formBatch(childDetails.insertClause, childDetails.insertParams, childData[idx]);
+					}
 				}
 			}
 			idx++;
@@ -408,7 +410,8 @@ public class DbHandle {
 	 * @param generatedKey
 	 *            non- array with at least one element. generated key is
 	 *            returned in this element
-	 * @param keyName non-null name of the key field being generated
+	 * @param keyName
+	 *            non-null name of the key field being generated
 	 * @return number of rows affected.
 	 * @throws SQLException
 	 */

@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-29T00:54:11.690
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form1.xlsx at 2019-08-30T23:09:24.170
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -12,6 +12,7 @@ export class Form1 extends Form {
 		label:'internal id', 
 		placeHolder:'Header Id', 
 		errorId:'invalidId', 
+		isRequired:true, 
 		minLength:1, 
 		maxLength:13, 
 		minValue:1, 
@@ -47,7 +48,8 @@ export class Form1 extends Form {
 		trueLabel:'True', 
 		falseLabel:'False', 
 		isEditable:true, 
-		errorId:'invalidTrueFalse'
+		errorId:'invalidTrueFalse', 
+		isRequired:true
 	});
 	fromDate = new Field('fromDate', 4, 4, {
 		defaultVlue:'44175', 
@@ -55,6 +57,7 @@ export class Form1 extends Form {
 		placeHolder:'from field', 
 		isEditable:true, 
 		errorId:'invalidFutureDate', 
+		isRequired:true, 
 		minValue:1, 
 		maxValue:73000
 	});
@@ -64,6 +67,7 @@ export class Form1 extends Form {
 		placeHolder:'to field', 
 		isEditable:true, 
 		errorId:'invalidFutureDate', 
+		isRequired:true, 
 		minValue:1, 
 		maxValue:73000
 	});
@@ -194,12 +198,12 @@ export class Form1 extends Form {
 		this.fields.set('aadhaar', this.aadhaar);
 		this.fields.set('pan', this.pan);
 		this.controls = {
-			headerId: ['',[Validators.max(9999999999999), Validators.min(1), Validators.minLength(1), Validators.maxLength(13)]], 
+			headerId: ['',[Validators.required, Validators.max(9999999999999), Validators.min(1), Validators.minLength(1), Validators.maxLength(13)]], 
 			customerId: ['AAA-99-AAA',[Validators.required, Validators.pattern('[A-Z]{3}-[\\d]{2}-[A-Z]{3}'), Validators.minLength(10), Validators.maxLength(10)]], 
 			financialYear: ['2010',[Validators.required, Validators.max(2025), Validators.min(1989), Validators.minLength(4), Validators.maxLength(4)]], 
-			boolField: ['true',[]], 
-			fromDate: ['44175',[]], 
-			toDate: ['44896',[]], 
+			boolField: ['true',[Validators.required]], 
+			fromDate: ['44175',[Validators.required]], 
+			toDate: ['44896',[Validators.required]], 
 			intField1: ['33',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
 			intField2: ['45',[Validators.max(9874), Validators.min(1), Validators.minLength(1), Validators.maxLength(9)]], 
 			fyStartDate: ['',[]], 

@@ -12,7 +12,7 @@ import example.project.gen.DefinedDataTypes;
 
 /**
  * class that represents structure of form2
- * <br /> generated at 2019-08-29T00:54:12.059 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
+ * <br /> generated at 2019-08-30T23:09:24.578 from file C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/form2.xlsx
  */ 
 public class Form2 extends Form {
 	public static final int headerId = 0;
@@ -26,7 +26,7 @@ public class Form2 extends Form {
 	private static final String WHERE = " WHERE header_id=? AND product_id=?";
 	private static final int[] WHERE_IDX = {0, 1};
 	private static final  String UPDATE = "UPDATE detail SET quantity= ? , color= ?  WHERE header_id=? AND product_id=?";
-	private static final  int[] UPDATE_IDX = {2, 3, 0, 1, 0, 1};
+	private static final  int[] UPDATE_IDX = {2, 3, 0, 1};
 	private static final String DELETE = "DELETE FROM detail";
 
 	private void setDbMeta(){
@@ -50,7 +50,7 @@ public class Form2 extends Form {
 		this.uniqueName = "form2";
 
 		Field[] flds = {
-			new Field("headerId", 0, DefinedDataTypes.id, null, null, false, false, null, "header_id", ColumnType.PrimaryAndParentKey), 
+			new Field("headerId", 0, DefinedDataTypes.id, null, null, true, false, null, "header_id", ColumnType.PrimaryAndParentKey), 
 			new Field("productId", 1, DefinedDataTypes.textId, null, null, true, true, null, "product_id", ColumnType.PrimaryKey), 
 			new Field("quantity", 2, DefinedDataTypes.orderQty, null, null, true, true, null, "quantity", ColumnType.RequiredData), 
 			new Field("color", 3, DefinedDataTypes.color, null, null, true, true, "colors", "color", ColumnType.RequiredData)

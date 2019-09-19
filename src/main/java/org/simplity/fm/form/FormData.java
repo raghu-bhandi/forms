@@ -494,7 +494,7 @@ public class FormData {
 			return;
 		}
 		Field f = this.form.getFields()[idx];
-		validateAndSet(f, value, this.fieldValues, idx, false, ctx);
+		validateAndSet(f, value, this.fieldValues, idx, false, ctx, null, 0);
 	}
 
 	/**
@@ -524,7 +524,7 @@ public class FormData {
 		for (int idx : indexes) {
 			Field f = fields[idx];
 			String value = getTextAttribute(json, f.getFieldName());
-			validateAndSet(f, value, this.fieldValues, idx, false, ctx);
+			validateAndSet(f, value, this.fieldValues, idx, false, ctx, null, 0);
 		}
 	}
 
@@ -545,7 +545,7 @@ public class FormData {
 		for (int idx : indexes) {
 			Field f = fields[idx];
 			String value = inputValues.get(f.getFieldName());
-			validateAndSet(f, value, this.fieldValues, idx, false, ctx);
+			validateAndSet(f, value, this.fieldValues, idx, false, ctx, null, 0);
 		}
 	}
 
@@ -566,11 +566,17 @@ public class FormData {
 	 *            non-null
 	 */
 	public void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert, IserviceContext ctx) {
+		this.validateAndLoad(json, allFieldsAreOptional, forInsert, ctx, null, 0);
+	}
+
+	
+	private void validateAndLoad(ObjectNode json, boolean allFieldsAreOptional, boolean forInsert, IserviceContext ctx,
+			String childName, int rowNbr) {
 		boolean keyIsOptional = false;
 		if (forInsert) {
 			keyIsOptional = this.form.getDbMetaData().generatedColumnName != null;
 		}
-		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, ctx);
+		setFeilds(json, this.form, this.fieldValues, allFieldsAreOptional, keyIsOptional, ctx, childName, rowNbr);
 
 		ChildForm[] children = this.form.getChildForms();
 		if (children != null) {
@@ -589,7 +595,7 @@ public class FormData {
 		JsonNode childNode = json.get(fieldName);
 		if (childNode == null) {
 			if (childForm.minRows > 0) {
-				ctx.addMessage(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+				ctx.addMessage(Message.newFieldError(fieldName, childForm.errorMessageId));
 			}
 			return null;
 		}
@@ -604,7 +610,7 @@ public class FormData {
 				return null;
 			}
 			FormData fd = childForm.form.newFormData();
-			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, forInsert, ctx);
+			fd.validateAndLoad((ObjectNode) childNode, allFieldsAreOptional, forInsert, ctx, null, 0);
 			FormData[] result = { fd };
 			return result;
 		}
@@ -625,7 +631,7 @@ public class FormData {
 		}
 
 		if (arr == null) {
-			ctx.addMessage(Message.newFieldError(fieldName, childForm.errorMessageId, null));
+			ctx.addMessage(Message.newFieldError(fieldName, childForm.errorMessageId));
 			return null;
 		}
 
@@ -642,7 +648,7 @@ public class FormData {
 			}
 			FormData fd = childForm.form.newFormData();
 			fds.add(fd);
-			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, forInsert, ctx);
+			fd.validateAndLoad((ObjectNode) col, allFieldsAreOptional, forInsert, ctx, fieldName, j);
 		}
 		if (fds.size() == 0) {
 			return null;
@@ -651,7 +657,7 @@ public class FormData {
 	}
 
 	private static void setFeilds(ObjectNode json, Form form, Object[] row, boolean allFieldsAreOptional,
-			boolean keyIsOptional, IserviceContext ctx) {
+			boolean keyIsOptional, IserviceContext ctx, String childName, int rowNbr) {
 
 		for (Field field : form.getFields()) {
 			ColumnType ct = field.getColumnType();
@@ -674,12 +680,12 @@ public class FormData {
 			}
 
 			String value = getTextAttribute(json, field.getFieldName());
-			validateAndSet(field, value, row, field.getIndex(), allFieldsAreOptional, ctx);
+			validateAndSet(field, value, row, field.getIndex(), allFieldsAreOptional, ctx, childName, rowNbr);
 		}
 	}
 
 	private static void validateAndSet(Field field, String value, Object[] row, int idx, boolean allFieldsAreOptional,
-			IserviceContext ctx) {
+			IserviceContext ctx, String childName, int rowNbr) {
 		if (value == null || value.isEmpty()) {
 			if (allFieldsAreOptional) {
 				row[idx] = null;
@@ -691,7 +697,8 @@ public class FormData {
 		} catch (InvalidValueException e) {
 			logger.error("{} is not a valid value for {} which is of data-type {} and value type {}", value,
 					field.getFieldName(), field.getDataType().getName(), field.getDataType().getValueType());
-			ctx.addMessage(Message.newFieldError(field.getFieldName(), field.getMessageId(), null));
+			ctx.addMessage(Message.newObjectFieldError(field.getFieldName(), childName, field.getMessageId(), rowNbr,
+					e.getParams()));
 		}
 	}
 

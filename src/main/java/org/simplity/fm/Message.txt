@@ -59,7 +59,7 @@ public class Message {
 	 * @return an error message for this message id
 	 */
 	public static Message newError(String messageId) {
-		return new Message(MessageType.ERROR, messageId, null, null, null, -1);
+		return new Message(MessageType.ERROR, messageId, null, null, null, 0);
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class Message {
 	 * @return a validation message based on the exception
 	 */
 	public static Message newValidationError(InvalidValueException e) {
-		return new Message(MessageType.ERROR, e.getMessageId(), e.getFieldName(), e.getParams(), null, -1);
+		return new Message(MessageType.ERROR, e.getMessageId(), e.getFieldName(), e.getParams(), null, 0);
 	}
 
 	/**
@@ -78,29 +78,27 @@ public class Message {
 	 * @param params
 	 * @return validation error message
 	 */
-	public static Message newFieldError(String fieldName, String messageId, String... params) {
-		return new Message(MessageType.ERROR, messageId, fieldName, params, null, -1);
+	public static Message newFieldError(String fieldName, String messageId, String params) {
+		return new Message(MessageType.ERROR, messageId, fieldName, params, null, 0);
 	}
 
 	/**
-	 * create a validation error message for a field inside an object/table
+	 * create a validation error message for a field
 	 * 
-	 * @param fieldName
-	 *            name of the field inside the object
-	 * @param objectName
-	 *            attribute/field name of the parent that has this child object
-	 *            as data
+	 * @param tableName
+	 *            table name (primary field name in the parent form)
+	 * @param columnName
+	 *            column name field name of the child form)
 	 * 
 	 * @param messageId
+	 * @param params
 	 * @param rowNumber
 	 *            1-based row number in which the error is detected
-	 * @param params
-	 *            run-time parameters
 	 * @return validation error message
 	 */
-	public static Message newObjectFieldError(String fieldName, String objectName, String messageId, int rowNumber,
-			String... params) {
-		return new Message(MessageType.ERROR, messageId, fieldName, params, objectName, rowNumber);
+	public static Message newColumnError(String tableName, String columnName, String messageId, String params,
+			int rowNumber) {
+		return new Message(MessageType.ERROR, messageId, tableName, params, columnName, 0);
 	}
 
 	/**
@@ -111,8 +109,8 @@ public class Message {
 	 * @param params
 	 * @return message
 	 */
-	public static Message newMessage(MessageType messageType, String messageId, String... params) {
-		return new Message(messageType, messageId, null, params, null, -1);
+	public static Message newMessage(MessageType messageType, String messageId, String params) {
+		return new Message(messageType, messageId, null, params, null, 0);
 	}
 
 	/**
@@ -125,35 +123,36 @@ public class Message {
 	public final String messageId;
 	/**
 	 * name of the field that is in error. null if the error is not
-	 * specific to a field. Could be a simple field name, or the it could be
-	 * inside a child table/object
+	 * specific to a field. Could be a simple field name, or the name of a
+	 * tabular data element
 	 */
 	public final String fieldName;
 
 	/**
-	 * If the field is inside a child table/object, this is the name of that
-	 * table/object
+	 * If the field in error is tabular one, this is the name of teh column that
+	 * is in error
 	 */
-	public final String objectName;
+	public final String columnName;
 
 	/**
-	 * 0-based row number in case this is a tabular data
+	 * 1-based row number in case this is a data tabular data
 	 */
 	public final int rowNumber;
 
 	/**
-	 * run-time parameters to be used to format the text for this message.
-	 * Please holders in the message are marked with {}
+	 * possibly comma separated list of parameters that go into the body of the
+	 * message, in case the message is a template with place-holders for
+	 * run-time parameter
 	 */
-	public final String[] params;
+	public final String params;
 
-	private Message(MessageType messageType, String messageId, String fieldName, String[] params, String objectName,
+	private Message(MessageType messageType, String messageId, String fieldName, String params, String columnName,
 			int rowNumber) {
 		this.messageType = messageType;
 		this.messageId = messageId;
 		this.fieldName = fieldName;
 		this.params = params;
-		this.objectName = objectName;
+		this.columnName = columnName;
 		this.rowNumber = rowNumber;
 	}
 
@@ -162,8 +161,6 @@ public class Message {
 		return "type:" + this.messageType + "  id:" + this.messageId + " field:" + this.fieldName;
 	}
 
-	private static final char Q = '"';
-
 	/**
 	 * @param writer
 	 * @throws IOException
@@ -171,50 +168,39 @@ public class Message {
 	public void toJson(Writer writer) throws IOException {
 		writer.write("{\"type\":\"");
 
-		if (this.messageType == null) {
+		if(this.messageType == null) {
 			writer.write("error");
-		} else {
+		}else {
 			writer.write(this.messageType.toString().toLowerCase());
 		}
-
-		writer.write("\",\"id\":\"");
+		
+		writer.write("\", \"id\":\"");
 		writer.write(this.messageId);
-		writer.write(Q);
-
-		writer.write("\",\"text:\"");
-		writer.write(this.messageId);
-		writer.write(Q);
-
+		writer.write("\"");
+		
 		if (this.fieldName != null) {
-			writer.write(",\"fieldName\":\"");
+			writer.write(", \"fieldName\": \"");
 			writer.write(this.fieldName);
-			writer.write(Q);
+			writer.write("\"");
 		}
-
-		if (this.objectName != null) {
-			writer.write(",\"objectName\": \"");
-			writer.write(this.objectName);
-			writer.write(Q);
+		
+		if (this.columnName != null) {
+			writer.write(", \"columnName\": \"");
+			writer.write(this.columnName);
+			writer.write("\"");
 		}
-
-		if (this.params != null && this.params.length > 0) {
-			writer.write(",\"params\":[");
-			writer.write(this.params[0].replaceAll("\"", "\"\""));
-			writer.write(Q);
-
-			for (int i = 1; i < this.params.length; i++) {
-				writer.write(",\"");
-				writer.write(this.params[i].replaceAll("\"", "\"\""));
-				writer.write(Q);
-			}
-			writer.write(']');
+		
+		if (this.params != null) {
+			writer.write(", \"params\": \"");
+			writer.write(this.params.replaceAll("\"", "\"\""));
+			writer.write("\"");
 		}
-
-		if (this.rowNumber != -1) {
-			writer.write(",\"idx\":");
+		
+		if (this.rowNumber != 0) {
+			writer.write(", \"rowNumber\": ");
 			writer.write(this.rowNumber);
 		}
-
+		
 		writer.write("}");
 	}
 }

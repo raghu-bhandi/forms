@@ -1,5 +1,5 @@
 /*
- * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-29T00:54:12.249
+ * generated from C:/Users/raghu/eclipse-workspace/ef/src/main/resources/fm/spec/form/formStorage.xlsx at 2019-08-30T23:09:24.817
  */
 import { Form , Field } from '../form/form';
 import { Validators } from '@angular/forms'
@@ -48,6 +48,7 @@ export class FormStorage extends Form {
 	formData = new Field('formData', 5, 0, {
 		label:'Form Data', 
 		errorId:'invalidMahabharat', 
+		isRequired:true, 
 		minLength:1, 
 		maxLength:10000
 	});
@@ -80,7 +81,7 @@ export class FormStorage extends Form {
 			referenceYear: ['',[Validators.required, Validators.max(2025), Validators.min(1989), Validators.minLength(4), Validators.maxLength(4)]], 
 			ackId: ['',[Validators.minLength(2), Validators.maxLength(100)]], 
 			status: ['',[Validators.minLength(2), Validators.maxLength(100)]], 
-			formData: ['',[Validators.minLength(1), Validators.maxLength(10000)]], 
+			formData: ['',[Validators.required, Validators.minLength(1), Validators.maxLength(10000)]], 
 			operation: ['',[Validators.required, Validators.minLength(2), Validators.maxLength(100)]]
 		};
 		this.keyFields = ['customerId', 'formName', 'referenceYear'];

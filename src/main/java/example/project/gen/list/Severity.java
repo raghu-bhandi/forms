@@ -4,7 +4,7 @@ import org.simplity.fm.validn.ValueList;
 
 /**
  * List of valid values for list severity
- * <br /> generated at 2019-08-29T00:54:11.164
+ * <br /> generated at 2019-08-30T23:09:23.398
  */ 
 public class Severity extends ValueList {
 	 private static final String[][] VALUES = { 
